@@ -1,0 +1,48 @@
+{
+  "name": "quizgod",
+  "version": "1.0.0",
+  "description": "AI-Powered Quiz Generator - Create quizzes manually or generate them from PDFs using AI",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "deploy:check": "npm run build && echo 'Build successful! Ready for deployment.'",
+    "deploy:vercel": "vercel --prod"
+  },
+  "keywords": [
+    "quiz",
+    "education",
+    "ai",
+    "pdf",
+    "nextjs",
+    "typescript",
+    "learning"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "next": "15.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^8",
+    "eslint-config-next": "15.5.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/quizgod.git"
+  },
+  "homepage": "https://quizgod.vercel.app"
+}
