@@ -1,36 +1,27 @@
 ﻿"use client";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import AuthModal from "@/components/AuthModal";
 import NavBar from "@/components/NavBar";
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function HomePage() {
   const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("signup");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const u = localStorage.getItem("qg_user");
-    setIsLoggedIn(!!u);
-  }, []);
+  const { user } = useAuth();
 
   return (
         <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-6 py-8">
         <div className="flex justify-between items-center mb-12">
           <div className="text-2xl font-bold text-white">🧠 QuizGod</div>
-          {isLoggedIn ? (
+          {user ? (
             <NavBar />
           ) : (
             <div className="flex gap-3">
               <button
-                onClick={() => { setAuthMode("login"); setShowAuth(true); }}
+                onClick={() => setShowAuth(true)}
                 className="px-4 py-2 rounded-full border border-white/30 hover:bg-white/10 dark:border-gray-400 dark:hover:bg-gray-700/30 transition-colors"
-              >Login</button>
-              <button
-                onClick={() => { setAuthMode("signup"); setShowAuth(true); }}
-                className="px-4 py-2 rounded-full bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-colors"
-              >Sign Up Free</button>
+              >Login / Sign Up</button>
             </div>
           )}
         </div>
@@ -67,7 +58,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {isLoggedIn && (
+          {user && (
             <div className="mt-10 flex justify-center gap-4 flex-wrap">
               <Link href="/create" className="px-6 py-3 bg-purple-500 rounded-lg hover:bg-purple-600">Create Quiz</Link>
               <Link href="/ai-quiz" className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg hover:from-pink-600 hover:to-purple-700">🤖 AI Quiz</Link>
@@ -79,7 +70,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <AuthModal isOpen={showAuth} mode={authMode} onClose={() => setShowAuth(false)} onAuth={() => setIsLoggedIn(true)} />
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   );
 }
