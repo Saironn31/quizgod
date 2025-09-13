@@ -33,7 +33,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         if (userCredential?.user) {
           await createUserProfile(userCredential.user.uid, email, name);
           // Migrate any existing local data
-          await migrateLocalDataToFirestore(userCredential.user.uid);
+          await migrateLocalDataToFirestore(userCredential.user.uid, email);
         }
       }
       onClose();

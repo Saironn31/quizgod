@@ -83,15 +83,20 @@ export interface UserClassMembership {
 // User operations
 export const createUserProfile = async (uid: string, email: string, name: string, username?: string) => {
   const userRef = doc(db, 'users', uid);
-  const userData: FirebaseUser = {
+  const userData: any = {
     uid,
     email,
     name,
-    username,
     preferences: { theme: 'light' },
     createdAt: new Date(),
     updatedAt: new Date()
   };
+  
+  // Only add username if it's provided
+  if (username) {
+    userData.username = username;
+  }
+  
   await setDoc(userRef, userData);
   return userData;
 };
