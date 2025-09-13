@@ -10,13 +10,16 @@ import {
   UserCredential
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { getUserProfile, FirebaseUser } from '@/lib/firestore';
 
 interface AuthContextType {
   user: User | null;
+  userProfile: FirebaseUser | null;
   loading: boolean;
   signup: (email: string, password: string) => Promise<UserCredential>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -27,6 +30,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -46,12 +50,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await signOut(auth);
   };
 
+  // Refresh user profile function
+  const refreshUserProfile = async () => {
+    if (user) {
+      const profile = await getUserProfile(user.uid);
+      setUserProfile(profile);
+    }
+  };
+
   // Listen for authentication state changes
   useEffect(() => {
     setMounted(true);
     
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      if (user) {
+        // Fetch user profile data from Firestore
+        const profile = await getUserProfile(user.uid);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      
       setLoading(false);
     });
 
@@ -60,10 +81,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     user,
+    userProfile,
     loading,
     signup,
     login,
-    logout
+    logout,
+    refreshUserProfile
   };
 
   if (!mounted) {

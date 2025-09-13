@@ -15,7 +15,8 @@ import {
   onSnapshot,
   orderBy
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { db, storage } from '@/lib/firebase';
 
 // Enhanced Types for complete system
 export interface FirebaseUser {
@@ -23,7 +24,8 @@ export interface FirebaseUser {
   email: string;
   name: string;
   username?: string;
-  preferences: {
+  profilePicture?: string; // URL to profile picture
+  preferences?: {
     theme: 'light' | 'dark';
   };
   createdAt: Date;
@@ -120,6 +122,48 @@ export const getUserProfile = async (uid: string): Promise<FirebaseUser | null> 
   } catch (error) {
     console.error('Error getting user profile:', error);
     return null;
+  }
+};
+
+// Profile picture operations
+export const uploadProfilePicture = async (uid: string, file: File): Promise<string> => {
+  try {
+    // Create a unique filename
+    const timestamp = Date.now();
+    const fileName = `profile_${uid}_${timestamp}.${file.name.split('.').pop()}`;
+    const storageRef = ref(storage, `profile-pictures/${fileName}`);
+    
+    // Upload the file
+    await uploadBytes(storageRef, file);
+    
+    // Get the download URL
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    // Update user profile with new picture URL
+    await updateUserProfile(uid, { profilePicture: downloadURL });
+    
+    return downloadURL;
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    throw error;
+  }
+};
+
+export const deleteProfilePicture = async (uid: string, profilePictureUrl: string): Promise<void> => {
+  try {
+    // Extract the file path from the URL
+    const url = new URL(profilePictureUrl);
+    const filePath = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
+    const storageRef = ref(storage, filePath);
+    
+    // Delete from storage
+    await deleteObject(storageRef);
+    
+    // Remove from user profile
+    await updateUserProfile(uid, { profilePicture: undefined });
+  } catch (error) {
+    console.error('Error deleting profile picture:', error);
+    throw error;
   }
 };
 
@@ -250,14 +294,16 @@ export const getUserSubjects = async (userId: string): Promise<FirebaseSubject[]
     const subjectsQuery = query(
       collection(db, 'subjects'), 
       where('userId', '==', userId),
-      where('isPersonal', '==', true),
-      orderBy('createdAt', 'desc')
+      where('isPersonal', '==', true)
     );
     const querySnapshot = await getDocs(subjectsQuery);
-    return querySnapshot.docs.map(doc => ({
+    const subjects = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     } as FirebaseSubject));
+    
+    // Sort client-side to avoid index requirement
+    return subjects.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   } catch (error) {
     console.error('Error getting personal subjects:', error);
     return [];
@@ -304,7 +350,32 @@ export const getAllUserSubjects = async (userId: string, userEmail: string): Pro
 };
 
 export const deleteSubject = async (subjectId: string) => {
-  await deleteDoc(doc(db, 'subjects', subjectId));
+  try {
+    // First, find and delete all quizzes associated with this subject
+    const quizzesQuery = query(
+      collection(db, 'quizzes'), 
+      where('subjectId', '==', subjectId)
+    );
+    const quizzesSnapshot = await getDocs(quizzesQuery);
+    
+    // Use batch to delete all associated quizzes
+    const batch = writeBatch(db);
+    quizzesSnapshot.docs.forEach((quizDoc) => {
+      batch.delete(quizDoc.ref);
+    });
+    
+    // Also delete the subject itself
+    const subjectRef = doc(db, 'subjects', subjectId);
+    batch.delete(subjectRef);
+    
+    // Commit all deletions
+    await batch.commit();
+    
+    console.log(`Deleted subject ${subjectId} and ${quizzesSnapshot.docs.length} associated quizzes`);
+  } catch (error) {
+    console.error('Error deleting subject and associated quizzes:', error);
+    throw error;
+  }
 };
 
 // Quiz operations

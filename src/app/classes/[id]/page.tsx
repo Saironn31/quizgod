@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import NavBar from "@/components/NavBar";
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Class {
   id: string;
@@ -185,30 +187,21 @@ export default function ClassDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-blue-600">
-            🧠 QuizGod
-          </Link>
-          <div className="flex items-center space-x-4">
-            <Link href="/classes" className="text-gray-600 hover:text-blue-600">
-              ← Back to Classes
-            </Link>
-            <span className="text-gray-700">Welcome, {currentUser}!</span>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="flex justify-between items-center mb-8 sm:mb-12">
+          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
+          <NavBar />
         </div>
-      </nav>
 
-      {/* Class Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-8">
-        <div className="max-w-6xl mx-auto px-6">
+        {/* Class Header */}
+        <div className="max-w-6xl mx-auto">
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold">{classData.name}</h1>
-              <p className="text-blue-100 mt-2">{classData.description}</p>
-              <div className="flex items-center gap-4 mt-4">
+              <h1 className="text-3xl font-bold text-white">{classData.name}</h1>
+              <p className="text-purple-100 mt-2">{classData.description}</p>
+              <div className="flex items-center gap-4 mt-4 flex-wrap">
                 <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
                   👥 {members.length} member{members.length !== 1 ? 's' : ''}
                 </span>
@@ -221,11 +214,11 @@ export default function ClassDetailPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="bg-white/20 rounded-lg p-4">
-                <div className="text-2xl font-mono font-bold">{classData.code}</div>
+              <div className="bg-white/20 backdrop-blur-md rounded-lg p-4">
+                <div className="text-2xl font-mono font-bold text-cyan-300">{classData.code}</div>
                 <button 
                   onClick={copyClassCode}
-                  className="text-sm text-blue-200 hover:text-white mt-1"
+                  className="text-sm text-purple-200 hover:text-white mt-1 transition-colors"
                 >
                   📋 Copy Code
                 </button>
@@ -233,12 +226,10 @@ export default function ClassDetailPage() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex space-x-8">
+        {/* Tabs */}
+        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
+          <div className="flex space-x-4 flex-wrap gap-2">
             {[
               { id: 'overview', label: '📊 Overview', icon: '📊' },
               { id: 'subjects', label: '📚 Subjects', icon: '📚' },
@@ -248,10 +239,10 @@ export default function ClassDetailPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm ${
+                className={`py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg'
+                    : 'bg-white/10 text-purple-200 hover:bg-white/20 hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -259,60 +250,58 @@ export default function ClassDetailPage() {
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Content */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-lg shadow p-6 text-center">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
                 <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-gray-800">{members.length}</div>
-                <div className="text-gray-600">Active Members</div>
+                <div className="text-2xl font-bold text-white">{members.length}</div>
+                <div className="text-purple-200">Active Members</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-6 text-center">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
                 <div className="text-3xl mb-2">📚</div>
-                <div className="text-2xl font-bold text-gray-800">{subjects.length}</div>
-                <div className="text-gray-600">Subjects</div>
+                <div className="text-2xl font-bold text-white">{subjects.length}</div>
+                <div className="text-purple-200">Subjects</div>
               </div>
-              <div className="bg-white rounded-lg shadow p-6 text-center">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
                 <div className="text-3xl mb-2">📝</div>
-                <div className="text-2xl font-bold text-gray-800">{quizzes.length}</div>
-                <div className="text-gray-600">Shared Quizzes</div>
+                <div className="text-2xl font-bold text-white">{quizzes.length}</div>
+                <div className="text-purple-200">Shared Quizzes</div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">🎯 Quick Actions</h3>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">🎯 Quick Actions</h3>
                 <div className="space-y-3">
                   <Link
                     href="/create"
-                    className="block w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center"
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 text-center font-medium"
                   >
                     ➕ Create New Quiz
                   </Link>
                   <Link
                     href="/ai-quiz"
-                    className="block w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-center"
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 text-center font-medium"
                   >
                     🤖 Generate AI Quiz
                   </Link>
                   <Link
                     href={`/classes/${classData.id}/leaderboard`}
-                    className="block w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-center"
+                    className="block w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 text-center font-medium"
                   >
                     🏆 View Leaderboard
                   </Link>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-lg font-semibold mb-4">📈 Class Activity</h3>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+                <h3 className="text-lg font-semibold mb-4 text-white">📈 Class Activity</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span>Class created</span>
+                  <div className="flex justify-between items-center py-2 border-b border-white/20">
+                    <span className="text-purple-200">Class created</span>
                     <span className="text-gray-500">
                       {new Date(classData.createdAt).toLocaleDateString()}
                     </span>
@@ -519,6 +508,7 @@ export default function ClassDetailPage() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

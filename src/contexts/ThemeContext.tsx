@@ -1,5 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
+import { updateUserProfile } from '@/lib/firestore';
 
 type Theme = 'light' | 'dark';
 
@@ -13,20 +15,25 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
+  const { user, userProfile } = useAuth();
 
   useEffect(() => {
     setMounted(true);
     
-    // Load theme from localStorage on mount
-    const savedTheme = localStorage.getItem('qg_theme') as Theme;
-    if (savedTheme) {
-      setTheme(savedTheme);
+    // Load theme priority: 1. User profile, 2. localStorage, 3. System preference
+    if (userProfile?.preferences?.theme) {
+      setTheme(userProfile.preferences.theme);
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
+      const savedTheme = localStorage.getItem('qg_theme') as Theme;
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else {
+        // Check system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+      }
     }
-  }, []);
+  }, [userProfile]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -35,7 +42,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
     localStorage.setItem('qg_theme', theme);
-  }, [theme, mounted]);
+    
+    // Sync with user profile if logged in
+    if (user && userProfile) {
+      const currentUserTheme = userProfile.preferences?.theme;
+      if (currentUserTheme && currentUserTheme !== theme) {
+        // Don't update if theme hasn't actually changed to avoid infinite loops
+        return;
+      }
+      
+      if (!userProfile.preferences || userProfile.preferences.theme !== theme) {
+        updateUserProfile(user.uid, {
+          preferences: {
+            ...(userProfile.preferences || {}),
+            theme
+          }
+        }).catch(console.error);
+      }
+    }
+  }, [theme, mounted, user, userProfile]);
 
   const toggleTheme = () => {
     if (!mounted) return; // Prevent theme changes before mount

@@ -31,42 +31,76 @@ export default function HomePage() {
           <p className="mt-4 text-base sm:text-lg text-purple-100 px-4">100% free. Manual quiz builder, subjects, and your quiz library.</p>
 
           <div className="mt-8 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6 max-w-7xl mx-auto px-2">
-            <div className="bg-white/10 rounded-xl p-4 sm:p-6">
-              <div className="text-3xl sm:text-4xl text-center mb-3">➕</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Manual Quiz Creation</h3>
-              <p className="text-sm sm:text-base">Create custom quizzes question-by-question with 4 options.</p>
-            </div>
-            <div className="bg-white/10 rounded-xl p-4 sm:p-6">
-              <div className="text-3xl sm:text-4xl text-center mb-3">🤖</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">AI Quiz Generator</h3>
-              <p className="text-sm sm:text-base">Upload PDFs and let AI automatically generate quiz questions!</p>
-            </div>
-            <div className="bg-white/10 rounded-xl p-4 sm:p-6">
-              <div className="text-3xl sm:text-4xl text-center mb-3">📚</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Subjects</h3>
-              <p className="text-sm sm:text-base">Organize your quizzes with add/delete subjects.</p>
-            </div>
-            <div className="bg-white/10 rounded-xl p-4 sm:p-6">
-              <div className="text-3xl sm:text-4xl text-center mb-3">🎮</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">My Quizzes</h3>
-              <p className="text-sm sm:text-base">See, play, and delete your quizzes anytime.</p>
-            </div>
-            <div className="bg-white/10 rounded-xl p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
-              <div className="text-3xl sm:text-4xl text-center mb-3">👥</div>
-              <h3 className="text-lg sm:text-xl font-semibold mb-2">Classes</h3>
-              <p className="text-sm sm:text-base">Create or join classes to collaborate and compete with classmates!</p>
-            </div>
+            {user ? (
+              <Link href="/create" className="bg-white/10 hover:bg-white/20 rounded-xl p-4 sm:p-6 transition-all duration-200 hover:scale-105 cursor-pointer">
+                <div className="text-3xl sm:text-4xl text-center mb-3">➕</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Manual Quiz Creation</h3>
+                <p className="text-sm sm:text-base">Create custom quizzes question-by-question with 4 options.</p>
+              </Link>
+            ) : (
+              <div className="bg-white/10 rounded-xl p-4 sm:p-6">
+                <div className="text-3xl sm:text-4xl text-center mb-3">➕</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Manual Quiz Creation</h3>
+                <p className="text-sm sm:text-base">Create custom quizzes question-by-question with 4 options.</p>
+              </div>
+            )}
+            
+            {user ? (
+              <Link href="/ai-quiz" className="bg-white/10 hover:bg-white/20 rounded-xl p-4 sm:p-6 transition-all duration-200 hover:scale-105 cursor-pointer">
+                <div className="text-3xl sm:text-4xl text-center mb-3">🤖</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">AI Quiz Generator</h3>
+                <p className="text-sm sm:text-base">Upload PDFs and let AI automatically generate quiz questions!</p>
+              </Link>
+            ) : (
+              <div className="bg-white/10 rounded-xl p-4 sm:p-6">
+                <div className="text-3xl sm:text-4xl text-center mb-3">🤖</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">AI Quiz Generator</h3>
+                <p className="text-sm sm:text-base">Upload PDFs and let AI automatically generate quiz questions!</p>
+              </div>
+            )}
+            
+            {user ? (
+              <Link href="/subjects" className="bg-white/10 hover:bg-white/20 rounded-xl p-4 sm:p-6 transition-all duration-200 hover:scale-105 cursor-pointer">
+                <div className="text-3xl sm:text-4xl text-center mb-3">📚</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Subjects</h3>
+                <p className="text-sm sm:text-base">Organize your quizzes with add/delete subjects.</p>
+              </Link>
+            ) : (
+              <div className="bg-white/10 rounded-xl p-4 sm:p-6">
+                <div className="text-3xl sm:text-4xl text-center mb-3">📚</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Subjects</h3>
+                <p className="text-sm sm:text-base">Organize your quizzes with add/delete subjects.</p>
+              </div>
+            )}
+            
+            {user ? (
+              <Link href="/quizzes" className="bg-white/10 hover:bg-white/20 rounded-xl p-4 sm:p-6 transition-all duration-200 hover:scale-105 cursor-pointer">
+                <div className="text-3xl sm:text-4xl text-center mb-3">🎮</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">My Quizzes</h3>
+                <p className="text-sm sm:text-base">See, play, and delete your quizzes anytime.</p>
+              </Link>
+            ) : (
+              <div className="bg-white/10 rounded-xl p-4 sm:p-6">
+                <div className="text-3xl sm:text-4xl text-center mb-3">🎮</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">My Quizzes</h3>
+                <p className="text-sm sm:text-base">See, play, and delete your quizzes anytime.</p>
+              </div>
+            )}
+            
+            {user ? (
+              <Link href="/classes" className="bg-white/10 hover:bg-white/20 rounded-xl p-4 sm:p-6 sm:col-span-2 lg:col-span-1 transition-all duration-200 hover:scale-105 cursor-pointer">
+                <div className="text-3xl sm:text-4xl text-center mb-3">👥</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Classes</h3>
+                <p className="text-sm sm:text-base">Create or join classes to collaborate and compete with classmates!</p>
+              </Link>
+            ) : (
+              <div className="bg-white/10 rounded-xl p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
+                <div className="text-3xl sm:text-4xl text-center mb-3">👥</div>
+                <h3 className="text-lg sm:text-xl font-semibold mb-2">Classes</h3>
+                <p className="text-sm sm:text-base">Create or join classes to collaborate and compete with classmates!</p>
+              </div>
+            )}
           </div>
-
-          {user && (
-            <div className="mt-8 sm:mt-10 flex justify-center gap-3 sm:gap-4 flex-wrap px-4">
-              <Link href="/create" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-purple-500 rounded-lg hover:bg-purple-600 transition-colors">Create Quiz</Link>
-              <Link href="/ai-quiz" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg hover:from-pink-600 hover:to-purple-700 transition-colors">🤖 AI Quiz</Link>
-              <Link href="/subjects" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors">Manage Subjects</Link>
-              <Link href="/quizzes" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-green-500 rounded-lg hover:bg-green-600 transition-colors">My Quizzes</Link>
-              <Link href="/classes" className="px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors">👥 Classes</Link>
-            </div>
-          )}
         </div>
       </div>
 
