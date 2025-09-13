@@ -5,22 +5,59 @@ import ThemeToggle from "../../components/ThemeToggle";
 import { useAuth } from '@/contexts/AuthContext';
 import { createSubject, getUserSubjects, deleteSubject, FirebaseSubject } from '@/lib/firestore';
 
+interface ExtendedFirebaseSubject extends FirebaseSubject {
+  source?: 'personal' | 'class';
+  className?: string;
+}
+
 export default function SubjectsPage(){
-  const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
+  const [subjects, setSubjects] = useState<ExtendedFirebaseSubject[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const { user } = useAuth();
 
-  // Load subjects from Firestore
+  // Load subjects from Firestore and classes
   useEffect(() => {
     if (!user) return;
     
     const loadSubjects = async () => {
       try {
         setLoading(true);
+        
+        // Load personal subjects from Firebase
         const userSubjects = await getUserSubjects(user.uid);
-        setSubjects(userSubjects);
+        
+        // Load class subjects
+        const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+        const userClasses = allClasses.filter((classInfo: any) => 
+          classInfo.members && classInfo.members.includes(user.email) && classInfo.subjects
+        );
+        
+        // Extract unique subjects from classes
+        const classSubjects: ExtendedFirebaseSubject[] = [];
+        const seenSubjects = new Set(userSubjects.map(s => s.name.toLowerCase()));
+        
+        userClasses.forEach((classInfo: any) => {
+          classInfo.subjects.forEach((subjectName: string) => {
+            if (!seenSubjects.has(subjectName.toLowerCase())) {
+              classSubjects.push({
+                id: `class-${classInfo.id}-${subjectName}`,
+                name: subjectName,
+                userId: user.uid,
+                createdAt: new Date(),
+                source: 'class',
+                className: classInfo.name
+              } as ExtendedFirebaseSubject);
+              seenSubjects.add(subjectName.toLowerCase());
+            }
+          });
+        });
+        
+        // Combine personal and class subjects (mark personal ones)
+        const personalSubjects = userSubjects.map(s => ({ ...s, source: 'personal' as const }));
+        const allSubjects = [...personalSubjects, ...classSubjects];
+        setSubjects(allSubjects);
       } catch (error) {
         console.error('Error loading subjects:', error);
       } finally {
@@ -173,16 +210,32 @@ export default function SubjectsPage(){
               <ul className="space-y-3">
                 {subjects.map(subject => (
                   <li key={subject.id} className="flex justify-between items-center bg-white dark:bg-gray-700 rounded-lg p-4 border border-purple-100 dark:border-gray-600 hover:shadow-md transition-shadow duration-200">
-                    <div className="flex items-center">
-                      <span className="text-2xl mr-3">📖</span>
-                      <span className="text-gray-800 dark:text-gray-200 font-medium">{subject.name}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">📖</span>
+                      <div className="flex flex-col">
+                        <span className="text-gray-800 dark:text-gray-200 font-medium">{subject.name}</span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                          subject.source === 'class' 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        }`}>
+                          {subject.source === 'class' ? `👥 From ${subject.className}` : '👤 Personal'}
+                        </span>
+                      </div>
                     </div>
-                    <button 
-                      onClick={()=>remove(subject.id)} 
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
-                    >
-                      🗑️ Delete
-                    </button>
+                    {subject.source === 'personal' && (
+                      <button 
+                        onClick={()=>remove(subject.id)} 
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 text-sm font-medium"
+                      >
+                        🗑️ Delete
+                      </button>
+                    )}
+                    {subject.source === 'class' && (
+                      <span className="px-4 py-2 bg-gray-300 text-gray-500 rounded-lg text-sm font-medium cursor-not-allowed">
+                        Class Subject
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>

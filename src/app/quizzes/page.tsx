@@ -10,11 +10,19 @@ interface Quiz {
   description?: string;
   questions: { question: string; options: string[]; correct: number }[];
   createdAt?: string;
+  source?: 'personal' | 'class';
+  className?: string;
 }
 
 interface QuizWithKey {
   key: string;
   quiz: Quiz;
+}
+
+interface LocalClass {
+  id: string;
+  name: string;
+  members: string[];
 }
 
 export default function QuizzesPage() {
@@ -29,20 +37,48 @@ export default function QuizzesPage() {
     
     setLoading(true);
     try {
-      const keys = Object.keys(localStorage).filter(k => k.startsWith(`qg_quiz_${user.email}_`));
-      const loaded = keys.map(k => {
+      // Load individual user quizzes
+      const userQuizKeys = Object.keys(localStorage).filter(k => k.startsWith(`qg_quiz_${user.email}_`));
+      const userQuizzes = userQuizKeys.map(k => {
         const quiz = JSON.parse(localStorage.getItem(k)!);
-        return { key: k, quiz };
+        return { key: k, quiz: { ...quiz, source: 'personal' } };
       });
+
+      // Load class quizzes that user has access to
+      const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+      const userClasses = allClasses.filter((classInfo: LocalClass) => 
+        classInfo.members && user.email && classInfo.members.includes(user.email)
+      );
+
+      const classQuizzes: QuizWithKey[] = [];
+      userClasses.forEach((classInfo: LocalClass) => {
+        const classQuizKeys = JSON.parse(localStorage.getItem(`qg_class_quizzes_${classInfo.id}`) || "[]");
+        classQuizKeys.forEach((quizKey: string) => {
+          const quiz = localStorage.getItem(quizKey);
+          if (quiz) {
+            const parsedQuiz = JSON.parse(quiz);
+            classQuizzes.push({ 
+              key: quizKey, 
+              quiz: { ...parsedQuiz, source: 'class', className: classInfo.name } 
+            });
+          }
+        });
+      });
+
+      // Combine all quizzes and remove duplicates
+      const allQuizzes = [...userQuizzes, ...classQuizzes];
+      const uniqueQuizzes = allQuizzes.filter((quiz, index, self) => 
+        index === self.findIndex(q => q.key === quiz.key)
+      );
       
       // Sort by creation date (newest first)
-      loaded.sort((a, b) => {
+      uniqueQuizzes.sort((a, b) => {
         const dateA = new Date(a.quiz.createdAt || 0).getTime();
         const dateB = new Date(b.quiz.createdAt || 0).getTime();
         return dateB - dateA;
       });
       
-      setQuizzes(loaded);
+      setQuizzes(uniqueQuizzes);
     } catch (error) {
       console.error('Error loading quizzes:', error);
     } finally {
@@ -234,9 +270,16 @@ export default function QuizzesPage() {
                       <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
                         {quiz.title}
                       </h3>
-                      <div className="flex items-center mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
                           📚 {quiz.subject}
+                        </span>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          quiz.source === 'class' 
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
+                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        }`}>
+                          {quiz.source === 'class' ? `👥 ${quiz.className}` : '👤 Personal'}
                         </span>
                       </div>
                     </div>
