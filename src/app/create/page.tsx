@@ -35,33 +35,84 @@ export default function CreatePage() {
         // Load personal subjects from Firebase
         const userSubjects = await getUserSubjects(user.uid);
         
-        // Load class subjects from classes user is a member of
+        // Load class subjects from ALL available classes (both created and joined)
         const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-        const userClasses = allClasses.filter((classInfo: LocalClass) => 
-          classInfo.members && user.email && classInfo.members.includes(user.email) && classInfo.subjects
-        );
         
-        // Extract unique subjects from classes
+        // Extract unique subjects from classes where user is a member (includes both created and joined classes)
         const classSubjects: ExtendedFirebaseSubject[] = [];
         const seenSubjects = new Set(userSubjects.map(s => s.name.toLowerCase()));
         
-        userClasses.forEach((classInfo: LocalClass) => {
-          classInfo.subjects.forEach((subjectName: string) => {
-            if (!seenSubjects.has(subjectName.toLowerCase())) {
-              classSubjects.push({
-                id: `class-${classInfo.id}-${subjectName}`,
-                name: subjectName,
-                userId: user.uid,
-                createdAt: new Date(),
-                source: 'class',
-                className: classInfo.name
-              } as ExtendedFirebaseSubject);
-              seenSubjects.add(subjectName.toLowerCase());
+        // Load subjects from ALL classes (created by user OR joined by user)
+        for (const classInfo of allClasses as LocalClass[]) {
+          // Get user identifier - check both email and any stored username mapping
+          const userEmail = user.email;
+          if (!userEmail) {
+            continue;
+          }
+          
+          const emailUsername = userEmail.split('@')[0];
+          
+          // Check if user has a stored username mapping
+          const storedUserData = localStorage.getItem(`qg_user_data_${userEmail}`);
+          let userIdentifiers = [userEmail, emailUsername];
+          
+          if (storedUserData) {
+            try {
+              const userData = JSON.parse(storedUserData);
+              if (userData.username) {
+                userIdentifiers.push(userData.username);
+              }
+            } catch (e) {
+              console.warn('Failed to parse user data:', e);
             }
+          }
+          
+          // Also check if there's a reverse mapping (username -> email)
+          const allUsernames = ['Sairon']; // Add other known usernames as needed
+          for (const username of allUsernames) {
+            const usernameData = localStorage.getItem(`qg_username_${username}`);
+            if (usernameData) {
+              try {
+                const data = JSON.parse(usernameData);
+                if (data.email === userEmail) {
+                  userIdentifiers.push(username);
+                }
+              } catch (e) {
+                // Continue checking
+              }
+            }
+          }
+          
+          const isUserInClass = classInfo.members && classInfo.members.some(member => {
+            const memberStr = String(member).trim();
+            return userIdentifiers.some(identifier => 
+              String(identifier).trim().toLowerCase() === memberStr.toLowerCase()
+            );
           });
-        });
+          
+          // Also check if user has access to this class's subjects (alternative approach)
+          const userClasses = JSON.parse(localStorage.getItem(`qg_user_classes_${userEmail}`) || "[]");
+          const hasAccessToClass = isUserInClass || userClasses.includes(classInfo.id);
+          
+          if (hasAccessToClass) {
+            const classSubjectsData = JSON.parse(localStorage.getItem(`qg_class_subjects_${classInfo.id}`) || "[]");
+            classSubjectsData.forEach((subject: any) => {
+              if (!seenSubjects.has(subject.name.toLowerCase())) {
+                classSubjects.push({
+                  id: `class-${classInfo.id}-${subject.name}`,
+                  name: subject.name,
+                  userId: user.uid,
+                  createdAt: new Date(subject.createdAt || Date.now()),
+                  source: 'class',
+                  className: classInfo.name
+                } as ExtendedFirebaseSubject);
+                seenSubjects.add(subject.name.toLowerCase());
+              }
+            });
+          }
+        }
         
-        // Combine personal and class subjects
+        // Combine personal and class subjects (mark personal ones)
         const personalSubjects = userSubjects.map(s => ({ ...s, source: 'personal' as const }));
         const allSubjects = [...personalSubjects, ...classSubjects];
         setSubjects(allSubjects);
