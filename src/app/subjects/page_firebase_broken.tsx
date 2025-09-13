@@ -1,15 +1,19 @@
-﻿"use client";
+"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
 import { useAuth } from '@/contexts/AuthContext';
-import { createSubject, getUserSubjects, deleteSubject, FirebaseSubject } from '@/lib/firestore';
-
-interface ClassInfo {
-  id: string;
-  name: string;
-  members: string[];
-}
+import { 
+  createSubject, 
+  getUserSubjects, 
+  deleteSubject, 
+  FirebaseSubject,
+  getUserClasses,
+  FirebaseClass,
+  migrateLocalDataToFirestore
+} from '@/lib/firestore';
+import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {
   source?: 'personal' | 'class';
@@ -21,138 +25,108 @@ export default function SubjectsPage(){
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const { user } = useAuth();
 
-  // Load subjects from Firestore and classes
+  // Load subjects from Firebase
   useEffect(() => {
     if (!user) return;
     
-    // Initialize user mapping if it doesn't exist
-    const initializeUserMapping = () => {
-      if (!user.email) return;
-      
-      // Create a mapping from the email username to full email for backward compatibility
-      const emailUsername = user.email.split('@')[0];
-      const userMapping = {
-        email: user.email,
-        username: emailUsername,
-        created: new Date().toISOString()
-      };
-      
-      // Store user data
-      localStorage.setItem(`qg_user_data_${user.email}`, JSON.stringify(userMapping));
-      
-      // For your specific case, create a mapping for "Sairon" -> your email
-      // This should ideally be done through a proper user profile system
-      if (user.email === 'johnvaldivieso331@gmail.com') {
-        localStorage.setItem(`qg_username_Sairon`, JSON.stringify({
-          email: user.email,
-          created: new Date().toISOString()
-        }));
-      }
-    };
+    let unsubscribes: (() => void)[] = [];
     
     const loadSubjects = async () => {
       try {
         setLoading(true);
         
-        // Load personal subjects from Firebase
-        const userSubjects = await getUserSubjects(user.uid);
+        // Check if migration is needed
+        const hasLocalData = localStorage.getItem("qg_all_classes") || 
+                           localStorage.getItem(`qg_user_classes_${user.email}`) ||
+                           localStorage.getItem("qg_personal_subjects");
         
-        // Load class subjects from ALL available classes (both created and joined)
-        const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-        
-        // Extract unique subjects from classes where user is a member (includes both created and joined classes)
-        const classSubjects: ExtendedFirebaseSubject[] = [];
-        const seenSubjects = new Set(userSubjects.map(s => s.name.toLowerCase()));
-        
-        // Load subjects from ALL classes (created by user OR joined by user)
-        for (const classInfo of allClasses as ClassInfo[]) {
-          // Include subjects from all classes where user is a member (creator or joiner)
-          // Note: When you create a class, you're automatically in the members array
-          // When you join a class, you're also added to the members array
-          
-          // Get user identifier - check both email and any stored username mapping
-          const userEmail = user.email;
-          if (!userEmail) {
-            continue;
+        if (hasLocalData && !localStorage.getItem(`qg_migrated_${user.uid}`)) {
+          setMigrating(true);
+          try {
+            await migrateLocalDataToFirestore(user.uid, user.email || '');
+            localStorage.setItem(`qg_migrated_${user.uid}`, 'true');
+          } catch (error) {
+            console.warn('Migration failed, continuing with Firebase data:', error);
           }
-          
-          const emailUsername = userEmail.split('@')[0]; // johnvaldivieso331 from johnvaldivieso331@gmail.com
-          
-          // Check if user has a stored username mapping
-          const storedUserData = localStorage.getItem(`qg_user_data_${userEmail}`);
-          let userIdentifiers = [userEmail, emailUsername];
-          
-          if (storedUserData) {
-            try {
-              const userData = JSON.parse(storedUserData);
-              if (userData.username) {
-                userIdentifiers.push(userData.username);
-              }
-            } catch (e) {
-              console.warn('Failed to parse user data:', e);
-            }
-          }
-          
-          // Also check if there's a reverse mapping (username -> email)
-          const allUsernames = ['Sairon']; // Add other known usernames as needed
-          for (const username of allUsernames) {
-            const usernameData = localStorage.getItem(`qg_username_${username}`);
-            if (usernameData) {
-              try {
-                const data = JSON.parse(usernameData);
-                if (data.email === userEmail) {
-                  userIdentifiers.push(username);
-                }
-              } catch (e) {
-                // Continue checking
-              }
-            }
-          }
-          
-          const isUserInClass = classInfo.members && classInfo.members.some(member => {
-            const memberStr = String(member).trim();
-            return userIdentifiers.some(identifier => 
-              String(identifier).trim().toLowerCase() === memberStr.toLowerCase()
-            );
-          });
-          
-          // Also check if user has access to this class's subjects (alternative approach)
-          const userClasses = JSON.parse(localStorage.getItem(`qg_user_classes_${userEmail}`) || "[]");
-          const hasAccessToClass = isUserInClass || userClasses.includes(classInfo.id);
-          
-          if (hasAccessToClass) {
-            const classSubjectsData = JSON.parse(localStorage.getItem(`qg_class_subjects_${classInfo.id}`) || "[]");
-            classSubjectsData.forEach((subject: any) => {
-              if (!seenSubjects.has(subject.name.toLowerCase())) {
-                classSubjects.push({
-                  id: `class-${classInfo.id}-${subject.name}`,
-                  name: subject.name,
-                  userId: user.uid,
-                  createdAt: new Date(subject.createdAt || Date.now()),
-                  source: 'class',
-                  className: classInfo.name
-                } as ExtendedFirebaseSubject);
-                seenSubjects.add(subject.name.toLowerCase());
-              }
-            });
-          }
+          setMigrating(false);
         }
         
-        // Combine personal and class subjects (mark personal ones)
-        const personalSubjects = userSubjects.map(s => ({ ...s, source: 'personal' as const }));
-        const allSubjects = [...personalSubjects, ...classSubjects];
-        setSubjects(allSubjects);
+        // Load personal subjects with real-time updates
+        const personalSubjectsQuery = query(
+          collection(db, 'subjects'),
+          where('userId', '==', user.uid)
+        );
+        
+        const unsubPersonal = onSnapshot(personalSubjectsQuery, (snapshot) => {
+          const personalSubjects: ExtendedFirebaseSubject[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            source: 'personal' as const
+          } as ExtendedFirebaseSubject));
+          
+          // Load class subjects
+          loadClassSubjects(personalSubjects);
+        });
+        
+        unsubscribes.push(unsubPersonal);
+        
       } catch (error) {
         console.error('Error loading subjects:', error);
+        setLoading(false);
+      }
+    };
+    
+    const loadClassSubjects = async (personalSubjects: ExtendedFirebaseSubject[]) => {
+      try {
+        // Get user's classes (both created and joined)
+        const userClasses = await getUserClasses(user.uid);
+        
+        const classSubjects: ExtendedFirebaseSubject[] = [];
+        const seenSubjects = new Set(personalSubjects.map(s => s.name.toLowerCase()));
+        
+        // Load subjects from each class
+        for (const classData of userClasses) {
+          const classSubjectsQuery = query(
+            collection(db, 'subjects'),
+            where('classId', '==', classData.id)
+          );
+          
+          const snapshot = await getDocs(classSubjectsQuery);
+          
+          snapshot.docs.forEach(doc => {
+            const subjectData = doc.data() as FirebaseSubject;
+            if (!seenSubjects.has(subjectData.name.toLowerCase())) {
+              classSubjects.push({
+                ...subjectData,
+                id: doc.id,
+                source: 'class',
+                className: classData.name
+              } as ExtendedFirebaseSubject);
+              seenSubjects.add(subjectData.name.toLowerCase());
+            }
+          });
+        }
+        
+        // Combine personal and class subjects
+        const allSubjects = [...personalSubjects, ...classSubjects];
+        setSubjects(allSubjects);
+        
+      } catch (error) {
+        console.error('Error loading class subjects:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    initializeUserMapping();
     loadSubjects();
+    
+    // Cleanup subscriptions
+    return () => {
+      unsubscribes.forEach(unsub => unsub());
+    };
   }, [user]);
 
   const add = async () => {
@@ -168,11 +142,14 @@ export default function SubjectsPage(){
     try {
       setCreating(true);
       const subjectId = await createSubject(name.trim(), user.uid);
-      const newSubject: FirebaseSubject = {
+      const newSubject: ExtendedFirebaseSubject = {
         id: subjectId,
         name: name.trim(),
         userId: user.uid,
-        createdAt: new Date()
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isPersonal: true,
+        source: 'personal'
       };
       setSubjects([...subjects, newSubject]);
       setName("");
@@ -257,6 +234,12 @@ export default function SubjectsPage(){
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-purple-100 dark:border-gray-700 p-8">
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">📚 My Subjects</h1>
+            {migrating && (
+              <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-2 rounded-lg">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 dark:border-blue-200"></div>
+                <span className="text-sm">Migrating data...</span>
+              </div>
+            )}
           </div>
 
           {/* Add Subject Form */}
@@ -286,6 +269,7 @@ export default function SubjectsPage(){
             
             {loading ? (
               <div className="text-center p-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
                 <p className="text-gray-500 dark:text-gray-400">Loading subjects...</p>
               </div>
             ) : subjects.length === 0 ? (
