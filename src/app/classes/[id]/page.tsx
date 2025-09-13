@@ -109,6 +109,19 @@ export default function ClassDetailPage() {
     // Save to class subjects
     localStorage.setItem(`qg_class_subjects_${classData.id}`, JSON.stringify(updatedSubjects));
     
+    // Update the global classes list with new subject info
+    const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+    const updatedClasses = allClasses.map((cls: any) => {
+      if (cls.id === classData.id) {
+        return {
+          ...cls,
+          subjects: updatedSubjects.map(s => s.name) // Store subject names in the class object
+        };
+      }
+      return cls;
+    });
+    localStorage.setItem("qg_all_classes", JSON.stringify(updatedClasses));
+    
     // Also add to each member's personal subjects
     members.forEach(member => {
       const memberSubjects = JSON.parse(localStorage.getItem(`qg_subjects_${member}`) || "[]");
@@ -130,6 +143,19 @@ export default function ClassDetailPage() {
       const updatedSubjects = subjects.filter(s => s.id !== subjectId);
       setSubjects(updatedSubjects);
       localStorage.setItem(`qg_class_subjects_${classData.id}`, JSON.stringify(updatedSubjects));
+      
+      // Update the global classes list
+      const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+      const updatedClasses = allClasses.map((cls: any) => {
+        if (cls.id === classData.id) {
+          return {
+            ...cls,
+            subjects: updatedSubjects.map(s => s.name)
+          };
+        }
+        return cls;
+      });
+      localStorage.setItem("qg_all_classes", JSON.stringify(updatedClasses));
     }
   };
 

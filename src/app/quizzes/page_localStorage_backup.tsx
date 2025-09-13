@@ -1,23 +1,33 @@
-"use client";
+﻿﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  getAllUserQuizzes, 
-  deleteQuiz, 
-  FirebaseQuiz,
-  migrateLocalDataToFirestore
-} from '@/lib/firestore';
 
-interface ExtendedFirebaseQuiz extends FirebaseQuiz {
+interface Quiz {
+  title: string;
+  subject: string;
+  description?: string;
+  questions: { question: string; options: string[]; correct: number }[];
+  createdAt?: string;
   source?: 'personal' | 'class';
+  className?: string;
+}
+
+interface QuizWithKey {
+  key: string;
+  quiz: Quiz;
+}
+
+interface LocalClass {
+  id: string;
+  name: string;
+  members: string[];
 }
 
 export default function QuizzesPage() {
-  const [quizzes, setQuizzes] = useState<ExtendedFirebaseQuiz[]>([]);
+  const [quizzes, setQuizzes] = useState<QuizWithKey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [migrating, setMigrating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const { user } = useAuth();
@@ -25,80 +35,92 @@ export default function QuizzesPage() {
   useEffect(() => {
     if (!user) return;
     
-    const loadQuizzes = async () => {
-      try {
-        setLoading(true);
-        
-        // Check if migration is needed
-        const hasLocalData = localStorage.getItem("qg_all_classes") || 
-                           localStorage.getItem(`qg_user_classes_${user.email}`) ||
-                           Object.keys(localStorage).some(key => key.startsWith(`qg_quiz_${user.email}_`));
-        
-        if (hasLocalData && !localStorage.getItem(`qg_migrated_${user.uid}`)) {
-          setMigrating(true);
-          try {
-            await migrateLocalDataToFirestore(user.uid, user.email || '');
-            localStorage.setItem(`qg_migrated_${user.uid}`, 'true');
-          } catch (error) {
-            console.warn('Migration failed, continuing with Firebase data:', error);
-          }
-          setMigrating(false);
-        }
-        
-        // Load all quizzes (personal and class)
-        const allQuizzes = await getAllUserQuizzes(user.uid, user.email || '');
-        
-        // Determine source (personal vs class) for display
-        const quizzesWithSource = allQuizzes.map(quiz => ({
-          ...quiz,
-          source: (quiz.classId ? 'class' : 'personal') as 'class' | 'personal'
-        }));
-        
-        // Sort by creation date (newest first)
-        quizzesWithSource.sort((a, b) => {
-          const dateA = new Date(a.createdAt).getTime();
-          const dateB = new Date(b.createdAt).getTime();
-          return dateB - dateA;
-        });
-        
-        setQuizzes(quizzesWithSource);
-      } catch (error) {
-        console.error('Error loading quizzes:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      // Load individual user quizzes
+      const userQuizKeys = Object.keys(localStorage).filter(k => k.startsWith(`qg_quiz_${user.email}_`));
+      const userQuizzes = userQuizKeys.map(k => {
+        const quiz = JSON.parse(localStorage.getItem(k)!);
+        return { key: k, quiz: { ...quiz, source: 'personal' } };
+      });
 
-    loadQuizzes();
+      // Load class quizzes that user has access to
+      const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+      const userClasses = allClasses.filter((classInfo: LocalClass) => 
+        classInfo.members && user.email && classInfo.members.includes(user.email)
+      );
+
+      const classQuizzes: QuizWithKey[] = [];
+      userClasses.forEach((classInfo: LocalClass) => {
+        const classQuizKeys = JSON.parse(localStorage.getItem(`qg_class_quizzes_${classInfo.id}`) || "[]");
+        classQuizKeys.forEach((quizKey: string) => {
+          const quiz = localStorage.getItem(quizKey);
+          if (quiz) {
+            const parsedQuiz = JSON.parse(quiz);
+            classQuizzes.push({ 
+              key: quizKey, 
+              quiz: { ...parsedQuiz, source: 'class', className: classInfo.name } 
+            });
+          }
+        });
+      });
+
+      // Combine all quizzes and remove duplicates
+      const allQuizzes = [...userQuizzes, ...classQuizzes];
+      const uniqueQuizzes = allQuizzes.filter((quiz, index, self) => 
+        index === self.findIndex(q => q.key === quiz.key)
+      );
+      
+      // Sort by creation date (newest first)
+      uniqueQuizzes.sort((a, b) => {
+        const dateA = new Date(a.quiz.createdAt || 0).getTime();
+        const dateB = new Date(b.quiz.createdAt || 0).getTime();
+        return dateB - dateA;
+      });
+      
+      setQuizzes(uniqueQuizzes);
+    } catch (error) {
+      console.error('Error loading quizzes:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
-  const handleDelete = async (quizId: string) => {
+  const handleDelete = (key: string) => {
     if (window.confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-      try {
-        await deleteQuiz(quizId);
-        setQuizzes(quizzes.filter(q => q.id !== quizId));
-      } catch (error) {
-        console.error('Error deleting quiz:', error);
-        alert('Failed to delete quiz. Please try again.');
-      }
+      localStorage.removeItem(key);
+      setQuizzes(quizzes.filter(q => q.key !== key));
     }
   };
 
-  // Get unique subjects for filter
-  const subjects = Array.from(new Set(quizzes.map(q => q.subject))).filter(Boolean);
+  // Get unique subjects for filter with proper formatting
+  const subjects = Array.from(new Set(quizzes.map(q => {
+    if (q.quiz.source === 'class' && q.quiz.className) {
+      return `"${q.quiz.subject}" ("${q.quiz.className}")`;
+    }
+    return q.quiz.subject;
+  }))).filter(Boolean);
 
   // Filter quizzes based on search and subject
-  const filteredQuizzes = quizzes.filter((quiz) => {
+  const filteredQuizzes = quizzes.filter(({ quiz }) => {
     const matchesSearch = quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (quiz.description?.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesSubject = !selectedSubject || quiz.subject === selectedSubject;
+    // Handle subject filtering with proper format matching
+    let matchesSubject = !selectedSubject;
+    if (selectedSubject) {
+      const quizSubjectDisplay = quiz.source === 'class' && quiz.className 
+        ? `"${quiz.subject}" ("${quiz.className}")`
+        : quiz.subject;
+      matchesSubject = quizSubjectDisplay === selectedSubject;
+    }
     
     return matchesSearch && matchesSubject;
   });
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Unknown date";
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -169,12 +191,6 @@ export default function QuizzesPage() {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200">🎮 My Quizzes</h1>
               <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and play your created quizzes</p>
-              {migrating && (
-                <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-2 rounded-lg mt-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 dark:border-blue-200"></div>
-                  <span className="text-sm">Migrating data...</span>
-                </div>
-              )}
             </div>
             <Link 
               href="/create" 
@@ -225,7 +241,7 @@ export default function QuizzesPage() {
             </div>
             <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4 text-center">
               <div className="text-2xl sm:text-3xl font-bold">
-                {quizzes.reduce((total, q) => total + q.questions.length, 0)}
+                {quizzes.reduce((total, q) => total + q.quiz.questions.length, 0)}
               </div>
               <div className="text-sm sm:text-base opacity-90">Total Questions</div>
             </div>
@@ -234,7 +250,7 @@ export default function QuizzesPage() {
           {/* Quizzes List */}
           {loading ? (
             <div className="text-center p-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <div className="text-4xl mb-4">⏳</div>
               <p className="text-gray-500 dark:text-gray-400">Loading your quizzes...</p>
             </div>
           ) : filteredQuizzes.length === 0 ? (
@@ -261,8 +277,8 @@ export default function QuizzesPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-              {filteredQuizzes.map((quiz) => (
-                <div key={quiz.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 sm:p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group">
+              {filteredQuizzes.map(({ key, quiz }) => (
+                <div key={key} className="bg-white dark:bg-gray-700 rounded-xl p-4 sm:p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group">
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
@@ -270,14 +286,14 @@ export default function QuizzesPage() {
                       </h3>
                       <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300">
-                          📚 {quiz.subject}
+                          📚 {quiz.source === 'class' && quiz.className ? `"${quiz.subject}" ("${quiz.className}")` : quiz.subject}
                         </span>
                         <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                           quiz.source === 'class' 
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
                             : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                         }`}>
-                          {quiz.source === 'class' ? '👥 Class' : '👤 Personal'}
+                          {quiz.source === 'class' ? `👥 ${quiz.className}` : '👤 Personal'}
                         </span>
                       </div>
                     </div>
@@ -302,20 +318,18 @@ export default function QuizzesPage() {
                   
                   <div className="flex gap-2">
                     <Link 
-                      href={`/quizzes/${quiz.id}`} 
+                      href={`/quizzes/${key}`} 
                       className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
                     >
                       🎮 Play
                     </Link>
-                    {quiz.source === 'personal' && (
-                      <button 
-                        onClick={() => handleDelete(quiz.id)} 
-                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium"
-                        title="Delete quiz"
-                      >
-                        🗑️
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => handleDelete(key)} 
+                      className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium"
+                      title="Delete quiz"
+                    >
+                      🗑️
+                    </button>
                   </div>
                 </div>
               ))}

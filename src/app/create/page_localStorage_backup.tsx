@@ -1,20 +1,18 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  getUserSubjects, 
-  FirebaseSubject, 
-  createQuiz,
-  createSubject,
-  getUserClasses,
-  migrateLocalDataToFirestore
-} from '@/lib/firestore';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getUserSubjects, FirebaseSubject } from '@/lib/firestore';
 
 type Question = { question: string; options: string[]; correct: number };
+
+interface LocalClass {
+  id: string;
+  name: string;
+  members: string[];
+  subjects: string[];
+}
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {
   source?: 'personal' | 'class';
@@ -27,8 +25,6 @@ export default function CreatePage() {
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([{ question: "", options: ["", "", "", ""], correct: 0 }]);
   const [subjects, setSubjects] = useState<ExtendedFirebaseSubject[]>([]);
-  const [saving, setSaving] = useState(false);
-  const [migrating, setMigrating] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -36,52 +32,34 @@ export default function CreatePage() {
     
     const loadSubjects = async () => {
       try {
-        // Check if migration is needed
-        const hasLocalData = localStorage.getItem("qg_all_classes") || 
-                           localStorage.getItem(`qg_user_classes_${user.email}`) ||
-                           localStorage.getItem("qg_personal_subjects");
-        
-        if (hasLocalData && !localStorage.getItem(`qg_migrated_${user.uid}`)) {
-          setMigrating(true);
-          try {
-            await migrateLocalDataToFirestore(user.uid, user.email || '');
-            localStorage.setItem(`qg_migrated_${user.uid}`, 'true');
-          } catch (error) {
-            console.warn('Migration failed, continuing with Firebase data:', error);
-          }
-          setMigrating(false);
-        }
-        
         // Load personal subjects from Firebase
         const userSubjects = await getUserSubjects(user.uid);
         
         // Load class subjects from classes user is a member of
-        const userClasses = await getUserClasses(user.uid);
+        const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+        const userClasses = allClasses.filter((classInfo: LocalClass) => 
+          classInfo.members && user.email && classInfo.members.includes(user.email) && classInfo.subjects
+        );
+        
+        // Extract unique subjects from classes
         const classSubjects: ExtendedFirebaseSubject[] = [];
         const seenSubjects = new Set(userSubjects.map(s => s.name.toLowerCase()));
         
-        // Get subjects from all user's classes
-        for (const classData of userClasses) {
-          const classSubjectsQuery = query(
-            collection(db, 'subjects'),
-            where('classId', '==', classData.id)
-          );
-          
-          const snapshot = await getDocs(classSubjectsQuery);
-          
-          snapshot.docs.forEach(doc => {
-            const subjectData = doc.data() as FirebaseSubject;
-            if (!seenSubjects.has(subjectData.name.toLowerCase())) {
+        userClasses.forEach((classInfo: LocalClass) => {
+          classInfo.subjects.forEach((subjectName: string) => {
+            if (!seenSubjects.has(subjectName.toLowerCase())) {
               classSubjects.push({
-                ...subjectData,
-                id: doc.id,
+                id: `class-${classInfo.id}-${subjectName}`,
+                name: subjectName,
+                userId: user.uid,
+                createdAt: new Date(),
                 source: 'class',
-                className: classData.name
+                className: classInfo.name
               } as ExtendedFirebaseSubject);
-              seenSubjects.add(subjectData.name.toLowerCase());
+              seenSubjects.add(subjectName.toLowerCase());
             }
           });
-        }
+        });
         
         // Combine personal and class subjects
         const personalSubjects = userSubjects.map(s => ({ ...s, source: 'personal' as const }));
@@ -104,7 +82,7 @@ export default function CreatePage() {
     }
   };
 
-  const save = async () => {
+  const save = () => {
     if (!title.trim()) return alert("Title required");
     if (!subject) return alert("Please select a subject");
     if (!user) return alert("You must be logged in.");
@@ -114,29 +92,31 @@ export default function CreatePage() {
       return alert("Please complete all questions and their options");
     }
 
-    try {
-      setSaving(true);
-      
-      // Create the quiz in Firebase
-      const quizData = {
-        title: title.trim(),
-        subject,
-        description: description.trim() || undefined,
-        questions,
-        userId: user.uid,
-        isPersonal: true
-      };
-      
-      const quizId = await createQuiz(quizData);
-      
+    const quiz = { title: title.trim(), subject, description: description.trim(), questions, createdAt: new Date().toISOString() };
+    const key = `qg_quiz_${user.email}_${Date.now()}`;
+    localStorage.setItem(key, JSON.stringify(quiz));
+
+    // Auto-share with user's classes
+    const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+    const userClasses = allClasses.filter((classInfo: LocalClass) => 
+      classInfo.members && user.email && classInfo.members.includes(user.email)
+    );
+
+    userClasses.forEach((classInfo: LocalClass) => {
+      const classQuizzes = JSON.parse(localStorage.getItem(`qg_class_quizzes_${classInfo.id}`) || "[]");
+      if (!classQuizzes.includes(key)) {
+        classQuizzes.push(key);
+        localStorage.setItem(`qg_class_quizzes_${classInfo.id}`, JSON.stringify(classQuizzes));
+      }
+    });
+
+    if (userClasses.length > 0) {
+      alert(`Quiz created and shared with ${userClasses.length} class${userClasses.length !== 1 ? 'es' : ''}!`);
+    } else {
       alert("Quiz created successfully!");
-      window.location.href = "/quizzes";
-    } catch (error) {
-      console.error('Error creating quiz:', error);
-      alert('Failed to create quiz. Please try again.');
-    } finally {
-      setSaving(false);
     }
+
+    window.location.href = "/quizzes";
   };
 
   if (!user) {
@@ -199,15 +179,7 @@ export default function CreatePage() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6">
         <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-purple-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200">✏️ Create New Quiz</h1>
-              {migrating && (
-                <div className="flex items-center gap-2 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-2 rounded-lg mt-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-800 dark:border-blue-200"></div>
-                  <span className="text-sm">Migrating data...</span>
-                </div>
-              )}
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200">✏️ Create New Quiz</h1>
           </div>
 
           {/* Quiz Metadata */}
@@ -233,7 +205,7 @@ export default function CreatePage() {
                   <option value="">Select subject</option>
                   {subjects.map(s=> (
                     <option key={s.id} value={s.name}>
-                      {s.source === 'class' ? `${s.name} (${s.className})` : s.name}
+                      {s.source === 'class' ? `"${s.name}" ("${s.className}")` : s.name}
                     </option>
                   ))}
                 </select>
@@ -325,10 +297,9 @@ export default function CreatePage() {
           <div className="flex justify-center sm:justify-end">
             <button 
               onClick={save} 
-              disabled={saving}
-              className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg text-sm sm:text-base disabled:opacity-50"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg text-sm sm:text-base"
             >
-              {saving ? '💾 Saving...' : '💾 Save Quiz'}
+              💾 Save Quiz
             </button>
           </div>
         </div>

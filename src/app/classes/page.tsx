@@ -1,465 +1,340 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  createClass, 
+  joinClass, 
+  getUserClasses, 
+  subscribeToUserClasses,
+  getClassSubjects,
+  getClassQuizzes,
+  FirebaseClass,
+  migrateLocalDataToFirestore,
+  clearLocalStorageAfterMigration
+} from '@/lib/firestore';
 
-interface Class {
-  id: string;
-  name: string;
-  description: string;
-  code: string;
-  createdBy: string;
-  createdAt: string;
-  members: string[];
-  subjects: string[];
-  quizzes: string[];
-}
-
-interface ClassMember {
-  username: string;
-  role: 'president' | 'member';
-  joinedAt: string;
+interface ClassWithCounts extends FirebaseClass {
+  subjectCount: number;
+  quizCount: number;
 }
 
 export default function ClassesPage() {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [classes, setClasses] = useState<Class[]>([]);
+  const { user } = useAuth();
+  const [classes, setClasses] = useState<ClassWithCounts[]>([]);
+  const [className, setClassName] = useState("");
+  const [classDescription, setClassDescription] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
-  const [newClassName, setNewClassName] = useState("");
-  const [newClassDescription, setNewClassDescription] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [migrated, setMigrated] = useState(false);
 
+  // Check if user needs data migration
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
-      return;
-    }
-    setCurrentUser(user);
-    loadUserClasses(user);
-  }, []);
-
-  const loadUserClasses = (username: string) => {
-    const userClasses = localStorage.getItem(`qg_user_classes_${username}`);
-    if (userClasses) {
-      const classIds = JSON.parse(userClasses);
-      const loadedClasses = classIds.map((id: string) => {
-        const classData = localStorage.getItem(`qg_class_${id}`);
-        return classData ? JSON.parse(classData) : null;
-      }).filter(Boolean);
-      setClasses(loadedClasses);
-    }
-  };
-
-  const generateClassCode = () => {
-    return Math.random().toString(36).substring(2, 8).toUpperCase();
-  };
-
-  const createClass = () => {
-    if (!newClassName.trim() || !currentUser) return;
-
-    const classId = `class_${Date.now()}`;
-    const classCode = generateClassCode();
+    if (!user?.email) return;
     
-    const newClass: Class = {
-      id: classId,
-      name: newClassName,
-      description: newClassDescription,
-      code: classCode,
-      createdBy: currentUser,
-      createdAt: new Date().toISOString(),
-      members: [currentUser],
-      subjects: [],
-      quizzes: []
-    };
-
-    // Save class data
-    localStorage.setItem(`qg_class_${classId}`, JSON.stringify(newClass));
-    
-    // Add class to user's class list
-    const userClasses = JSON.parse(localStorage.getItem(`qg_user_classes_${currentUser}`) || "[]");
-    userClasses.push(classId);
-    localStorage.setItem(`qg_user_classes_${currentUser}`, JSON.stringify(userClasses));
-
-    // Add to global class list for easier searching
-    const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    allClasses.push(newClass);
-    localStorage.setItem("qg_all_classes", JSON.stringify(allClasses));
-
-    // Save user's role in this class
-    localStorage.setItem(`qg_class_role_${classId}_${currentUser}`, "president");
-
-    setClasses([...classes, newClass]);
-    setNewClassName("");
-    setNewClassDescription("");
-    setShowCreateForm(false);
-    
-    alert(`Class created! Share this code with your classmates: ${classCode}`);
-  };
-
-  const joinClass = () => {
-    if (!joinCode.trim() || !currentUser) {
-      alert("Please enter a valid class code.");
-      return;
-    }
-
-    console.log("Attempting to join class with code:", joinCode);
-
-    // First try to find class in global class list
-    const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    console.log("All classes in global list:", allClasses);
-    
-    let targetClass = allClasses.find((classInfo: Class) => classInfo.code === joinCode.toUpperCase());
-    console.log("Found in global list:", targetClass);
-    
-    // If not found in global list, search localStorage keys
-    if (!targetClass) {
-      console.log("Searching individual localStorage keys...");
-      const allKeys = Object.keys(localStorage);
-      const classKeys = allKeys.filter(key => key.startsWith('qg_class_'));
-      console.log("Class keys found:", classKeys);
-      
-      for (const key of classKeys) {
+    const checkMigration = async () => {
+      const hasLocalData = localStorage.getItem('qg_all_classes') !== null;
+      if (hasLocalData && !migrated) {
         try {
-          const classData = JSON.parse(localStorage.getItem(key) || "{}");
-          console.log(`Checking class ${key}:`, classData);
-          if (classData.code === joinCode.toUpperCase()) {
-            targetClass = classData;
-            console.log("Found matching class:", targetClass);
-            break;
-          }
+          console.log('Migrating localStorage data to Firebase...');
+          await migrateLocalDataToFirestore(user.uid, user.email!);
+          clearLocalStorageAfterMigration();
+          setMigrated(true);
         } catch (error) {
-          console.log(`Error parsing ${key}:`, error);
-          continue;
+          console.error('Migration failed:', error);
         }
       }
-    }
-
-    if (!targetClass) {
-      alert("Invalid class code! Please check the code and try again.");
-      return;
-    }
-
-    // Check if already a member
-    if (targetClass.members && targetClass.members.includes(currentUser)) {
-      alert("You're already a member of this class!");
-      return;
-    }
-
-    // Add user to class members
-    if (!targetClass.members) {
-      targetClass.members = [];
-    }
-    targetClass.members.push(currentUser);
+    };
     
-    // Save updated class data
-    localStorage.setItem(`qg_class_${targetClass.id}`, JSON.stringify(targetClass));
+    checkMigration();
+  }, [user, migrated]);
 
-    // Add class to user's class list
-    const userClasses = JSON.parse(localStorage.getItem(`qg_user_classes_${currentUser}`) || "[]");
-    if (!userClasses.includes(targetClass.id)) {
-      userClasses.push(targetClass.id);
-      localStorage.setItem(`qg_user_classes_${currentUser}`, JSON.stringify(userClasses));
-    }
+  // Load user's classes from Firebase with counts
+  useEffect(() => {
+    if (!user?.email) return;
 
-    // Save user's role in this class
-    localStorage.setItem(`qg_class_role_${targetClass.id}_${currentUser}`, "member");
+    const loadClassesWithCounts = async (firebaseClasses: FirebaseClass[]) => {
+      const classesWithCounts = await Promise.all(
+        firebaseClasses.map(async (classInfo) => {
+          const subjects = await getClassSubjects(classInfo.id);
+          const quizzes = await getClassQuizzes(classInfo.id);
+          return {
+            ...classInfo,
+            subjectCount: subjects.length,
+            quizCount: quizzes.length
+          };
+        })
+      );
+      setClasses(classesWithCounts);
+      setLoading(false);
+    };
 
-    // Update the global class list
-    const updatedAllClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    const existingIndex = updatedAllClasses.findIndex((c: Class) => c.id === targetClass.id);
-    if (existingIndex >= 0) {
-      updatedAllClasses[existingIndex] = targetClass;
-    } else {
-      updatedAllClasses.push(targetClass);
-    }
-    localStorage.setItem("qg_all_classes", JSON.stringify(updatedAllClasses));
+    // Initial load
+    getUserClasses(user.email!).then(loadClassesWithCounts);
 
-    setClasses([...classes, targetClass]);
-    setJoinCode("");
-    setShowJoinForm(false);
+    // Set up real-time listener
+    const unsubscribe = subscribeToUserClasses(user.email!, loadClassesWithCounts);
+
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleCreateClass = async () => {
+    if (!className.trim() || !user) return;
     
-    alert(`Successfully joined "${targetClass.name}"! 🎉`);
-  };
-
-  const leaveClass = (classId: string) => {
-    if (!currentUser) return;
-    
-    if (confirm("Are you sure you want to leave this class?")) {
-      // Remove from user's class list
-      const userClasses = JSON.parse(localStorage.getItem(`qg_user_classes_${currentUser}`) || "[]");
-      const updatedUserClasses = userClasses.filter((id: string) => id !== classId);
-      localStorage.setItem(`qg_user_classes_${currentUser}`, JSON.stringify(updatedUserClasses));
-
-      // Remove from class members
-      const classData = JSON.parse(localStorage.getItem(`qg_class_${classId}`) || "{}");
-      classData.members = classData.members.filter((member: string) => member !== currentUser);
-      localStorage.setItem(`qg_class_${classId}`, JSON.stringify(classData));
-
-      // Remove user's role
-      localStorage.removeItem(`qg_class_role_${classId}_${currentUser}`);
-
-      setClasses(classes.filter(c => c.id !== classId));
+    try {
+      setCreating(true);
+      await createClass(
+        className.trim(),
+        user.uid,
+        user.email!,
+        classDescription.trim() || undefined
+      );
+      
+      setClassName("");
+      setClassDescription("");
+      setShowCreateForm(false);
+      
+      // Classes will be updated via real-time listener
+    } catch (error) {
+      console.error('Error creating class:', error);
+      alert('Failed to create class. Please try again.');
+    } finally {
+      setCreating(false);
     }
   };
 
-  if (!currentUser) {
-    return <div>Loading...</div>;
+  const handleJoinClass = async () => {
+    if (!joinCode.trim() || !user) return;
+
+    try {
+      setJoining(true);
+      await joinClass(joinCode.trim().toUpperCase(), user.uid, user.email!);
+      
+      setJoinCode("");
+      setShowJoinForm(false);
+      
+      // Classes will be updated via real-time listener
+    } catch (error) {
+      console.error('Error joining class:', error);
+      alert(error instanceof Error ? error.message : 'Failed to join class. Please try again.');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Please log in to access Classes</h1>
+          <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900">
       {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 p-4">
+      <nav className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm shadow-sm border-b border-purple-100 dark:border-gray-700 p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+          <Link href="/" className="text-2xl font-bold text-purple-600 dark:text-purple-400">
             🧠 QuizGod
           </Link>
           <div className="flex items-center space-x-4">
-            <Link href="/create" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+            <Link href="/create" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
               Create Quiz
             </Link>
-            <Link href="/ai-quiz" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-              🤖 AI Quiz
-            </Link>
-            <Link href="/subjects" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+            <Link href="/subjects" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
               Subjects
             </Link>
-            <Link href="/quizzes" className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
+            <Link href="/quizzes" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
               My Quizzes
             </Link>
-            <Link href="/classes" className="text-blue-600 dark:text-blue-400 font-semibold">
-              👥 Classes
+            <Link href="/classes" className="text-purple-600 dark:text-purple-400 font-semibold">
+              Classes
             </Link>
-            <span className="text-gray-700 dark:text-gray-200">Welcome, {currentUser}!</span>
-            <button
-              onClick={() => {
-                localStorage.removeItem("qg_user");
-                window.location.href = "/";
-              }}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
-            >
-              Logout
-            </button>
+            <Link href="/ai-quiz" className="text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400">
+              Smart Quiz
+            </Link>
+            <span className="text-gray-700 dark:text-gray-300">Welcome, {user.email}!</span>
           </div>
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-6xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">👥 My Classes</h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">
-              Create or join classes to collaborate on quizzes and compete with classmates!
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowJoinForm(true)}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 transition-colors"
-            >
-              🔗 Join Class
-            </button>
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors"
-            >
-              ➕ Create Class
-            </button>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-2 flex items-center">
+            👥 My Classes
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">Create or join classes to collaborate with others!</p>
         </div>
 
-        {/* Create Class Modal */}
+        {/* Action Buttons */}
+        <div className="mb-8 flex flex-wrap gap-4">
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors duration-200 font-medium flex items-center gap-2"
+          >
+            ➕ Create New Class
+          </button>
+          <button
+            onClick={() => setShowJoinForm(!showJoinForm)}
+            className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors duration-200 font-medium flex items-center gap-2"
+          >
+            🔗 Join Class
+          </button>
+        </div>
+
+        {/* Create Class Form */}
         {showCreateForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-2xl font-bold mb-4">Create New Class</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Class Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newClassName}
-                    onChange={(e) => setNewClassName(e.target.value)}
-                    placeholder="e.g., Math Class 2025"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
-                  </label>
-                  <textarea
-                    value={newClassDescription}
-                    onChange={(e) => setNewClassDescription(e.target.value)}
-                    placeholder="Brief description of the class..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setShowCreateForm(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={createClass}
-                    disabled={!newClassName.trim()}
-                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Create Class
-                  </button>
-                </div>
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg p-6 border border-purple-100 dark:border-gray-700 shadow-lg">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">➕ Create New Class</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Class Name *
+                </label>
+                <input
+                  type="text"
+                  value={className}
+                  onChange={(e) => setClassName(e.target.value)}
+                  placeholder="Enter class name..."
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={classDescription}
+                  onChange={(e) => setClassDescription(e.target.value)}
+                  placeholder="Enter class description..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCreateClass}
+                  disabled={!className.trim() || creating}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-400 transition-colors duration-200 font-medium"
+                >
+                  {creating ? 'Creating...' : 'Create Class'}
+                </button>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 font-medium"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Join Class Modal */}
+        {/* Join Class Form */}
         {showJoinForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-              <h2 className="text-2xl font-bold mb-4">Join Class</h2>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Class Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={joinCode}
-                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                    placeholder="Enter 6-character code"
-                    maxLength={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-center text-lg"
-                  />
-                  <p className="text-sm text-gray-500 mt-1">
-                    Ask your class president for the class code
-                  </p>
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setShowJoinForm(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={joinClass}
-                    disabled={joinCode.length !== 6}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Join Class
-                  </button>
-                </div>
+          <div className="mb-8 bg-white dark:bg-gray-800 rounded-lg p-6 border border-green-100 dark:border-gray-700 shadow-lg">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">🔗 Join Class</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Join Code
+                </label>
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="Enter 6-character join code..."
+                  maxLength={6}
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono text-lg"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleJoinClass}
+                  disabled={joinCode.length !== 6 || joining}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors duration-200 font-medium"
+                >
+                  {joining ? 'Joining...' : 'Join Class'}
+                </button>
+                <button
+                  onClick={() => setShowJoinForm(false)}
+                  className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 font-medium"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Classes Grid */}
-        {classes.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎓</div>
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Classes Yet</h3>
-            <p className="text-gray-500 mb-6">
-              Create a new class or join an existing one to get started!
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                ➕ Create Your First Class
-              </button>
-              <button
-                onClick={() => setShowJoinForm(true)}
-                className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                🔗 Join a Class
-              </button>
-            </div>
+        {/* Classes List */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-purple-100 dark:border-gray-700">
+          <div className="p-6 border-b border-purple-100 dark:border-gray-700">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 flex items-center">
+              📚 Your Classes ({classes.length})
+            </h2>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {classes.map((classItem) => {
-              const isPresident = classItem.createdBy === currentUser;
-              const memberCount = classItem.members.length;
-              
-              return (
-                <div key={classItem.id} className="bg-white rounded-lg shadow-md p-6 border">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-800">{classItem.name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {isPresident ? '👑 President' : '👤 Member'}
-                      </p>
+          <div className="p-6">
+            {loading ? (
+              <div className="text-center p-8">
+                <p className="text-gray-500 dark:text-gray-400">Loading classes...</p>
+              </div>
+            ) : classes.length === 0 ? (
+              <div className="text-center p-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                <p className="text-gray-500 dark:text-gray-400 mb-3">No classes yet</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500">Create a new class or join an existing one using the buttons above</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {classes.map(classInfo => (
+                  <Link 
+                    key={classInfo.id}
+                    href={`/classes/${classInfo.id}`}
+                    className="block bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-xl font-bold text-gray-800 dark:text-gray-200">{classInfo.name}</h3>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        classInfo.memberRoles[user.email!] === 'president' 
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' 
+                          : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+                      }`}>
+                        {classInfo.memberRoles[user.email!] === 'president' ? '👑 President' : '👤 Member'}
+                      </span>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-mono font-bold text-blue-600">{classItem.code}</div>
-                      <div className="text-xs text-gray-500">Class Code</div>
-                    </div>
-                  </div>
-
-                  {classItem.description && (
-                    <p className="text-gray-600 mb-4 text-sm">{classItem.description}</p>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <span>👥 {memberCount} member{memberCount !== 1 ? 's' : ''}</span>
-                    <span>📚 {classItem.subjects.length} subject{classItem.subjects.length !== 1 ? 's' : ''}</span>
-                    <span>📝 {classItem.quizzes.length} quiz{classItem.quizzes.length !== 1 ? 'zes' : ''}</span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/classes/${classItem.id}`}
-                      className="flex-1 px-4 py-2 bg-blue-600 text-white text-center rounded-md hover:bg-blue-700 transition-colors text-sm"
-                    >
-                      📚 Enter Class
-                    </Link>
-                    <Link
-                      href={`/classes/${classItem.id}/leaderboard`}
-                      className="px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors text-sm"
-                    >
-                      🏆
-                    </Link>
-                    {!isPresident && (
-                      <button
-                        onClick={() => leaveClass(classItem.id)}
-                        className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors text-sm"
-                      >
-                        🚪
-                      </button>
+                    
+                    {classInfo.description && (
+                      <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">{classInfo.description}</p>
                     )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Info Section */}
-        <div className="mt-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
-          <h3 className="text-lg font-semibold text-gray-800 mb-3">🌟 How Classes Work:</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-            <ul className="space-y-2">
-              <li>• <strong>Create a class</strong> and get a unique 6-character code</li>
-              <li>• <strong>Share the code</strong> with your classmates</li>
-              <li>• <strong>Collaborate on subjects</strong> - everyone can add/edit</li>
-              <li>• <strong>Share quizzes</strong> - contribute and play together</li>
-            </ul>
-            <ul className="space-y-2">
-              <li>• <strong>Class President</strong> can manage class settings</li>
-              <li>• <strong>Leaderboards</strong> track scores and completion times</li>
-              <li>• <strong>Real-time collaboration</strong> on educational content</li>
-              <li>• <strong>Compete and learn</strong> with your classmates!</li>
-            </ul>
+                    
+                    <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 mb-4">
+                      <span>📖 {classInfo.subjectCount} subjects</span>
+                      <span>📝 {classInfo.quizCount} quizzes</span>
+                      <span>👥 {classInfo.members.length} members</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        Code: <span className="font-mono font-bold">{classInfo.joinCode}</span>
+                      </span>
+                      <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {new Date(classInfo.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

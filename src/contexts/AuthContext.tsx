@@ -28,6 +28,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   // Sign up function
   const signup = async (email: string, password: string) => {
@@ -47,6 +48,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Listen for authentication state changes
   useEffect(() => {
+    setMounted(true);
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -62,6 +65,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     login,
     logout
   };
+
+  if (!mounted) {
+    return <div style={{ visibility: 'hidden' }}>{children}</div>;
+  }
 
   return (
     <AuthContext.Provider value={value}>

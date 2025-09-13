@@ -2,10 +2,28 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserSubjects, FirebaseSubject, createSubject } from '@/lib/firestore';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
+interface LocalClass {
+  id: string;
+  name: string;
+  members: string[];
+  subjects: string[];
+}
+
+interface ExtendedSubject {
+  id: string;
+  name: string;
+  source?: 'personal' | 'class';
+  className?: string;
+}
 
 export default function AIQuizGenerator() {
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
+  const { user } = useAuth();
+  const [subjects, setSubjects] = useState<ExtendedSubject[]>([]);
   const [newSubject, setNewSubject] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [quizTitle, setQuizTitle] = useState("");
@@ -14,52 +32,66 @@ export default function AIQuizGenerator() {
   const [showQuizForm, setShowQuizForm] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
-      return;
-    }
-    setCurrentUser(user);
+    if (!user) return;
     loadSubjects();
-  }, []);
+  }, [user]);
 
-  const loadSubjects = () => {
-    const storedSubjects = localStorage.getItem("qg_subjects");
-    if (storedSubjects) {
-      try {
-        const parsed = JSON.parse(storedSubjects);
-        // Handle both old format (string array) and new format (object array)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          if (typeof parsed[0] === 'string') {
-            // Convert old format to new format
-            const converted = parsed.map((subject: string, index: number) => ({
-              id: `subject_${index + 1}`,
-              name: subject
-            }));
-            setSubjects(converted);
-            localStorage.setItem("qg_subjects", JSON.stringify(converted));
-          } else {
-            setSubjects(parsed);
+  const loadSubjects = async () => {
+    if (!user) return;
+    
+    try {
+      // Load personal subjects from Firebase
+      const userSubjects = await getUserSubjects(user.uid);
+      
+      // Load class subjects from classes user is a member of
+      const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
+      const userClasses = allClasses.filter((classInfo: LocalClass) => 
+        classInfo.members && user.email && classInfo.members.includes(user.email) && classInfo.subjects
+      );
+      
+      // Extract unique subjects from classes
+      const classSubjects: ExtendedSubject[] = [];
+      const seenSubjects = new Set(userSubjects.map(s => s.name.toLowerCase()));
+      
+      userClasses.forEach((classInfo: LocalClass) => {
+        classInfo.subjects.forEach((subjectName: string) => {
+          if (!seenSubjects.has(subjectName.toLowerCase())) {
+            classSubjects.push({
+              id: `class-${classInfo.id}-${subjectName}`,
+              name: subjectName,
+              source: 'class',
+              className: classInfo.name
+            });
+            seenSubjects.add(subjectName.toLowerCase());
           }
-        }
-      } catch (error) {
-        console.error("Error parsing subjects:", error);
-        setSubjects([]);
-      }
+        });
+      });
+      
+      // Combine personal and class subjects
+      const personalSubjects = userSubjects.map(s => ({ 
+        id: s.id, 
+        name: s.name, 
+        source: 'personal' as const 
+      }));
+      const allSubjects = [...personalSubjects, ...classSubjects];
+      setSubjects(allSubjects);
+    } catch (error) {
+      console.error('Error loading subjects:', error);
     }
   };
 
-  const addSubject = () => {
-    if (newSubject.trim() && !subjects.some(s => s.name.toLowerCase() === newSubject.toLowerCase())) {
-      const newSubjectObj = {
-        id: `subject_${Date.now()}`,
-        name: newSubject.trim()
-      };
-      const updatedSubjects = [...subjects, newSubjectObj];
-      setSubjects(updatedSubjects);
-      localStorage.setItem("qg_subjects", JSON.stringify(updatedSubjects));
+  const addSubject = async () => {
+    if (!user || !newSubject.trim() || subjects.some(s => s.name.toLowerCase() === newSubject.toLowerCase())) {
+      return;
+    }
+    
+    try {
+      await createSubject(newSubject.trim(), user.uid);
+      await loadSubjects(); // Reload subjects to get the new one
       setNewSubject("");
       setShowSubjectForm(false);
+    } catch (error) {
+      console.error('Error creating subject:', error);
     }
   };
 
@@ -74,7 +106,7 @@ export default function AIQuizGenerator() {
       title: quizTitle.trim(),
       subject: selectedSubject,
       questions: parseQuizQuestions(quizQuestions),
-      creator: currentUser,
+      creator: user?.email || "Unknown User",
       createdAt: new Date().toISOString(),
       isShared: true
     };
@@ -134,7 +166,7 @@ export default function AIQuizGenerator() {
     return questions;
   };
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-100 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 flex items-center justify-center">
         <div className="text-center">
@@ -170,11 +202,15 @@ export default function AIQuizGenerator() {
               Smart Quiz
             </Link>
             <ThemeToggle />
-            <span className="text-gray-700 dark:text-gray-300">Welcome, {currentUser}!</span>
+            <span className="text-gray-700 dark:text-gray-300">Welcome, {user?.email}!</span>
             <button
-              onClick={() => {
-                localStorage.removeItem("qg_user");
-                window.location.href = "/";
+              onClick={async () => {
+                try {
+                  await signOut(auth);
+                  window.location.href = "/";
+                } catch (error) {
+                  console.error('Logout error:', error);
+                }
               }}
               className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
             >
@@ -355,7 +391,7 @@ Please ensure the questions test understanding of key concepts rather than obscu
                   <div className="max-h-24 overflow-y-auto space-y-1">
                     {subjects.map((subject) => (
                       <div key={subject.id} className="p-2 bg-white/60 dark:bg-gray-700/60 rounded border text-xs">
-                        {subject.name}
+                        {subject.source === 'class' ? `"${subject.name}" ("${subject.className}")` : subject.name}
                       </div>
                     ))}
                     {subjects.length === 0 && (
@@ -405,7 +441,7 @@ Please ensure the questions test understanding of key concepts rather than obscu
                           <option value="">Select a subject</option>
                           {subjects.map((subject) => (
                             <option key={subject.id} value={subject.name}>
-                              {subject.name}
+                              {subject.source === 'class' ? `"${subject.name}" ("${subject.className}")` : subject.name}
                             </option>
                           ))}
                         </select>
