@@ -111,7 +111,7 @@ export default function AIQuizGenerator() {
     }
   };
 
-  const createQuiz = async () => {
+  const createQuizFromAI = async () => {
     if (!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || !user?.uid) {
       alert("Please fill in all fields");
       return;
@@ -359,7 +359,7 @@ export default function AIQuizGenerator() {
                         </div>
                         
                         <button
-                          onClick={createQuiz}
+                          onClick={createQuizFromAI}
                           disabled={!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || creating}
                           className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
                         >

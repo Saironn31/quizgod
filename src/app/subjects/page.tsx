@@ -127,9 +127,10 @@ export default function SubjectsPage() {
     }
   };
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Unknown date";
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return "Unknown date";
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -250,19 +251,6 @@ export default function SubjectsPage() {
                           </span>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center">
-                        <span className="w-5 h-5 mr-2">📅</span>
-                        <span>Created {formatDate(subject.createdAt)}</span>
-                      </div>
-                      {subject.description && (
-                        <div className="flex items-start">
-                          <span className="w-5 h-5 mr-2 mt-0.5">📝</span>
-                          <span className="line-clamp-2">{subject.description}</span>
-                        </div>
-                      )}
                     </div>
                     
                     <div className="flex gap-2">

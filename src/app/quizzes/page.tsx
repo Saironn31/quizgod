@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import NavBar from '@/components/NavBar';
@@ -106,9 +106,10 @@ export default function QuizzesPage() {
     return matchesSearch && matchesSubject;
   });
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Unknown date";
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date?: Date | string) => {
+    if (!date) return "Unknown date";
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'

@@ -76,9 +76,9 @@ export default function ClassesPage() {
       setCreating(true);
       const classId = await createClass(
         newClassName.trim(),
-        newClassDescription.trim() || undefined,
         user.uid,
-        user.email
+        user.email,
+        newClassDescription.trim() || undefined
       );
       
       // Reload classes to show the new one
