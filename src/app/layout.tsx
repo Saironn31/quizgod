@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   description: "Free quiz platform with AI generation, collaborative classes, and leaderboards",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1.0,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

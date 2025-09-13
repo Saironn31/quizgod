@@ -109,7 +109,7 @@ export default function ClassesPage() {
     const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
     console.log("All classes in global list:", allClasses);
     
-    let targetClass = allClasses.find((classInfo: any) => classInfo.code === joinCode.toUpperCase());
+    let targetClass = allClasses.find((classInfo: Class) => classInfo.code === joinCode.toUpperCase());
     console.log("Found in global list:", targetClass);
     
     // If not found in global list, search localStorage keys
@@ -167,7 +167,7 @@ export default function ClassesPage() {
 
     // Update the global class list
     const updatedAllClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    const existingIndex = updatedAllClasses.findIndex((c: any) => c.id === targetClass.id);
+    const existingIndex = updatedAllClasses.findIndex((c: Class) => c.id === targetClass.id);
     if (existingIndex >= 0) {
       updatedAllClasses[existingIndex] = targetClass;
     } else {

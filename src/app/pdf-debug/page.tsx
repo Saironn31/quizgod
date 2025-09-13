@@ -213,7 +213,7 @@ export default function PDFDebugPage() {
         <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-6 mt-6">
           <h3 className="font-semibold mb-2">🔧 Debug Instructions:</h3>
           <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1">
-            <li>Upload a PDF file and click "Test PDF Extraction"</li>
+            <li>Upload a PDF file and click &quot;Test PDF Extraction&quot;</li>
             <li>Check the browser console (F12) for detailed logs</li>
             <li>Review the character analysis to identify encoding issues</li>
             <li>Look for non-printable characters or unicode issues</li>

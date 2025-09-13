@@ -2,33 +2,38 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import ThemeToggle from "../../components/ThemeToggle";
+import { useAuth } from '@/contexts/AuthContext';
+import { getUserSubjects, FirebaseSubject } from '@/lib/firestore';
 
 type Question = { question: string; options: string[]; correct: number };
+
+interface LocalClass {
+  id: string;
+  members: string[];
+}
 
 export default function CreatePage() {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([{ question: "", options: ["", "", "", ""], correct: 0 }]);
-  const [subjects, setSubjects] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
+  const { user } = useAuth();
 
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
-      return;
-    }
-    setCurrentUser(user);
-  }, []);
-
-  useEffect(()=>{
-    if (!currentUser) return;
-    const storedSubjects = JSON.parse(localStorage.getItem(`qg_subjects_${currentUser}`)||"[]");
-    // Extract subject names from objects
-    const subjectNames = storedSubjects.map((s: any) => typeof s === 'string' ? s : s.name);
-    setSubjects(subjectNames);
-  },[currentUser]);
+    if (!user) return;
+    
+    const loadSubjects = async () => {
+      try {
+        const userSubjects = await getUserSubjects(user.uid);
+        setSubjects(userSubjects);
+      } catch (error) {
+        console.error('Error loading subjects:', error);
+      }
+    };
+    
+    loadSubjects();
+  }, [user]);
 
   const addQuestion = () => setQuestions([...questions, { question: "", options: ["", "", "", ""], correct: 0 }]);
   const updateQ = (i:number, patch: Partial<Question>) => setQuestions(qs => qs.map((q,idx)=> idx===i? { ...q, ...patch }: q));
@@ -42,7 +47,7 @@ export default function CreatePage() {
   const save = () => {
     if (!title.trim()) return alert("Title required");
     if (!subject) return alert("Please select a subject");
-    if (!currentUser) return alert("You must be logged in.");
+    if (!user) return alert("You must be logged in.");
     
     const incompleteQuestions = questions.filter(q => !q.question.trim() || q.options.some(opt => !opt.trim()));
     if (incompleteQuestions.length > 0) {
@@ -50,16 +55,16 @@ export default function CreatePage() {
     }
 
     const quiz = { title: title.trim(), subject, description: description.trim(), questions, createdAt: new Date().toISOString() };
-    const key = `qg_quiz_${currentUser}_${Date.now()}`;
+    const key = `qg_quiz_${user.email}_${Date.now()}`;
     localStorage.setItem(key, JSON.stringify(quiz));
 
     // Auto-share with user's classes
     const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    const userClasses = allClasses.filter((classInfo: any) => 
-      classInfo.members && classInfo.members.includes(currentUser)
+    const userClasses = allClasses.filter((classInfo: LocalClass) => 
+      classInfo.members && user.email && classInfo.members.includes(user.email)
     );
 
-    userClasses.forEach((classInfo: any) => {
+    userClasses.forEach((classInfo: LocalClass) => {
       const classQuizzes = JSON.parse(localStorage.getItem(`qg_class_quizzes_${classInfo.id}`) || "[]");
       if (!classQuizzes.includes(key)) {
         classQuizzes.push(key);
@@ -76,7 +81,7 @@ export default function CreatePage() {
     window.location.href = "/quizzes";
   };
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
@@ -94,10 +99,10 @@ export default function CreatePage() {
       {/* Navigation */}
       <nav className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm shadow-sm border-b border-purple-100 dark:border-gray-700 p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <Link href="/" className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
             🧠 QuizGod
           </Link>
-          <div className="flex items-center space-x-4">
+          <div className="hidden lg:flex items-center space-x-4">
             <Link href="/create" className="text-purple-600 dark:text-purple-400 font-semibold">
               Create Quiz
             </Link>
@@ -114,31 +119,35 @@ export default function CreatePage() {
               Smart Quiz
             </Link>
             <ThemeToggle />
-            <span className="text-gray-700 dark:text-gray-300">Welcome, {currentUser}!</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm truncate max-w-32">Welcome, {user.email}!</span>
             <button
               onClick={() => {
-                localStorage.removeItem("qg_user");
                 window.location.href = "/";
               }}
-              className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+              className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 text-sm"
             >
               Logout
             </button>
+          </div>
+          {/* Mobile menu button */}
+          <div className="lg:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/" className="text-sm bg-purple-500 text-white px-3 py-2 rounded">Menu</Link>
           </div>
         </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-purple-100 dark:border-gray-700 p-8">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">✏️ Create New Quiz</h1>
+      <div className="max-w-6xl mx-auto p-4 sm:p-6">
+        <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-xl shadow-lg border border-purple-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 sm:mb-8 gap-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 dark:text-gray-200">✏️ Create New Quiz</h1>
           </div>
 
           {/* Quiz Metadata */}
-          <div className="mb-8 p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">📋 Quiz Information</h2>
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">📋 Quiz Information</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quiz Title *</label>
                 <input 
@@ -156,7 +165,7 @@ export default function CreatePage() {
                   onChange={e=>setSubject(e.target.value)}
                 >
                   <option value="">Select subject</option>
-                  {subjects.map(s=> <option key={s} value={s}>{s}</option>)}
+                  {subjects.map(s=> <option key={s.id} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
             </div>
@@ -173,26 +182,26 @@ export default function CreatePage() {
           </div>
 
           {/* Questions Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">❓ Questions ({questions.length})</h2>
+          <div className="mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-4">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200">❓ Questions ({questions.length})</h2>
               <button 
                 onClick={addQuestion} 
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-lg"
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white font-semibold rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 shadow-lg text-sm sm:text-base"
               >
                 ➕ Add Question
               </button>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {questions.map((q,i)=> (
-                <div key={i} className="bg-white dark:bg-gray-700 rounded-lg p-6 border border-purple-100 dark:border-gray-600 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200">Question {i+1}</h3>
+                <div key={i} className="bg-white dark:bg-gray-700 rounded-lg p-4 sm:p-6 border border-purple-100 dark:border-gray-600 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+                    <h3 className="text-base sm:text-lg font-medium text-gray-800 dark:text-gray-200">Question {i+1}</h3>
                     {questions.length > 1 && (
                       <button 
                         onClick={() => removeQuestion(i)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                        className="w-full sm:w-auto px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
                       >
                         🗑️ Remove
                       </button>
@@ -209,11 +218,11 @@ export default function CreatePage() {
                     />
                   </div>
                   
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {q.options.map((opt, oi)=> (
                       <div key={oi} className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Option {oi+1} {q.correct===oi && <span className="text-green-500 font-semibold">(✓ Correct Answer)</span>}
+                          Option {oi+1} {q.correct===oi && <span className="text-green-500 font-semibold">(✓ Correct)</span>}
                         </label>
                         <div className="flex gap-2">
                           <input 
@@ -224,7 +233,7 @@ export default function CreatePage() {
                           />
                           <button 
                             type="button" 
-                            className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                            className={`px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
                               q.correct === oi 
                                 ? 'bg-green-500 text-white' 
                                 : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
@@ -243,10 +252,10 @@ export default function CreatePage() {
           </div>
 
           {/* Save Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-center sm:justify-end">
             <button 
               onClick={save} 
-              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg"
+              className="w-full sm:w-auto px-6 sm:px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg text-sm sm:text-base"
             >
               💾 Save Quiz
             </button>
