@@ -247,23 +247,29 @@ export const getUserProfile = async (uid: string): Promise<FirebaseUser | null> 
 };
 
 // Profile picture operations
+import { supabase } from './supabase';
+
 export const uploadProfilePicture = async (uid: string, file: File): Promise<string> => {
   try {
     // Create a unique filename
     const timestamp = Date.now();
     const fileName = `profile_${uid}_${timestamp}.${file.name.split('.').pop()}`;
-    const storageRef = ref(storage, `profile-pictures/${fileName}`);
-    
-    // Upload the file
-    await uploadBytes(storageRef, file);
-    
-    // Get the download URL
-    const downloadURL = await getDownloadURL(storageRef);
-    
+    const filePath = `${uid}/${fileName}`;
+    const { data, error } = await supabase.storage
+      .from('profile-pictures')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true,
+      });
+    if (error) throw error;
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('profile-pictures')
+      .getPublicUrl(filePath);
+    const publicUrl = urlData?.publicUrl;
     // Update user profile with new picture URL
-    await updateUserProfile(uid, { profilePicture: downloadURL });
-    
-    return downloadURL;
+    await updateUserProfile(uid, { profilePicture: publicUrl });
+    return publicUrl;
   } catch (error) {
     console.error('Error uploading profile picture:', error);
     throw error;

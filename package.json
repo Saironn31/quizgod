@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.57.4",
     "@tensorflow/tfjs": "^4.15.0",
     "canvas": "^3.2.0",
     "firebase": "^12.2.1",
