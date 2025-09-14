@@ -240,21 +240,35 @@ export const joinClass = async (joinCode: string, userId: string, userEmail: str
       throw new Error('Already a member of this class');
     }
     
+    console.log('Starting class update...');
     // Update class with new member
-    await updateDoc(classDoc.ref, {
-      members: arrayUnion(userEmail),
-      [`memberRoles.${userEmail}`]: 'member',
-      updatedAt: new Date()
-    });
+    try {
+      await updateDoc(classDoc.ref, {
+        members: arrayUnion(userEmail),
+        [`memberRoles.${userEmail}`]: 'member',
+        updatedAt: new Date()
+      });
+      console.log('Class document updated successfully');
+    } catch (updateError) {
+      console.error('Error updating class document:', updateError);
+      throw new Error(`Failed to update class: ${updateError}`);
+    }
     
+    console.log('Creating membership record...');
     // Create membership record
-    await addDoc(collection(db, 'classMemberships'), {
-      userId,
-      userEmail,
-      classId: classDoc.id,
-      role: 'member',
-      joinedAt: new Date()
-    });
+    try {
+      await addDoc(collection(db, 'classMemberships'), {
+        userId,
+        userEmail,
+        classId: classDoc.id,
+        role: 'member',
+        joinedAt: new Date()
+      });
+      console.log('Membership record created successfully');
+    } catch (membershipError) {
+      console.error('Error creating membership record:', membershipError);
+      throw new Error(`Failed to create membership record: ${membershipError}`);
+    }
     
     console.log('Successfully joined class');
     return true;
