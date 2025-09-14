@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getUserProfile } from '@/lib/firestore';
 import PrivateChat from '@/components/PrivateChat';
 import NavBar from '@/components/NavBar';
+import AddFriendForm from '@/components/AddFriendForm';
 
 const FriendsPage: React.FC = () => {
   const { user, userProfile } = useAuth();
@@ -37,7 +38,10 @@ const FriendsPage: React.FC = () => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white mb-1">Your Friends</h1>
-            <p className="text-purple-200">Connect and chat with your friends</p>
+            <p className="text-purple-200 mb-4">Connect and chat with your friends</p>
+            <div className="flex justify-center mb-4">
+              <AddFriendForm />
+            </div>
           </div>
           {loading ? (
             <div className="text-center py-8">
