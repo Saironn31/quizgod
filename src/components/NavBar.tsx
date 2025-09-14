@@ -3,36 +3,16 @@ import AddFriendForm from './AddFriendForm';
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from '@/contexts/AuthContext';
-import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
+// import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 import ChangeNameForm from './ChangeNameForm';
 
 
 const NavBar: React.FC = () => {
   // Handler for deleting profile picture
-  const handleDeleteProfilePicture = async () => {
-    if (!user?.uid || !userProfile?.profilePicture) return;
-    try {
-      await deleteProfilePicture(user.uid, userProfile.profilePicture);
-      await refreshUserProfile();
-      setShowProfileMenu(false);
-    } catch (error) {
-      alert('Failed to delete profile picture');
-    }
-  };
+  // Removed profile picture delete handler
 
   // Handler for uploading profile picture
-  const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user?.uid || !e.target.files?.[0]) return;
-    setIsUploading(true);
-    try {
-      await uploadProfilePicture(user.uid, e.target.files[0]);
-      await refreshUserProfile();
-    } catch (error) {
-      alert('Failed to upload profile picture');
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  // Removed profile picture upload handler
 
   // Handler to close mobile menu
   const closeMenu = () => {
@@ -44,7 +24,7 @@ const NavBar: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Removed file input ref for profile picture
 
 
   // Mobile menu toggle handler
@@ -79,9 +59,7 @@ const NavBar: React.FC = () => {
     }
   };
 
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
+  // Removed triggerFileInput logic
 
   // (Removed duplicate useEffect outside function body)
   return (
@@ -91,59 +69,12 @@ const NavBar: React.FC = () => {
         {/* User Profile Section */}
         <div className="flex items-center gap-4">
           <div className="relative">
-            {userProfile?.profilePicture ? (
-              <div 
-                className="w-10 h-10 rounded-full overflow-hidden shadow-lg cursor-pointer hover:ring-2 hover:ring-purple-300 transition-all"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                <img 
-                  src={userProfile.profilePicture} 
-                  alt="Profile"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : (
-              <div 
-                className="w-10 h-10 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg cursor-pointer hover:ring-2 hover:ring-purple-300 transition-all"
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-              >
-                {getDisplayName().charAt(0).toUpperCase()}
-              </div>
-            )}
+            {/* Removed profile picture display and upload UI */}
             
             {/* Profile Picture Menu */}
-            {showProfileMenu && (
-              <div className="absolute right-0 mt-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[240px] flex flex-col gap-2">
-                <button
-                  onClick={triggerFileInput}
-                  disabled={isUploading}
-                  className="w-full px-3 py-2 text-left text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
-                >
-                  {isUploading ? 'Uploading...' : userProfile?.profilePicture ? 'Change Picture' : 'Upload Picture'}
-                </button>
-                {userProfile?.profilePicture && (
-                  <button
-                    onClick={handleDeleteProfilePicture}
-                    className="w-full px-3 py-2 text-left text-red-300 hover:bg-red-500/20 rounded-lg transition-all"
-                  >
-                    Remove Picture
-                  </button>
-                )}
-                {/* Change name/username form */}
-                <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
-                {/* Add friend form */}
-                <AddFriendForm />
-              </div>
-            )}
+            {/* Removed profile picture menu UI */}
           
-          {/* Hidden file input */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleProfilePictureUpload}
-            className="hidden"
-          />
+          {/* Removed file input for profile picture */}
           
           <div className="flex flex-col">
             <span className="font-semibold text-white text-lg">

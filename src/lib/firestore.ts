@@ -247,52 +247,7 @@ export const getUserProfile = async (uid: string): Promise<FirebaseUser | null> 
 };
 
 // Profile picture operations
-import { supabase } from './supabase';
-
-export const uploadProfilePicture = async (uid: string, file: File): Promise<string> => {
-  try {
-    // Create a unique filename
-    const timestamp = Date.now();
-    const fileName = `profile_${uid}_${timestamp}.${file.name.split('.').pop()}`;
-    const filePath = `${uid}/${fileName}`;
-    const { data, error } = await supabase.storage
-      .from('profile-pictures')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true,
-      });
-    if (error) throw error;
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('profile-pictures')
-      .getPublicUrl(filePath);
-    const publicUrl = urlData?.publicUrl;
-    // Update user profile with new picture URL
-    await updateUserProfile(uid, { profilePicture: publicUrl });
-    return publicUrl;
-  } catch (error) {
-    console.error('Error uploading profile picture:', error);
-    throw error;
-  }
-};
-
-export const deleteProfilePicture = async (uid: string, profilePictureUrl: string): Promise<void> => {
-  try {
-    // Extract the file path from the URL
-    const url = new URL(profilePictureUrl);
-    const filePath = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
-    const storageRef = ref(storage, filePath);
-    
-    // Delete from storage
-    await deleteObject(storageRef);
-    
-    // Remove from user profile
-    await updateUserProfile(uid, { profilePicture: undefined });
-  } catch (error) {
-    console.error('Error deleting profile picture:', error);
-    throw error;
-  }
-};
+// Removed profile picture upload and delete functions
 
 // Class operations
 /**
