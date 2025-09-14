@@ -128,7 +128,7 @@ export default function AIQuizGenerator() {
         subject: selectedSubject,
         questions: parseQuizQuestions(quizQuestions),
         userId: user.uid,
-        isPersonal: !selectedClass
+        isPersonal: !selectedClass || selectedClass === ""
       };
       
       // Only add optional fields if they have values

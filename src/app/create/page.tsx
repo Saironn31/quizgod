@@ -133,7 +133,7 @@ export default function CreatePage() {
         subject: subject,
         questions: questions,
         userId: user.uid,
-        isPersonal: !selectedClass
+        isPersonal: !selectedClass || selectedClass === ""
       };
       
       // Only add optional fields if they have values
