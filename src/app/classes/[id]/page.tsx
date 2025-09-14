@@ -142,25 +142,25 @@ export default function ClassDetailPage() {
         <div className="flex justify-between items-center mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
           <NavBar />
-        </div>
-
-        {/* Class Header */}
-        <div className="max-w-6xl mx-auto">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-white">{classData.name}</h1>
-              <p className="text-purple-100 mt-2">{classData.description}</p>
-              <div className="flex items-center gap-4 mt-4 flex-wrap">
-                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                  👥 {classData.members.length} member{classData.members.length !== 1 ? 's' : ''}
-                </span>
-                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                  📚 {subjects.length} subject{subjects.length !== 1 ? 's' : ''}
-                </span>
-                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                  📝 {quizzes.length} quiz{quizzes.length !== 1 ? 'zes' : ''}
-                </span>
+        try {
+          setCreating(true);
+          const subjectId = await createSubject(
+            newSubjectName.trim(),
+            user.uid,
+            classData.id
+          );
+          // Reload subjects to show the new one
+          const updatedSubjects = await getClassSubjects(classData.id);
+          setSubjects(updatedSubjects);
+          setNewSubjectName("");
+          setShowAddSubject(false);
+          alert("Subject created successfully!");
+        } catch (error) {
+          console.error('Error creating subject:', error);
+          alert("Failed to create subject. Please try again.");
+        } finally {
+          setCreating(false);
+        }
               </div>
             </div>
             <div className="text-right">
