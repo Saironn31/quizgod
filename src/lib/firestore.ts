@@ -223,15 +223,18 @@ export const createClass = async (
 
 export const joinClass = async (joinCode: string, userId: string, userEmail: string): Promise<boolean> => {
   try {
+    console.log('Attempting to join class with code:', joinCode);
     const classesQuery = query(collection(db, 'classes'), where('joinCode', '==', joinCode));
     const querySnapshot = await getDocs(classesQuery);
     
     if (querySnapshot.empty) {
+      console.log('No classes found with join code:', joinCode);
       throw new Error('Invalid join code');
     }
     
     const classDoc = querySnapshot.docs[0];
     const classData = classDoc.data() as FirebaseClass;
+    console.log('Found class:', classData.name, 'with members:', classData.members);
     
     if (classData.members.includes(userEmail)) {
       throw new Error('Already a member of this class');
@@ -253,10 +256,14 @@ export const joinClass = async (joinCode: string, userId: string, userEmail: str
       joinedAt: new Date()
     });
     
+    console.log('Successfully joined class');
     return true;
   } catch (error) {
     console.error('Error joining class:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw new Error(`Failed to join class: ${error.message}`);
+    }
+    throw new Error('Failed to join class: Unknown error');
   }
 };
 
