@@ -113,30 +113,27 @@ const NavBar: React.FC = () => {
             
             {/* Profile Picture Menu */}
             {showProfileMenu && (
-              <>
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]" onClick={() => setShowProfileMenu(false)} />
-                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[320px] flex flex-col gap-2">
+              <div className="absolute right-0 mt-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[240px] flex flex-col gap-2">
+                <button
+                  onClick={triggerFileInput}
+                  disabled={isUploading}
+                  className="w-full px-3 py-2 text-left text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
+                >
+                  {isUploading ? 'Uploading...' : userProfile?.profilePicture ? 'Change Picture' : 'Upload Picture'}
+                </button>
+                {userProfile?.profilePicture && (
                   <button
-                    onClick={triggerFileInput}
-                    disabled={isUploading}
-                    className="w-full px-3 py-2 text-left text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
+                    onClick={handleDeleteProfilePicture}
+                    className="w-full px-3 py-2 text-left text-red-300 hover:bg-red-500/20 rounded-lg transition-all"
                   >
-                    {isUploading ? 'Uploading...' : userProfile?.profilePicture ? 'Change Picture' : 'Upload Picture'}
+                    Remove Picture
                   </button>
-                  {userProfile?.profilePicture && (
-                    <button
-                      onClick={handleDeleteProfilePicture}
-                      className="w-full px-3 py-2 text-left text-red-300 hover:bg-red-500/20 rounded-lg transition-all"
-                    >
-                      Remove Picture
-                    </button>
-                  )}
-                  {/* Change name/username form */}
-                  <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
-                  {/* Add friend form */}
-                  <AddFriendForm />
-                </div>
-              </>
+                )}
+                {/* Change name/username form */}
+                <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
+                {/* Add friend form */}
+                <AddFriendForm />
+              </div>
             )}
           
           {/* Hidden file input */}
