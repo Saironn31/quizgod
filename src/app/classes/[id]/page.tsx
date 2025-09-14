@@ -617,32 +617,36 @@ export default function ClassDetailPage() {
               </button>
             </div>
 
+            {/* Modal Overlay for Add Subject */}
             {showAddSubject && (
-              <div className="bg-white rounded-lg shadow p-6 mb-6">
-                <h3 className="text-lg font-semibold mb-4">Add New Subject</h3>
-                <div className="flex gap-3">
+              <>
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={() => setShowAddSubject(false)} />
+                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl p-8 z-[9999] min-w-[320px] w-full max-w-md flex flex-col gap-4 border border-white/20">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-800">Add New Subject</h3>
                   <input
                     type="text"
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                     placeholder="Subject name"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   />
-                  <button
-                    onClick={addSubject}
-                    disabled={!newSubjectName.trim()}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={() => setShowAddSubject(false)}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      onClick={addSubject}
+                      disabled={!newSubjectName.trim()}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Add
+                    </button>
+                    <button
+                      onClick={() => setShowAddSubject(false)}
+                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </>
             )}
 
             {subjects.length === 0 ? (
