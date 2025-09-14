@@ -128,16 +128,26 @@ export default function CreatePage() {
       // Find the selected subject
       const selectedSubject = subjects.find(s => s.name === subject);
       
-      await createQuiz({
+      const quizData: any = {
         title: title.trim(),
         subject: subject,
-        description: description.trim() || undefined,
-        subjectId: selectedSubject?.id,
         questions: questions,
         userId: user.uid,
-        classId: selectedClass || undefined,
         isPersonal: !selectedClass
-      });
+      };
+      
+      // Only add optional fields if they have values
+      if (description.trim()) {
+        quizData.description = description.trim();
+      }
+      if (selectedSubject?.id) {
+        quizData.subjectId = selectedSubject.id;
+      }
+      if (selectedClass) {
+        quizData.classId = selectedClass;
+      }
+      
+      await createQuiz(quizData);
 
       alert("Quiz created successfully!");
       

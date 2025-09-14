@@ -123,15 +123,21 @@ export default function AIQuizGenerator() {
       // Find the selected subject
       const selectedSubjectObj = subjects.find(s => s.name === selectedSubject);
       
-      const quizData = {
+      const quizData: any = {
         title: quizTitle.trim(),
         subject: selectedSubject,
         questions: parseQuizQuestions(quizQuestions),
         userId: user.uid,
-        classId: selectedClass || undefined,
-        subjectId: selectedSubjectObj?.id,
         isPersonal: !selectedClass
       };
+      
+      // Only add optional fields if they have values
+      if (selectedClass) {
+        quizData.classId = selectedClass;
+      }
+      if (selectedSubjectObj?.id) {
+        quizData.subjectId = selectedSubjectObj.id;
+      }
 
       await createQuiz(quizData);
 

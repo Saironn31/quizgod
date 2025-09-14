@@ -175,9 +175,8 @@ export const createClass = async (
   description?: string
 ): Promise<FirebaseClass> => {
   const joinCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-  const classData: Omit<FirebaseClass, 'id'> = {
+  const classData: any = {
     name,
-    description,
     creatorId,
     creatorEmail,
     members: [creatorEmail],
@@ -187,6 +186,11 @@ export const createClass = async (
     createdAt: new Date(),
     updatedAt: new Date()
   };
+  
+  // Only add description if it's provided and not empty
+  if (description && description.trim()) {
+    classData.description = description.trim();
+  }
   
   const classRef = await addDoc(collection(db, 'classes'), classData);
   
@@ -278,14 +282,20 @@ export const createSubject = async (
   userId: string, 
   classId?: string
 ): Promise<string> => {
-  const subjectRef = await addDoc(collection(db, 'subjects'), {
+  const subjectData: any = {
     name,
     userId,
-    classId,
     isPersonal: !classId,
     createdAt: new Date(),
     updatedAt: new Date()
-  });
+  };
+  
+  // Only add classId if it's provided
+  if (classId) {
+    subjectData.classId = classId;
+  }
+  
+  const subjectRef = await addDoc(collection(db, 'subjects'), subjectData);
   return subjectRef.id;
 };
 
