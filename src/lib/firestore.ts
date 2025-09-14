@@ -564,6 +564,25 @@ export const deleteQuiz = async (quizId: string) => {
   await deleteDoc(doc(db, 'quizzes', quizId));
 };
 
+export const getQuizById = async (quizId: string): Promise<FirebaseQuiz | null> => {
+  try {
+    const quizDoc = await getDoc(doc(db, 'quizzes', quizId));
+    if (quizDoc.exists()) {
+      const data = quizDoc.data();
+      return {
+        id: quizDoc.id,
+        ...data,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate()
+      } as FirebaseQuiz;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting quiz by ID:', error);
+    return null;
+  }
+};
+
 // Migration and utility functions
 export const migrateLocalDataToFirestore = async (userId: string, userEmail: string) => {
   try {

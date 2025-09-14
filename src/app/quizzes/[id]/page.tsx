@@ -2,50 +2,52 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-
-interface Question {
-  question: string;
-  options: string[];
-  correct: number;
-}
-
-interface Quiz {
-  title: string;
-  subject: string;
-  description?: string;
-  questions: Question[];
-}
+import { useAuth } from '@/contexts/AuthContext';
+import { getQuizById, FirebaseQuiz } from '@/lib/firestore';
 
 export default function QuizPlayerPage() {
   const params = useParams();
   const router = useRouter();
-  const [quiz, setQuiz] = useState<Quiz | null>(null);
+  const { user } = useAuth();
+  const [quiz, setQuiz] = useState<FirebaseQuiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const quizKey = params.id as string;
-    const quizData = localStorage.getItem(quizKey);
-    
-    if (!quizData) {
-      router.push("/quizzes");
+    if (!user?.uid) {
+      router.push('/');
       return;
     }
+    
+    loadQuiz();
+  }, [params.id, user]);
 
+  const loadQuiz = async () => {
+    if (!params.id) return;
+    
     try {
-      const parsedQuiz = JSON.parse(quizData);
-      setQuiz(parsedQuiz);
-      setSelectedAnswers(new Array(parsedQuiz.questions.length).fill(-1));
-      setTimeLeft(parsedQuiz.questions.length * 60); // 1 minute per question
+      const quizData = await getQuizById(params.id as string);
+      
+      if (!quizData) {
+        router.push("/quizzes");
+        return;
+      }
+
+      setQuiz(quizData);
+      setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
+      setTimeLeft(quizData.questions.length * 60); // 1 minute per question
     } catch (error) {
       console.error("Error loading quiz:", error);
       router.push("/quizzes");
+    } finally {
+      setLoading(false);
     }
-  }, [params.id, router]);
+  };
 
   useEffect(() => {
     if (quizStarted && timeLeft > 0 && !showResults) {
@@ -81,7 +83,7 @@ export default function QuizPlayerPage() {
   };
 
   const handleFinishQuiz = () => {
-    if (!quiz) return;
+    if (!quiz || !user?.email) return;
 
     let correctCount = 0;
     quiz.questions.forEach((question, index) => {
@@ -93,23 +95,8 @@ export default function QuizPlayerPage() {
     setScore(correctCount);
     setShowResults(true);
 
-    // Save the score for leaderboard
-    const currentUser = localStorage.getItem("qg_user");
-    if (currentUser) {
-      const timeElapsed = (quiz.questions.length * 60) - timeLeft;
-      const scoreData = {
-        score: correctCount,
-        percentage: Math.round((correctCount / quiz.questions.length) * 100),
-        completionTime: timeElapsed,
-        completedAt: new Date().toISOString(),
-        quizKey: params.id as string,
-        quizTitle: quiz.title
-      };
-
-      const existingScores = JSON.parse(localStorage.getItem(`qg_quiz_scores_${currentUser}`) || "[]");
-      existingScores.push(scoreData);
-      localStorage.setItem(`qg_quiz_scores_${currentUser}`, JSON.stringify(existingScores));
-    }
+    // TODO: Save score to Firebase for leaderboard functionality
+    // This would require implementing a scores collection in Firestore
   };
 
   const formatTime = (seconds: number) => {
@@ -118,11 +105,28 @@ export default function QuizPlayerPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <h1 className="text-2xl font-bold mb-4">Loading Quiz...</h1>
+          <p className="text-purple-200">Please wait while we fetch your quiz</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!quiz) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading Quiz...</h1>
+          <div className="text-4xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold mb-4">Quiz Not Found</h1>
+          <p className="text-purple-200 mb-4">The quiz you're looking for doesn't exist.</p>
+          <Link href="/quizzes" className="text-blue-400 hover:underline">
+            ← Back to Quizzes
+          </Link>
         </div>
       </div>
     );

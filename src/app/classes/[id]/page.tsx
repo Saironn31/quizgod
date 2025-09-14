@@ -1,96 +1,77 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import { useAuth } from '@/contexts/AuthContext';
-
-interface Class {
-  id: string;
-  name: string;
-  description: string;
-  code: string;
-  createdBy: string;
-  createdAt: string;
-  members: string[];
-  subjects: string[];
-  quizzes: string[];
-}
-
-interface Subject {
-  id: string;
-  name: string;
-  createdBy: string;
-  createdAt: string;
-}
-
-interface Quiz {
-  title: string;
-  subject: string;
-  description?: string;
-  questions: { question: string; options: string[]; correct: number }[];
-  createdBy?: string;
-  createdAt?: string;
-}
+import { 
+  getClassById, 
+  getClassSubjects, 
+  getClassQuizzes,
+  createSubject,
+  FirebaseClass,
+  FirebaseSubject,
+  FirebaseQuiz
+} from '@/lib/firestore';
 
 export default function ClassDetailPage() {
   const params = useParams();
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const [classData, setClassData] = useState<Class | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [quizzes, setQuizzes] = useState<{ key: string; quiz: Quiz }[]>([]);
-  const [members, setMembers] = useState<string[]>([]);
+  const router = useRouter();
+  const { user } = useAuth();
+  const [classData, setClassData] = useState<FirebaseClass | null>(null);
+  const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
+  const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isPresident, setIsPresident] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'quizzes' | 'members'>('overview');
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
+    if (!user?.email) {
+      router.push('/');
       return;
     }
-    setCurrentUser(user);
-    loadClassData(params.id as string, user);
-  }, [params.id]);
-
-  const loadClassData = (classId: string, username: string) => {
-    const classInfo = localStorage.getItem(`qg_class_${classId}`);
-    if (!classInfo) {
-      alert("Class not found!");
-      window.location.href = "/classes";
-      return;
-    }
-
-    const parsedClass = JSON.parse(classInfo);
-    setClassData(parsedClass);
-    setMembers(parsedClass.members);
-    setIsPresident(parsedClass.createdBy === username);
-
-    // Load class subjects
-    loadClassSubjects(classId);
     
-    // Load class quizzes
-    loadClassQuizzes(classId);
-  };
+    loadClassData();
+  }, [params.id, user]);
 
-  const loadClassSubjects = (classId: string) => {
-    const classSubjects = localStorage.getItem(`qg_class_subjects_${classId}`);
-    if (classSubjects) {
-      setSubjects(JSON.parse(classSubjects));
-    }
-  };
-
-  const loadClassQuizzes = (classId: string) => {
-    const classQuizzes = localStorage.getItem(`qg_class_quizzes_${classId}`);
-    if (classQuizzes) {
-      const quizKeys = JSON.parse(classQuizzes);
-      const loadedQuizzes = quizKeys.map((key: string) => {
-        const quizData = localStorage.getItem(key);
-        return quizData ? { key, quiz: JSON.parse(quizData) } : null;
-      }).filter(Boolean);
-      setQuizzes(loadedQuizzes);
+  const loadClassData = async () => {
+    if (!params.id || !user?.uid || !user?.email) return;
+    
+    try {
+      setLoading(true);
+      
+      // Load class data
+      const classInfo = await getClassById(params.id as string);
+      if (!classInfo) {
+        router.push('/classes');
+        return;
+      }
+      
+      // Check if user is a member
+      if (!classInfo.members.includes(user.email)) {
+        router.push('/classes');
+        return;
+      }
+      
+      setClassData(classInfo);
+      setIsPresident(classInfo.memberRoles[user.email] === 'president');
+      
+      // Load subjects and quizzes
+      const [subjectsData, quizzesData] = await Promise.all([
+        getClassSubjects(params.id as string),
+        getClassQuizzes(params.id as string)
+      ]);
+      
+      setSubjects(subjectsData);
+      setQuizzes(quizzesData);
+    } catch (error) {
+      console.error('Error loading class data:', error);
+      router.push('/classes');
+    } finally {
+      setLoading(false);
     }
   };
 
