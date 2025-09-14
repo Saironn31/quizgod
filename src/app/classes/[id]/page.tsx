@@ -1,3 +1,4 @@
+// ...existing code...
 "use client";
 
 type OverviewTabProps = {
@@ -27,6 +28,7 @@ import Link from "next/link";
 // Tab components for modularization
 function OverviewTab({ classData, subjects, quizzes }: OverviewTabProps) {
   if (!classData) return null;
+  const createdAtDisplay = classData && classData.createdAt ? new Date(classData.createdAt).toLocaleDateString() : 'Unknown';
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -45,43 +47,7 @@ function OverviewTab({ classData, subjects, quizzes }: OverviewTabProps) {
           <div className="text-2xl font-bold text-white">{quizzes.length}</div>
           <div className="text-purple-200">Shared Quizzes</div>
         </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4 text-white">🎯 Quick Actions</h3>
-          <div className="space-y-3">
-            <Link href="/create">
-              <a className="block w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg hover:from-blue-600 hover:to-indigo-600 transition-all duration-200 text-center font-medium">➕ Create New Quiz</a>
-            </Link>
-            <Link href="/ai-quiz">
-              <a className="block w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:from-pink-600 hover:to-purple-700 transition-all duration-200 text-center font-medium">🤖 Generate AI Quiz</a>
-            </Link>
-            <Link href={`/classes/${classData.id}/leaderboard`}>
-              <a className="block w-full px-4 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:from-yellow-600 hover:to-orange-600 transition-all duration-200 text-center font-medium">🏆 View Leaderboard</a>
-            </Link>
-          </div>
-        </div>
-        <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4 text-white">📈 Class Activity</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center py-2 border-b border-white/20">
-              <span className="text-purple-200">Class created</span>
-              <span className="text-gray-500">{classData.createdAt ? new Date(classData.createdAt).toLocaleDateString() : ''}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span>Total subjects</span>
-              <span className="text-blue-600 font-semibold">{subjects.length}</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b">
-              <span>Total quizzes</span>
-              <span className="text-purple-600 font-semibold">{quizzes.length}</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <span>Members joined</span>
-              <span className="text-green-600 font-semibold">{classData.members?.length ?? 0}</span>
-            </div>
-          </div>
-        </div>
+  {/* End grid */}
       </div>
     </div>
   );
@@ -116,7 +82,7 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
           {subjects.map((subject) => (
             <div key={subject.id} className="bg-white rounded-lg shadow p-4">
               <h3 className="text-lg font-semibold text-gray-800">{subject.name}</h3>
-              <p className="text-sm text-gray-500 mt-1">Created by {subject.userId}</p>
+              <p className="text-sm text-gray-500 mt-1">Created by {subject.creatorName ?? subject.creatorUsername ?? subject.userId}</p>
               <p className="text-xs text-gray-400 mt-1">{new Date(subject.createdAt).toLocaleDateString()}</p>
               <div className="mt-3 flex gap-2">
                 <button onClick={() => deleteSubject(subject.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
@@ -131,6 +97,38 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
 
 function QuizzesTab({ quizzes, classData }: QuizzesTabProps) {
   if (!classData) return null;
+  const createdAtDisplay = classData && classData.createdAt ? new Date(classData.createdAt).toLocaleDateString() : 'Unknown';
+  const [sharingQuizId, setSharingQuizId] = useState<string | null>(null);
+  const [userClasses, setUserClasses] = useState<any[]>([]);
+  const [loadingClasses, setLoadingClasses] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user || !user.email) return;
+    setLoadingClasses(true);
+    import('@/lib/firestore').then(res => {
+      res.getUserClasses(user.email!).then(classes => {
+        setUserClasses(classes);
+        setLoadingClasses(false);
+      });
+    });
+  }, [user]);
+
+  const handleShareQuiz = async (quizId: string, targetClassId: string) => {
+    if (!user || !user.uid) return;
+    setSharingQuizId(quizId);
+    try {
+      const res = await import('@/lib/firestore');
+      await res.shareQuizToClass(quizId, targetClassId, user.uid);
+      alert('Quiz shared to class!');
+      window.location.reload();
+    } catch (error) {
+      alert('Failed to share quiz.');
+    } finally {
+      setSharingQuizId(null);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -161,7 +159,29 @@ function QuizzesTab({ quizzes, classData }: QuizzesTabProps) {
               {quiz.createdBy && <p className="text-xs text-gray-400 mt-1">Created by {quiz.createdBy}</p>}
               <div className="mt-4 flex gap-2">
                 <Link href={`/quizzes/${quiz.id}`}><a className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">🎮 Play Quiz</a></Link>
-                <Link href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`}><a className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors text-sm">🏆 Scores</a></Link>
+                <Link href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`}>
+                  <a className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors text-sm">🏆 Scores</a>
+                </Link>
+                {/* Share to class button for personal quizzes */}
+                {quiz.isPersonal && userClasses.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-gray-400">Share to class:</span>
+                    {loadingClasses ? (
+                      <span className="text-xs text-gray-400">Loading classes...</span>
+                    ) : (
+                      userClasses.map(cls => (
+                        <button
+                          key={cls.id}
+                          disabled={sharingQuizId === quiz.id}
+                          className="px-2 py-1 bg-blue-500 text-white rounded text-xs mt-1"
+                          onClick={() => handleShareQuiz(quiz.id, cls.id)}
+                        >
+                          {sharingQuizId === quiz.id ? 'Sharing...' : `Share to ${cls.name}`}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -173,6 +193,22 @@ function QuizzesTab({ quizzes, classData }: QuizzesTabProps) {
 
 function MembersTab({ classData }: MembersTabProps) {
   if (!classData) return null;
+  const isPresident = classData.memberRoles && classData.memberRoles[classData.members?.[0]] === 'president';
+  const [removing, setRemoving] = useState<string | null>(null);
+  const handleRemoveMember = async (memberEmail: string) => {
+    if (!window.confirm(`Remove member ${memberEmail} from class?`)) return;
+    setRemoving(memberEmail);
+    try {
+      const res = await import('@/lib/firestore');
+      await res.removeMemberFromClass(classData.id, memberEmail);
+      alert(`Member ${memberEmail} removed.`);
+      window.location.reload(); // reload to refresh class data
+    } catch (error) {
+      alert('Failed to remove member.');
+    } finally {
+      setRemoving(null);
+    }
+  };
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -181,7 +217,7 @@ function MembersTab({ classData }: MembersTabProps) {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {(classData.members ?? []).map((member: string) => (
-          <div key={member} className="bg-white rounded-lg shadow p-4">
+          <div key={member} className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
             <div className="flex items-center">
               <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">{member[0]?.toUpperCase()}</div>
               <div>
@@ -189,6 +225,15 @@ function MembersTab({ classData }: MembersTabProps) {
                 <p className="text-sm text-gray-500">{member === (classData.president ?? classData.members?.[0]) ? '👑 President' : '👤 Member'}</p>
               </div>
             </div>
+            {isPresident && member !== (classData.president ?? classData.members?.[0]) && (
+              <button
+                onClick={() => handleRemoveMember(member)}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                title="Remove member"
+              >
+                Remove
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -196,6 +241,7 @@ function MembersTab({ classData }: MembersTabProps) {
   );
 }
 import NavBar from "@/components/NavBar";
+import ClassChat from '@/components/ClassChat';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getClassById, 
@@ -257,8 +303,23 @@ export default function ClassDetailPage() {
         getClassSubjects(params.id as string),
         getClassQuizzes(params.id as string)
       ]);
-      
-      setSubjects(subjectsData);
+
+      // Fetch creator profile for each subject
+      const subjectsWithCreator = await Promise.all(subjectsData.map(async (subject) => {
+        try {
+          const res = await import('@/lib/firestore');
+          const getUserProfile = res.getUserProfile;
+          const creatorProfile = await getUserProfile(subject.userId);
+          return {
+            ...subject,
+            creatorName: creatorProfile?.name,
+            creatorUsername: creatorProfile?.username
+          };
+        } catch {
+          return subject;
+        }
+      }));
+      setSubjects(subjectsWithCreator);
       setQuizzes(quizzesData);
     } catch (error) {
       console.error('Error loading class data:', error);
@@ -334,7 +395,29 @@ export default function ClassDetailPage() {
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         <div className="flex justify-between items-center mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <NavBar />
+          {/* NavBar should be used as a component */}
+          <div>
+            <NavBar />
+          </div>
+          {/* President delete class button */}
+          {isPresident && (
+            <button
+              onClick={async () => {
+                if (!window.confirm('Delete this class and all its quizzes? This cannot be undone.')) return;
+                try {
+                  const res = await import('@/lib/firestore');
+                  await res.deleteClassWithQuizzes(classData.id);
+                  alert('Class deleted.');
+                  window.location.href = '/classes';
+                } catch (error) {
+                  alert('Failed to delete class.');
+                }
+              }}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-4"
+            >
+              Delete Class
+            </button>
+          )}
         </div>
         {/* Tabs */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
@@ -352,7 +435,52 @@ export default function ClassDetailPage() {
         </div>
         {/* Content */}
         {activeTab === 'overview' && (
-          <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
+          <>
+            {/* OverviewTab content inline to fix createdAtDisplay scope */}
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                  <div className="text-3xl mb-2">👥</div>
+                  <div className="text-2xl font-bold text-white">{classData.members?.length ?? 0}</div>
+                  <div className="text-purple-200">Active Members</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                  <div className="text-3xl mb-2">📚</div>
+                  <div className="text-2xl font-bold text-white">{subjects.length}</div>
+                  <div className="text-purple-200">Subjects</div>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                  <div className="text-3xl mb-2">📝</div>
+                  <div className="text-2xl font-bold text-white">{quizzes.length}</div>
+                  <div className="text-purple-200">Shared Quizzes</div>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                {/* Quick Actions removed. Only stats and class activity remain. */}
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4 text-white">📈 Class Activity</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center py-2 border-b border-white/20">
+                      <span className="text-purple-200">Class created</span>
+                      <span className="text-gray-500">{classData && classData.createdAt ? new Date(classData.createdAt).toLocaleDateString() : 'Unknown'}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <span>Total subjects</span>
+                      <span className="text-blue-600 font-semibold">{subjects.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2 border-b">
+                      <span>Total quizzes</span>
+                      <span className="text-purple-600 font-semibold">{quizzes.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-2">
+                      <span>Members joined</span>
+                      <span className="text-green-600 font-semibold">{classData?.members?.length ?? 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
         )}
         {activeTab === 'subjects' && (
           <SubjectsTab
@@ -371,6 +499,11 @@ export default function ClassDetailPage() {
         {activeTab === 'members' && (
           <MembersTab classData={classData} />
         )}
+        {/* Class-wide chat at the bottom of the page */}
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
+          <ClassChat classId={classData.id} />
+        </div>
       </div>
     </div>
   );
@@ -451,7 +584,7 @@ export default function ClassDetailPage() {
                   <div className="flex justify-between items-center py-2 border-b border-white/20">
                     <span className="text-purple-200">Class created</span>
                     <span className="text-gray-500">
-                      {classData?.createdAt ? new Date(classData.createdAt).toLocaleDateString() : ''}
+                      {classData!.createdAt ? new Date(classData!.createdAt).toLocaleDateString() : 'Unknown'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-b">

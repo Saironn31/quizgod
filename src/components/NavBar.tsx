@@ -1,17 +1,56 @@
-﻿"use client";
+﻿import AddFriendForm from './AddFriendForm';
+"use client";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
-import ThemeToggle from "./ThemeToggle";
 import { useAuth } from '@/contexts/AuthContext';
 import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
+import ChangeNameForm from './ChangeNameForm';
 
-export default function NavBar() {
+
+const NavBar: React.FC = () => {
+  // Handler for deleting profile picture
+  const handleDeleteProfilePicture = async () => {
+    if (!user?.uid || !userProfile?.profilePicture) return;
+    try {
+      await deleteProfilePicture(user.uid, userProfile.profilePicture);
+      await refreshUserProfile();
+      setShowProfileMenu(false);
+    } catch (error) {
+      alert('Failed to delete profile picture');
+    }
+  };
+
+  // Handler for uploading profile picture
+  const handleProfilePictureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user?.uid || !e.target.files?.[0]) return;
+    setIsUploading(true);
+    try {
+      await uploadProfilePicture(user.uid, e.target.files[0]);
+      await refreshUserProfile();
+    } catch (error) {
+      alert('Failed to upload profile picture');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handler to close mobile menu
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+  // All hooks and handlers inside function
   const { user, userProfile, logout, refreshUserProfile } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+
+  // Mobile menu toggle handler
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   // Get username from user profile or email fallback
   const getDisplayName = () => {
@@ -29,69 +68,13 @@ export default function NavBar() {
     }
     return 'Guest';
   };
-
   const handleLogout = async () => {
     try {
       await logout();
       setIsMenuOpen(false); // Close menu after logout
     } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
 
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-    setShowProfileMenu(false);
-  };
-
-  // Profile picture upload handlers
-  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user) return;
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('File size must be less than 5MB');
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      await uploadProfilePicture(user.uid, file);
-      // Refresh the user profile to show the new picture
-      await refreshUserProfile();
-      setShowProfileMenu(false);
-    } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      alert('Failed to upload profile picture');
-    } finally {
-      setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleDeleteProfilePicture = async () => {
-    if (!user || !userProfile?.profilePicture) return;
-
-    try {
-      await deleteProfilePicture(user.uid, userProfile.profilePicture);
-      // Refresh the user profile to remove the picture
-      await refreshUserProfile();
-      setShowProfileMenu(false);
-    } catch (error) {
-      console.error('Error deleting profile picture:', error);
       alert('Failed to delete profile picture');
     }
   };
@@ -100,24 +83,7 @@ export default function NavBar() {
     fileInputRef.current?.click();
   };
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-        setShowProfileMenu(false);
-      }
-    };
-
-    if (isMenuOpen || showProfileMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isMenuOpen, showProfileMenu]);
-
+  // (Removed duplicate useEffect outside function body)
   return (
     <nav className="relative bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl px-8 py-4 min-w-fit" ref={menuRef}>
       {/* Desktop Navigation */}
@@ -147,7 +113,7 @@ export default function NavBar() {
             
             {/* Profile Picture Menu */}
             {showProfileMenu && (
-              <div className="absolute top-12 left-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 shadow-xl z-50 min-w-[200px]">
+              <div className="absolute top-12 left-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-xl z-50 min-w-[220px] flex flex-col gap-2">
                 <button
                   onClick={triggerFileInput}
                   disabled={isUploading}
@@ -163,6 +129,10 @@ export default function NavBar() {
                     Remove Picture
                   </button>
                 )}
+                {/* Change name/username form */}
+                <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
+                {/* Add friend form */}
+                <AddFriendForm />
               </div>
             )}
           </div>
@@ -224,13 +194,16 @@ export default function NavBar() {
           >
             Classes
           </Link>
+          <Link 
+            href="/friends" 
+            className="px-5 py-2 rounded-xl text-pink-300 hover:bg-pink-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
+          >
+            Friends
+          </Link>
         </div>
 
         {/* Right Section - Theme Toggle & Logout */}
         <div className="flex items-center gap-4">
-          <div className="bg-white/10 rounded-xl p-2">
-            <ThemeToggle />
-          </div>
           <button 
             onClick={handleLogout} 
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium shadow-lg hover:scale-105 flex items-center gap-2"
@@ -279,7 +252,6 @@ export default function NavBar() {
           {/* Mobile Controls */}
           <div className="flex items-center gap-2">
             <div className="bg-white/10 rounded-lg p-1">
-              <ThemeToggle />
             </div>
             {/* Hamburger Menu Button */}
             <button
@@ -317,58 +289,62 @@ export default function NavBar() {
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
           <div className="absolute top-full right-0 mt-3 w-64 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-50 animate-fade-in">
-            <Link 
-              href="/" 
-              className="flex items-center gap-3 px-4 py-3 text-blue-300 hover:bg-blue-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              Home
-            </Link>
-            <Link 
-              href="/create" 
-              className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              Create Quiz
-            </Link>
-            <Link 
-              href="/ai-quiz" 
-              className="flex items-center gap-3 px-4 py-3 text-yellow-300 hover:bg-yellow-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              AI Quiz
-            </Link>
-            <Link 
-              href="/subjects" 
-              className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              Subjects
-            </Link>
-            <Link 
-              href="/quizzes" 
-              className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              My Quizzes
-            </Link>
-            <Link 
-              href="/classes" 
-              className="flex items-center gap-3 px-4 py-3 text-green-300 hover:bg-green-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-              onClick={closeMenu}
-            >
-              Classes
-            </Link>
-            <hr className="my-3 border-white/20 mx-4" />
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full text-left px-4 py-3 mx-2 text-white bg-gradient-to-r from-red-500/80 to-pink-500/80 hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium rounded-xl shadow-lg"
-            >
-              Logout
-            </button>
+            <div>
+              <Link 
+                href="/" 
+                className="flex items-center gap-3 px-4 py-3 text-blue-300 hover:bg-blue-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                Home
+              </Link>
+              <Link 
+                href="/create" 
+                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                Create Quiz
+              </Link>
+              <Link 
+                href="/ai-quiz" 
+                className="flex items-center gap-3 px-4 py-3 text-yellow-300 hover:bg-yellow-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                AI Quiz
+              </Link>
+              <Link 
+                href="/subjects" 
+                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                Subjects
+              </Link>
+              <Link 
+                href="/quizzes" 
+                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                My Quizzes
+              </Link>
+              <Link 
+                href="/classes" 
+                className="flex items-center gap-3 px-4 py-3 text-green-300 hover:bg-green-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                onClick={closeMenu}
+              >
+                Classes
+              </Link>
+              <hr className="my-3 border-white/20 mx-4" />
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 mx-2 text-white bg-gradient-to-r from-red-500/80 to-pink-500/80 hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium rounded-xl shadow-lg"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         )}
       </div>
     </nav>
   );
 }
+
+export default NavBar;

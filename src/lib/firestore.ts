@@ -1,3 +1,24 @@
+/**
+ * Share a personal quiz to a class (copies quiz and assigns classId)
+ */
+export const shareQuizToClass = async (quizId: string, targetClassId: string, userId: string): Promise<string> => {
+  // Get the quiz
+  const quizRef = doc(db, 'quizzes', quizId);
+  const quizSnap = await getDoc(quizRef);
+  if (!quizSnap.exists()) throw new Error('Quiz not found');
+  const quizData = quizSnap.data();
+  // Copy quiz and assign classId
+  const newQuizData = {
+    ...quizData,
+    classId: targetClassId,
+    isPersonal: false,
+    userId,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  const newQuizRef = await addDoc(collection(db, 'quizzes'), newQuizData);
+  return newQuizRef.id;
+};
 import { 
   collection, 
   doc, 
@@ -34,12 +55,22 @@ const convertTimestamps = (data: any) => {
 };
 
 // Enhanced Types for complete system
+export interface ChatMessage {
+  id?: string;
+  senderUid: string;
+  senderName: string;
+  content: string;
+  timestamp: Date;
+  classId?: string; // For class-wide chat
+  recipientUid?: string; // For private chat
+}
 export interface FirebaseUser {
   uid: string;
   email: string;
   name: string;
   username?: string;
   profilePicture?: string; // URL to profile picture
+  friends?: string[]; // Array of user UIDs
   preferences?: {
     theme: 'light' | 'dark';
   };
@@ -98,6 +129,81 @@ export interface UserClassMembership {
 }
 
 // User operations
+/**
+ * Send a chat message (class-wide or private)
+ */
+export const sendChatMessage = async (message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<string> => {
+  const msgData = {
+    ...message,
+    timestamp: new Date()
+  };
+  const ref = await addDoc(collection(db, 'chatMessages'), msgData);
+  return ref.id;
+};
+
+/**
+ * Get chat messages for a class
+ */
+export const getClassChatMessages = async (classId: string): Promise<ChatMessage[]> => {
+  const msgsQuery = query(collection(db, 'chatMessages'), where('classId', '==', classId), orderBy('timestamp', 'asc'));
+  const snap = await getDocs(msgsQuery);
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate?.() || new Date() } as ChatMessage));
+};
+
+/**
+ * Get private chat messages between two users
+ */
+export const getPrivateChatMessages = async (uid1: string, uid2: string): Promise<ChatMessage[]> => {
+  const msgsQuery = query(collection(db, 'chatMessages'),
+    where('recipientUid', 'in', [uid1, uid2]),
+    where('senderUid', 'in', [uid1, uid2]),
+    orderBy('timestamp', 'asc'));
+  const snap = await getDocs(msgsQuery);
+  // Only messages where sender/recipient are the two users
+  return snap.docs
+    .map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate?.() || new Date() } as ChatMessage))
+    .filter(msg => (msg.senderUid === uid1 && msg.recipientUid === uid2) || (msg.senderUid === uid2 && msg.recipientUid === uid1));
+};
+/**
+ * Add a friend by username or email
+ */
+export const addFriend = async (currentUid: string, identifier: string): Promise<string> => {
+  // identifier can be username or email
+  const usersQuery = query(collection(db, 'users'),
+    where('username', '==', identifier));
+  const usernameSnapshot = await getDocs(usersQuery);
+  let friendUid = '';
+  if (!usernameSnapshot.empty) {
+    friendUid = usernameSnapshot.docs[0].id;
+  } else {
+    // Try email if username not found
+    const emailQuery = query(collection(db, 'users'),
+      where('email', '==', identifier));
+    const emailSnapshot = await getDocs(emailQuery);
+    if (!emailSnapshot.empty) {
+      friendUid = emailSnapshot.docs[0].id;
+    }
+  }
+  if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
+  // Add friendUid to current user's friends array
+  const userRef = doc(db, 'users', currentUid);
+  await updateDoc(userRef, {
+    friends: arrayUnion(friendUid),
+    updatedAt: new Date()
+  });
+  return friendUid;
+};
+
+/**
+ * Remove a friend by UID
+ */
+export const removeFriend = async (currentUid: string, friendUid: string): Promise<void> => {
+  const userRef = doc(db, 'users', currentUid);
+  await updateDoc(userRef, {
+    friends: arrayRemove(friendUid),
+    updatedAt: new Date()
+  });
+};
 export const createUserProfile = async (uid: string, email: string, name: string, username?: string) => {
   const userRef = doc(db, 'users', uid);
   const userData: any = {
@@ -183,6 +289,51 @@ export const deleteProfilePicture = async (uid: string, profilePictureUrl: strin
 };
 
 // Class operations
+/**
+ * Delete a class and all its quizzes (president only)
+ */
+export const deleteClassWithQuizzes = async (classId: string): Promise<void> => {
+  // Delete all quizzes for this class
+  const quizzesQuery = query(collection(db, 'quizzes'), where('classId', '==', classId));
+  const quizzesSnapshot = await getDocs(quizzesQuery);
+  const batch = writeBatch(db);
+  quizzesSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete all subjects for this class
+  const subjectsQuery = query(collection(db, 'subjects'), where('classId', '==', classId));
+  const subjectsSnapshot = await getDocs(subjectsQuery);
+  subjectsSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete class membership records
+  const membershipsQuery = query(collection(db, 'classMemberships'), where('classId', '==', classId));
+  const membershipsSnapshot = await getDocs(membershipsQuery);
+  membershipsSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete the class itself
+  batch.delete(doc(db, 'classes', classId));
+  await batch.commit();
+};
+/**
+ * Remove a member from a class. Only president should call this.
+ * @param classId - The class document ID
+ * @param memberEmail - The email of the member to remove
+ */
+export const removeMemberFromClass = async (classId: string, memberEmail: string): Promise<void> => {
+  const classRef = doc(db, 'classes', classId);
+  // Remove member from class document
+  await updateDoc(classRef, {
+    members: arrayRemove(memberEmail),
+    [`memberRoles.${memberEmail}`]: null,
+    updatedAt: new Date()
+  });
+  // Remove membership record
+  const membershipsQuery = query(
+    collection(db, 'classMemberships'),
+    where('classId', '==', classId),
+    where('userEmail', '==', memberEmail)
+  );
+  const membershipsSnap = await getDocs(membershipsQuery);
+  for (const docSnap of membershipsSnap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+};
 export const createClass = async (
   name: string, 
   creatorId: string, 
