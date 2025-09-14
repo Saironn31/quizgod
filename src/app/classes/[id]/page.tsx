@@ -330,7 +330,7 @@ export default function ClassDetailPage() {
                   <div key={subject.id} className="bg-white rounded-lg shadow p-4">
                     <h3 className="text-lg font-semibold text-gray-800">{subject.name}</h3>
                     <p className="text-sm text-gray-500 mt-1">
-                      Created by {subject.createdBy}
+                      Created by {subject.userId}
                     </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(subject.createdAt).toLocaleDateString()}
