@@ -18,6 +18,21 @@ import {
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 
+// Helper function to convert Firestore Timestamps to Dates
+const convertTimestamps = (data: any) => {
+  const converted = { ...data };
+  if (converted.createdAt?.toDate) {
+    converted.createdAt = converted.createdAt.toDate();
+  }
+  if (converted.updatedAt?.toDate) {
+    converted.updatedAt = converted.updatedAt.toDate();
+  }
+  if (converted.joinedAt?.toDate) {
+    converted.joinedAt = converted.joinedAt.toDate();
+  }
+  return converted;
+};
+
 // Enhanced Types for complete system
 export interface FirebaseUser {
   uid: string;
@@ -252,10 +267,15 @@ export const getUserClasses = async (userEmail: string): Promise<FirebaseClass[]
       where('members', 'array-contains', userEmail)
     );
     const querySnapshot = await getDocs(classesQuery);
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    } as FirebaseClass));
+    return querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date()
+      } as FirebaseClass;
+    });
   } catch (error) {
     console.error('Error getting user classes:', error);
     return [];
@@ -309,7 +329,7 @@ export const getUserSubjects = async (userId: string): Promise<FirebaseSubject[]
     const querySnapshot = await getDocs(subjectsQuery);
     const subjects = querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseSubject));
     
     // Sort client-side to avoid index requirement
@@ -330,7 +350,7 @@ export const getClassSubjects = async (classId: string): Promise<FirebaseSubject
     const querySnapshot = await getDocs(subjectsQuery);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseSubject));
   } catch (error) {
     console.error('Error getting class subjects:', error);
@@ -409,7 +429,7 @@ export const getUserQuizzes = async (userId: string): Promise<FirebaseQuiz[]> =>
     const querySnapshot = await getDocs(quizzesQuery);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseQuiz));
   } catch (error) {
     console.error('Error getting personal quizzes:', error);
@@ -427,7 +447,7 @@ export const getClassQuizzes = async (classId: string): Promise<FirebaseQuiz[]> 
     const querySnapshot = await getDocs(quizzesQuery);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseQuiz));
   } catch (error) {
     console.error('Error getting class quizzes:', error);
@@ -467,7 +487,7 @@ export const getQuizzesBySubject = async (userId: string, subject: string): Prom
     const querySnapshot = await getDocs(quizzesQuery);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseQuiz));
   } catch (error) {
     console.error('Error getting quizzes by subject:', error);
@@ -596,7 +616,7 @@ export const subscribeToUserClasses = (
   return onSnapshot(q, (querySnapshot) => {
     const classes = querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseClass));
     callback(classes);
   });
@@ -615,7 +635,7 @@ export const subscribeToClassSubjects = (
   return onSnapshot(q, (querySnapshot) => {
     const subjects = querySnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...convertTimestamps(doc.data())
     } as FirebaseSubject));
     callback(subjects);
   });
