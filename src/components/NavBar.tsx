@@ -113,7 +113,7 @@ const NavBar: React.FC = () => {
             
             {/* Profile Picture Menu */}
             {showProfileMenu && (
-              <div className="absolute top-12 left-0 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-xl z-50 min-w-[220px] flex flex-col gap-2">
+              <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[320px] flex flex-col gap-2">
                 <button
                   onClick={triggerFileInput}
                   disabled={isUploading}
@@ -288,7 +288,7 @@ const NavBar: React.FC = () => {
 
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
-          <div className="absolute top-full right-0 mt-3 w-64 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-50 animate-fade-in">
+          <div className="absolute top-full right-0 mt-3 w-64 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-[9999] animate-fade-in">
             <div>
               <Link 
                 href="/" 

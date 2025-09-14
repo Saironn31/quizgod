@@ -38,10 +38,10 @@ export default function ConfirmationModal({
 
   return (
     <div 
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+  <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6 z-[9999]">
         {/* Header */}
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-white mb-2">
