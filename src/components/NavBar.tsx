@@ -113,29 +113,31 @@ const NavBar: React.FC = () => {
             
             {/* Profile Picture Menu */}
             {showProfileMenu && (
-              <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[320px] flex flex-col gap-2">
-                <button
-                  onClick={triggerFileInput}
-                  disabled={isUploading}
-                  className="w-full px-3 py-2 text-left text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
-                >
-                  {isUploading ? 'Uploading...' : userProfile?.profilePicture ? 'Change Picture' : 'Upload Picture'}
-                </button>
-                {userProfile?.profilePicture && (
+              <>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]" onClick={() => setShowProfileMenu(false)} />
+                <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-4 shadow-2xl z-[9999] min-w-[320px] flex flex-col gap-2">
                   <button
-                    onClick={handleDeleteProfilePicture}
-                    className="w-full px-3 py-2 text-left text-red-300 hover:bg-red-500/20 rounded-lg transition-all"
+                    onClick={triggerFileInput}
+                    disabled={isUploading}
+                    className="w-full px-3 py-2 text-left text-white hover:bg-white/10 rounded-lg transition-all disabled:opacity-50"
                   >
-                    Remove Picture
+                    {isUploading ? 'Uploading...' : userProfile?.profilePicture ? 'Change Picture' : 'Upload Picture'}
                   </button>
-                )}
-                {/* Change name/username form */}
-                <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
-                {/* Add friend form */}
-                <AddFriendForm />
-              </div>
+                  {userProfile?.profilePicture && (
+                    <button
+                      onClick={handleDeleteProfilePicture}
+                      className="w-full px-3 py-2 text-left text-red-300 hover:bg-red-500/20 rounded-lg transition-all"
+                    >
+                      Remove Picture
+                    </button>
+                  )}
+                  {/* Change name/username form */}
+                  <ChangeNameForm user={user} userProfile={userProfile} refreshUserProfile={refreshUserProfile} />
+                  {/* Add friend form */}
+                  <AddFriendForm />
+                </div>
+              </>
             )}
-          </div>
           
           {/* Hidden file input */}
           <input
@@ -211,7 +213,8 @@ const NavBar: React.FC = () => {
             Logout
           </button>
         </div>
-      </div>
+      </div> {/* END desktop nav main flex container */}
+      </div> {/* END nav main container */}
 
       {/* Mobile Navigation */}
       <div className="md:hidden">
@@ -288,59 +291,62 @@ const NavBar: React.FC = () => {
 
         {/* Mobile Menu Dropdown */}
         {isMenuOpen && (
-          <div className="absolute top-full right-0 mt-3 w-64 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-[9999] animate-fade-in">
-            <div>
-              <Link 
-                href="/" 
-                className="flex items-center gap-3 px-4 py-3 text-blue-300 hover:bg-blue-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                Home
-              </Link>
-              <Link 
-                href="/create" 
-                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                Create Quiz
-              </Link>
-              <Link 
-                href="/ai-quiz" 
-                className="flex items-center gap-3 px-4 py-3 text-yellow-300 hover:bg-yellow-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                AI Quiz
-              </Link>
-              <Link 
-                href="/subjects" 
-                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                Subjects
-              </Link>
-              <Link 
-                href="/quizzes" 
-                className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                My Quizzes
-              </Link>
-              <Link 
-                href="/classes" 
-                className="flex items-center gap-3 px-4 py-3 text-green-300 hover:bg-green-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
-                onClick={closeMenu}
-              >
-                Classes
-              </Link>
-              <hr className="my-3 border-white/20 mx-4" />
-              <button 
-                onClick={handleLogout}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 mx-2 text-white bg-gradient-to-r from-red-500/80 to-pink-500/80 hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium rounded-xl shadow-lg"
-              >
-                Logout
-              </button>
+          <>
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[9998]" onClick={closeMenu} />
+            <div className="fixed top-20 right-8 w-64 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/20 py-3 z-[9999] animate-fade-in">
+              <div>
+                <Link 
+                  href="/" 
+                  className="flex items-center gap-3 px-4 py-3 text-blue-300 hover:bg-blue-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  Home
+                </Link>
+                <Link 
+                  href="/create" 
+                  className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  Create Quiz
+                </Link>
+                <Link 
+                  href="/ai-quiz" 
+                  className="flex items-center gap-3 px-4 py-3 text-yellow-300 hover:bg-yellow-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  AI Quiz
+                </Link>
+                <Link 
+                  href="/subjects" 
+                  className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  Subjects
+                </Link>
+                <Link 
+                  href="/quizzes" 
+                  className="flex items-center gap-3 px-4 py-3 text-white hover:bg-white/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  My Quizzes
+                </Link>
+                <Link 
+                  href="/classes" 
+                  className="flex items-center gap-3 px-4 py-3 text-green-300 hover:bg-green-500/20 transition-all duration-200 font-medium rounded-xl mx-2"
+                  onClick={closeMenu}
+                >
+                  Classes
+                </Link>
+                <hr className="my-3 border-white/20 mx-4" />
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 w-full text-left px-4 py-3 mx-2 text-white bg-gradient-to-r from-red-500/80 to-pink-500/80 hover:from-red-600 hover:to-pink-600 transition-all duration-200 font-medium rounded-xl shadow-lg"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </nav>
