@@ -355,8 +355,8 @@ export const getClassSubjects = async (classId: string): Promise<FirebaseSubject
   } catch (error: any) {
     console.error('Error getting class subjects:', error);
     
-    // Check if it's an index missing error
-    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+    // Check if it's an index missing error - updated to catch more error types
+    if ((error?.code === 'failed-precondition' || error?.message?.includes('requires an index') || error?.message?.includes('index')) && error?.message?.includes('index')) {
       console.warn('Firebase index missing for class subjects query. Please create the required index.');
       // Fallback: get subjects without ordering (which doesn't require composite index)
       try {
@@ -457,8 +457,8 @@ export const getUserQuizzes = async (userId: string): Promise<FirebaseQuiz[]> =>
   } catch (error: any) {
     console.error('Error getting personal quizzes:', error);
     
-    // Check if it's an index missing error
-    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+    // Check if it's an index missing error - updated to catch more error types
+    if ((error?.code === 'failed-precondition' || error?.message?.includes('requires an index') || error?.message?.includes('index')) && error?.message?.includes('index')) {
       console.warn('Firebase index missing for personal quizzes query. Please create the required index.');
       // Fallback: get user quizzes without composite index
       try {
@@ -500,8 +500,8 @@ export const getClassQuizzes = async (classId: string): Promise<FirebaseQuiz[]> 
   } catch (error: any) {
     console.error('Error getting class quizzes:', error);
     
-    // Check if it's an index missing error
-    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+    // Check if it's an index missing error - updated to catch more error types
+    if ((error?.code === 'failed-precondition' || error?.message?.includes('requires an index') || error?.message?.includes('index')) && error?.message?.includes('index')) {
       console.warn('Firebase index missing for class quizzes query. Please create the required index.');
       // Fallback: get class quizzes without ordering
       try {
