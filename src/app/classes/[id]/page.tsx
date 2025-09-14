@@ -207,7 +207,7 @@ export default function ClassDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
                 <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-white">{members.length}</div>
+                <div className="text-2xl font-bold text-white">{classData.members.length}</div>
                 <div className="text-purple-200">Active Members</div>
               </div>
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
@@ -266,7 +266,7 @@ export default function ClassDetailPage() {
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span>Members joined</span>
-                    <span className="text-green-600 font-semibold">{members.length}</span>
+                    <span className="text-green-600 font-semibold">{classData.members.length}</span>
                   </div>
                 </div>
               </div>
