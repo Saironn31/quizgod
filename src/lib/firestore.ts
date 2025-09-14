@@ -352,8 +352,31 @@ export const getClassSubjects = async (classId: string): Promise<FirebaseSubject
       id: doc.id,
       ...convertTimestamps(doc.data())
     } as FirebaseSubject));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting class subjects:', error);
+    
+    // Check if it's an index missing error
+    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+      console.warn('Firebase index missing for class subjects query. Please create the required index.');
+      // Fallback: get subjects without ordering (which doesn't require composite index)
+      try {
+        const fallbackQuery = query(
+          collection(db, 'subjects'),
+          where('classId', '==', classId)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const subjects = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...convertTimestamps(doc.data())
+        } as FirebaseSubject));
+        // Sort manually by createdAt
+        return subjects.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        return [];
+      }
+    }
+    
     return [];
   }
 };
@@ -431,8 +454,33 @@ export const getUserQuizzes = async (userId: string): Promise<FirebaseQuiz[]> =>
       id: doc.id,
       ...convertTimestamps(doc.data())
     } as FirebaseQuiz));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting personal quizzes:', error);
+    
+    // Check if it's an index missing error
+    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+      console.warn('Firebase index missing for personal quizzes query. Please create the required index.');
+      // Fallback: get user quizzes without composite index
+      try {
+        const fallbackQuery = query(
+          collection(db, 'quizzes'),
+          where('userId', '==', userId)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const quizzes = fallbackSnapshot.docs
+          .map(doc => ({
+            id: doc.id,
+            ...convertTimestamps(doc.data())
+          } as FirebaseQuiz))
+          .filter(quiz => quiz.isPersonal === true);
+        // Sort manually by createdAt
+        return quizzes.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        return [];
+      }
+    }
+    
     return [];
   }
 };
@@ -449,8 +497,31 @@ export const getClassQuizzes = async (classId: string): Promise<FirebaseQuiz[]> 
       id: doc.id,
       ...convertTimestamps(doc.data())
     } as FirebaseQuiz));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error getting class quizzes:', error);
+    
+    // Check if it's an index missing error
+    if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
+      console.warn('Firebase index missing for class quizzes query. Please create the required index.');
+      // Fallback: get class quizzes without ordering
+      try {
+        const fallbackQuery = query(
+          collection(db, 'quizzes'),
+          where('classId', '==', classId)
+        );
+        const fallbackSnapshot = await getDocs(fallbackQuery);
+        const quizzes = fallbackSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...convertTimestamps(doc.data())
+        } as FirebaseQuiz));
+        // Sort manually by createdAt
+        return quizzes.sort((a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+      } catch (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        return [];
+      }
+    }
+    
     return [];
   }
 };
