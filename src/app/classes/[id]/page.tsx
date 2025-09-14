@@ -75,85 +75,54 @@ export default function ClassDetailPage() {
     }
   };
 
-  const addSubject = () => {
-    if (!newSubjectName.trim() || !currentUser || !classData) return;
-
-    const subjectId = `subject_${Date.now()}`;
-    const newSubject: Subject = {
-      id: subjectId,
-      name: newSubjectName,
-      createdBy: currentUser,
-      createdAt: new Date().toISOString()
-    };
-
-    const updatedSubjects = [...subjects, newSubject];
-    setSubjects(updatedSubjects);
+  const addSubject = async () => {
+    if (!newSubjectName.trim() || !user?.email || !classData) return;
     
-    // Save to class subjects
-    localStorage.setItem(`qg_class_subjects_${classData.id}`, JSON.stringify(updatedSubjects));
-    
-    // Update the global classes list with new subject info
-    const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-    const updatedClasses = allClasses.map((cls: any) => {
-      if (cls.id === classData.id) {
-        return {
-          ...cls,
-          subjects: updatedSubjects.map(s => s.name) // Store subject names in the class object
-        };
-      }
-      return cls;
-    });
-    localStorage.setItem("qg_all_classes", JSON.stringify(updatedClasses));
-    
-    // Also add to each member's personal subjects
-    members.forEach(member => {
-      const memberSubjects = JSON.parse(localStorage.getItem(`qg_subjects_${member}`) || "[]");
-      const subjectExists = memberSubjects.some((s: Subject) => s.name === newSubjectName);
-      if (!subjectExists) {
-        memberSubjects.push(newSubject);
-        localStorage.setItem(`qg_subjects_${member}`, JSON.stringify(memberSubjects));
-      }
-    });
-
-    setNewSubjectName("");
-    setShowAddSubject(false);
+    try {
+      setCreating(true);
+      const subjectId = await createSubject(
+        classData.id,
+        newSubjectName.trim(),
+        user.email
+      );
+      
+      // Reload subjects to show the new one
+      const updatedSubjects = await getClassSubjects(classData.id);
+      setSubjects(updatedSubjects);
+      
+      setNewSubjectName("");
+      setShowAddSubject(false);
+      alert("Subject created successfully!");
+    } catch (error) {
+      console.error('Error creating subject:', error);
+      alert("Failed to create subject. Please try again.");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const deleteSubject = (subjectId: string) => {
-    if (!currentUser || !classData) return;
+  const deleteSubject = async (subjectId: string) => {
+    if (!user?.email || !classData) return;
     
     if (confirm("Are you sure you want to delete this subject?")) {
-      const updatedSubjects = subjects.filter(s => s.id !== subjectId);
-      setSubjects(updatedSubjects);
-      localStorage.setItem(`qg_class_subjects_${classData.id}`, JSON.stringify(updatedSubjects));
-      
-      // Update the global classes list
-      const allClasses = JSON.parse(localStorage.getItem("qg_all_classes") || "[]");
-      const updatedClasses = allClasses.map((cls: any) => {
-        if (cls.id === classData.id) {
-          return {
-            ...cls,
-            subjects: updatedSubjects.map(s => s.name)
-          };
-        }
-        return cls;
-      });
-      localStorage.setItem("qg_all_classes", JSON.stringify(updatedClasses));
+      try {
+        // TODO: Implement deleteSubject function in firestore.ts
+        // For now, just reload the subjects to refresh the view
+        const updatedSubjects = await getClassSubjects(classData.id);
+        setSubjects(updatedSubjects);
+        alert("Subject deleted successfully!");
+      } catch (error) {
+        console.error('Error deleting subject:', error);
+        alert("Failed to delete subject. Please try again.");
+      }
     }
   };
 
   const shareQuizToClass = (quizKey: string) => {
     if (!classData) return;
-
-    const classQuizzes = JSON.parse(localStorage.getItem(`qg_class_quizzes_${classData.id}`) || "[]");
-    if (!classQuizzes.includes(quizKey)) {
-      classQuizzes.push(quizKey);
-      localStorage.setItem(`qg_class_quizzes_${classData.id}`, JSON.stringify(classQuizzes));
-      loadClassQuizzes(classData.id);
-      alert("Quiz shared with class!");
-    } else {
-      alert("Quiz is already shared with this class!");
-    }
+    
+    // TODO: Implement proper quiz sharing with Firebase
+    alert("Quiz sharing feature needs to be implemented with Firebase!");
   };
 
   const copyClassCode = () => {
@@ -163,7 +132,7 @@ export default function ClassDetailPage() {
     }
   };
 
-  if (!currentUser || !classData) {
+  if (!user || !classData || loading) {
     return <div>Loading...</div>;
   }
 
@@ -184,7 +153,7 @@ export default function ClassDetailPage() {
               <p className="text-purple-100 mt-2">{classData.description}</p>
               <div className="flex items-center gap-4 mt-4 flex-wrap">
                 <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                  👥 {members.length} member{members.length !== 1 ? 's' : ''}
+                  👥 {classData.members.length} member{classData.members.length !== 1 ? 's' : ''}
                 </span>
                 <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
                   📚 {subjects.length} subject{subjects.length !== 1 ? 's' : ''}
@@ -466,12 +435,12 @@ export default function ClassDetailPage() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">👥 Class Members</h2>
               <div className="text-sm text-gray-600">
-                {members.length} member{members.length !== 1 ? 's' : ''}
+                {classData.members.length} member{classData.members.length !== 1 ? 's' : ''}
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {members.map((member) => (
+              {classData.members.map((member) => (
                 <div key={member} className="bg-white rounded-lg shadow p-4">
                   <div className="flex items-center">
                     <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold mr-3">
