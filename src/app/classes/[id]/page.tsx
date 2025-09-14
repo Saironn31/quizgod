@@ -81,15 +81,13 @@ export default function ClassDetailPage() {
     try {
       setCreating(true);
       const subjectId = await createSubject(
-        classData.id,
         newSubjectName.trim(),
-        user.email
+        user.uid,
+        classData.id
       );
-      
       // Reload subjects to show the new one
       const updatedSubjects = await getClassSubjects(classData.id);
       setSubjects(updatedSubjects);
-      
       setNewSubjectName("");
       setShowAddSubject(false);
       alert("Subject created successfully!");
