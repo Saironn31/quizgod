@@ -22,9 +22,34 @@ export default function AIQuizGenerator() {
   const { user } = useAuth();
   const [subjects, setSubjects] = useState<ExtendedSubject[]>([]);
   const [classes, setClasses] = useState<FirebaseClass[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = useState<ExtendedSubject[]>([]);
+  const [filteredClasses, setFilteredClasses] = useState<FirebaseClass[]>([]);
   const [newSubject, setNewSubject] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
+  // Dynamic filtering logic
+  useEffect(() => {
+    // Filter subjects based on selected class
+    if (selectedClass) {
+      setFilteredSubjects(subjects.filter(s => !s.classId || s.classId === selectedClass));
+    } else {
+      setFilteredSubjects(subjects);
+    }
+  }, [selectedClass, subjects]);
+
+  useEffect(() => {
+    // Filter classes based on selected subject
+    if (selectedSubject) {
+      const subjectObj = subjects.find(s => s.name === selectedSubject);
+      if (subjectObj?.classId) {
+        setFilteredClasses(classes.filter(c => c.id === subjectObj.classId));
+      } else {
+        setFilteredClasses(classes);
+      }
+    } else {
+      setFilteredClasses(classes);
+    }
+  }, [selectedSubject, classes, subjects]);
   const [quizTitle, setQuizTitle] = useState("");
   const [quizQuestions, setQuizQuestions] = useState("");
   const [showSubjectForm, setShowSubjectForm] = useState(false);
@@ -338,7 +363,7 @@ export default function AIQuizGenerator() {
                             className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                           >
                             <option value="">Select a subject</option>
-                            {subjects.map((subject) => (
+                            {filteredSubjects.map((subject) => (
                               <option key={subject.id} value={subject.name}>
                                 {subject.source === 'class' ? `${subject.name} (${subject.className})` : subject.name}
                               </option>
@@ -356,7 +381,7 @@ export default function AIQuizGenerator() {
                             className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                           >
                             <option value="">No class (Personal quiz)</option>
-                            {classes.map((classData) => (
+                            {filteredClasses.map((classData) => (
                               <option key={classData.id} value={classData.id}>
                                 {classData.name}
                               </option>
