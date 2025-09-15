@@ -130,7 +130,7 @@ const FriendsPage: React.FC = () => {
                     onClick={async () => {
                       if (!user?.uid) return;
                       await removeFriend(user.uid, friend.uid);
-                      window.location.reload();
+                      setFriends(prev => prev.filter(f => f.uid !== friend.uid));
                     }}
                   >
                     ❌ Remove
