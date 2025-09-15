@@ -10,6 +10,7 @@ const FriendsPage: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [friends, setFriends] = useState<any[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<any | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
@@ -97,7 +98,7 @@ const FriendsPage: React.FC = () => {
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold mb-2 shadow-lg">
                     {friend.name?.charAt(0).toUpperCase() || friend.username?.charAt(0).toUpperCase() || friend.email?.charAt(0).toUpperCase() || '?'}
                   </div>
-                  <div className="text-lg font-semibold text-gray-800 dark:text-white text-center">{friend.name || friend.username || friend.email}</div>
+                  <div className="text-lg font-semibold text-gray-800 dark:text-white text-center cursor-pointer underline" onClick={() => { setSelectedFriend(friend); setShowProfileModal(true); }}>{friend.name || friend.username || friend.email}</div>
                   <div className="text-xs text-purple-600 dark:text-purple-200 mb-2 text-center">{friend.username || friend.email}</div>
                   <button
                     className="px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium shadow hover:from-green-600 hover:to-emerald-600 transition-all mt-2"
@@ -125,6 +126,33 @@ const FriendsPage: React.FC = () => {
               <PrivateChat friendUid={selectedFriend.uid} friendName={selectedFriend.name || selectedFriend.username || selectedFriend.email} />
               <div className="flex justify-center">
                 <button className="mt-6 px-6 py-2 bg-gradient-to-r from-gray-700 to-purple-700 text-white rounded-xl font-medium shadow hover:bg-gray-800/80 transition-all" onClick={() => setSelectedFriend(null)}>Close Chat</button>
+              </div>
+            </div>
+          )}
+
+          {showProfileModal && selectedFriend && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
+                <h2 className="text-2xl font-bold mb-2 text-purple-700 dark:text-purple-300 text-center">Friend Profile</h2>
+                <div className="mb-4 text-center">
+                  <div className="text-lg font-semibold text-gray-800 dark:text-white">{selectedFriend.name || selectedFriend.username || selectedFriend.email}</div>
+                  <div className="text-xs text-purple-600 dark:text-purple-200 mb-2">{selectedFriend.username || selectedFriend.email}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="font-medium text-gray-700 dark:text-gray-200">Bio:</div>
+                  <div className="text-gray-600 dark:text-gray-300">{selectedFriend.bio || 'No bio available.'}</div>
+                </div>
+                <div className="mb-4">
+                  <div className="font-medium text-gray-700 dark:text-gray-200">Recent Activity:</div>
+                  <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
+                </div>
+                <div className="mb-4">
+                  <div className="font-medium text-gray-700 dark:text-gray-200">Shared Quizzes:</div>
+                  <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
+                </div>
+                <div className="flex justify-center">
+                  <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
+                </div>
               </div>
             </div>
           )}
