@@ -508,10 +508,17 @@ export const getUserClasses = async (userEmail: string): Promise<FirebaseClass[]
       const data = doc.data();
       return {
         id: doc.id,
-        ...data,
+        name: data.name,
+        description: data.description,
+        creatorId: data.creatorId,
+        creatorEmail: data.creatorEmail,
+        members: data.members || [],
+        memberRoles: data.memberRoles || {},
+        joinCode: data.joinCode,
+        isPublic: data.isPublic,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date()
-      } as FirebaseClass;
+      };
     });
   } catch (error) {
     console.error('Error getting user classes:', error);
