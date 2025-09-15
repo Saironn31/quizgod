@@ -9,6 +9,7 @@ import FriendRequestForm from '@/components/AddFriendForm';
 const FriendsPage: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [friends, setFriends] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<any | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,6 +52,15 @@ const FriendsPage: React.FC = () => {
         </div>
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search friends by name, username, or email"
+                className="px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-white w-full max-w-md"
+              />
+            </div>
             <h1 className="text-2xl font-bold text-white mb-1">Your Friends</h1>
             <p className="text-purple-200 mb-4">Connect and chat with your friends</p>
             <div className="flex justify-center mb-4">
@@ -93,8 +103,17 @@ const FriendsPage: React.FC = () => {
                   No friends yet.<br />Add friends from your profile menu!
                 </div>
               )}
-              {friends.map(friend => (
-                <div key={friend.uid} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700 p-6 flex flex-col items-center gap-2 shadow-xl transition-all hover:scale-[1.03]">
+              {friends
+                .filter(friend => {
+                  const term = searchTerm.toLowerCase();
+                  return (
+                    friend.name?.toLowerCase().includes(term) ||
+                    friend.username?.toLowerCase().includes(term) ||
+                    friend.email?.toLowerCase().includes(term)
+                  );
+                })
+                .map(friend => (
+                  <div key={friend.uid} className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700 p-6 flex flex-col items-center gap-2 shadow-xl transition-all hover:scale-[1.03]">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold mb-2 shadow-lg">
                     {friend.name?.charAt(0).toUpperCase() || friend.username?.charAt(0).toUpperCase() || friend.email?.charAt(0).toUpperCase() || '?'}
                   </div>
