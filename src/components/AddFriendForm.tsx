@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { addFriend } from '@/lib/firestore';
+import { sendFriendRequest } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 
-const AddFriendForm: React.FC = () => {
+const FriendRequestForm: React.FC = () => {
   const { user } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
@@ -14,8 +14,8 @@ const AddFriendForm: React.FC = () => {
     setMessage('');
     try {
       if (!user?.uid) throw new Error('Not logged in');
-      await addFriend(user.uid, identifier.trim());
-      setMessage('Friend added!');
+  await sendFriendRequest(user.uid, identifier.trim());
+  setMessage('Friend request sent!');
       setIdentifier('');
     } catch (error: any) {
       setMessage(error.message || 'Failed to add friend');
@@ -47,4 +47,4 @@ const AddFriendForm: React.FC = () => {
   );
 };
 
-export default AddFriendForm;
+export default FriendRequestForm;

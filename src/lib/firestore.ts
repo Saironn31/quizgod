@@ -37,6 +37,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+  import { Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 
 // Helper function to convert Firestore Timestamps to Dates
@@ -78,6 +79,40 @@ export interface FirebaseUser {
   updatedAt: Date;
 }
 
+// --- Friend Request Functions ---
+/**
+ * Send a friend request by username or email
+ */
+export const sendFriendRequest = async (currentUid: string, identifier: string): Promise<string> => {
+  // identifier can be username or email
+  const usersQuery = query(collection(db, 'users'),
+    where('username', '==', identifier));
+  const usernameSnapshot = await getDocs(usersQuery);
+  let friendUid = '';
+  if (!usernameSnapshot.empty) {
+    friendUid = usernameSnapshot.docs[0].id;
+  } else {
+    // Try email if username not found
+    const emailQuery = query(collection(db, 'users'),
+      where('email', '==', identifier));
+    const emailSnapshot = await getDocs(emailQuery);
+    if (!emailSnapshot.empty) {
+      friendUid = emailSnapshot.docs[0].id;
+    }
+  }
+  if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
+  // Create friend request document in friendRequests collection
+  const friendRequestsRef = collection(db, 'friendRequests');
+  await addDoc(friendRequestsRef, {
+    senderUid: currentUid,
+    receiverUid: friendUid,
+    status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  return friendUid;
+};
+
 export interface FirebaseClass {
   id: string;
   name: string;
@@ -87,10 +122,49 @@ export interface FirebaseClass {
   members: string[]; // Array of user emails
   memberRoles: { [email: string]: 'president' | 'member' };
   joinCode: string;
+
   isPublic: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
+
+/**
+ * Accept a friend request
+ */
+export const acceptFriendRequest = async (requestId: string): Promise<void> => {
+  const friendRequestsRef = doc(db, 'friendRequests', requestId);
+  const requestSnap = await getDoc(friendRequestsRef);
+  if (!requestSnap.exists()) throw new Error('Friend request not found');
+  const request = requestSnap.data();
+  const senderUid = request.senderUid;
+  const receiverUid = request.receiverUid;
+  // Add each user to the other's friends array
+  const senderRef = doc(db, 'users', senderUid);
+  const receiverRef = doc(db, 'users', receiverUid);
+  await Promise.all([
+    updateDoc(senderRef, {
+      friends: arrayUnion(receiverUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(receiverRef, {
+      friends: arrayUnion(senderUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRequestsRef, {
+      status: 'accepted',
+      updatedAt: new Date()
+    })
+  ]);
+};
+
+/**
+ * Decline a friend request
+ */
+export const declineFriendRequest = async (requestId: string): Promise<void> => {
+  const friendRequestsRef = doc(db, 'friendRequests', requestId);
+  await updateDoc(friendRequestsRef, {
+    status: 'declined',
+    updatedAt: new Date()
+  });
+};
 
 export interface FirebaseSubject {
   id: string;
