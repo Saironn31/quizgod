@@ -296,10 +296,17 @@ export const addFriend = async (currentUid: string, identifier: string): Promise
  */
 export const removeFriend = async (currentUid: string, friendUid: string): Promise<void> => {
   const userRef = doc(db, 'users', currentUid);
-  await updateDoc(userRef, {
-    friends: arrayRemove(friendUid),
-    updatedAt: new Date()
-  });
+  const friendRef = doc(db, 'users', friendUid);
+  await Promise.all([
+    updateDoc(userRef, {
+      friends: arrayRemove(friendUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRef, {
+      friends: arrayRemove(currentUid),
+      updatedAt: new Date()
+    })
+  ]);
 };
 export const createUserProfile = async (uid: string, email: string, name: string, username?: string) => {
   const userRef = doc(db, 'users', uid);

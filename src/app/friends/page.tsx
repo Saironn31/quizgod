@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest } from '@/lib/firestore';
+import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest, removeFriend } from '@/lib/firestore';
 import PrivateChat from '@/components/PrivateChat';
 import NavBar from '@/components/NavBar';
 import FriendRequestForm from '@/components/AddFriendForm';
@@ -104,6 +104,16 @@ const FriendsPage: React.FC = () => {
                     onClick={() => setSelectedFriend(friend)}
                   >
                     💬 Chat
+                  </button>
+                  <button
+                    className="px-5 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all mt-2"
+                    onClick={async () => {
+                      if (!user?.uid) return;
+                      await removeFriend(user.uid, friend.uid);
+                      window.location.reload();
+                    }}
+                  >
+                    ❌ Remove Friend
                   </button>
                 </div>
               ))}
