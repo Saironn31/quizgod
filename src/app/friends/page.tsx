@@ -60,7 +60,6 @@ const FriendsPage: React.FC = () => {
     };
     if (friendRequests.length > 0) fetchProfiles();
   }, [friendRequests]);
-  }, [user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
