@@ -2,6 +2,7 @@
 import AddFriendForm from './AddFriendForm';
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
+import { getFriendRequests } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 // import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 import ChangeNameForm from './ChangeNameForm';
@@ -20,6 +21,16 @@ const NavBar: React.FC = () => {
   };
   // All hooks and handlers inside function
   const { user, userProfile, logout, refreshUserProfile } = useAuth();
+  const [pendingRequests, setPendingRequests] = useState(0);
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!user?.uid) return;
+      const requests = await getFriendRequests(user.uid);
+      setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+    };
+    fetchRequests();
+  }, [user]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -126,9 +137,14 @@ const NavBar: React.FC = () => {
           </Link>
           <Link 
             href="/friends" 
-            className="px-5 py-2 rounded-xl text-pink-300 hover:bg-pink-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
+            className="px-5 py-2 rounded-xl text-pink-300 hover:bg-pink-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105 relative"
           >
             Friends
+            {pendingRequests > 0 && (
+              <span className="absolute -top-2 -right-4 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold animate-pulse">
+                {pendingRequests}
+              </span>
+            )}
           </Link>
         </div>
 
