@@ -68,7 +68,7 @@ const FriendsPage: React.FC = () => {
             </div>
             <div className="mt-6">
               <h2 className="text-lg font-semibold text-white mb-2">Friend Requests</h2>
-              {requestsLoading ? (
+              {requestsLoading && friendRequests.length === 0 ? (
                 <p className="text-purple-200">Loading requests...</p>
               ) : friendRequests.length === 0 ? (
                 <p className="text-purple-400">No pending requests</p>
@@ -126,25 +126,27 @@ const FriendsPage: React.FC = () => {
                     💬 Chat
                   </button>
                   <button
-                    className="px-5 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all mt-2"
+                    className="px-2 py-1 text-xs bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all mt-2"
                     onClick={async () => {
                       if (!user?.uid) return;
                       await removeFriend(user.uid, friend.uid);
                       window.location.reload();
                     }}
                   >
-                    ❌ Remove Friend
+                    ❌ Remove
                   </button>
                 </div>
               ))}
             </div>
           )}
           {selectedFriend && (
-            <div className="mt-8 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-6 shadow-xl">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white text-center">💬 Chat with {selectedFriend.name || selectedFriend.username || selectedFriend.email}</h2>
-              <PrivateChat friendUid={selectedFriend.uid} friendName={selectedFriend.name || selectedFriend.username || selectedFriend.email} />
+            <div className="mt-8 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-xl max-w-md mx-auto">
+              <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-white text-center">💬 Chat with {selectedFriend.name || selectedFriend.username || selectedFriend.email}</h2>
+              <div className="mb-2">
+                <PrivateChat friendUid={selectedFriend.uid} friendName={selectedFriend.name || selectedFriend.username || selectedFriend.email} />
+              </div>
               <div className="flex justify-center">
-                <button className="mt-6 px-6 py-2 bg-gradient-to-r from-gray-700 to-purple-700 text-white rounded-xl font-medium shadow hover:bg-gray-800/80 transition-all" onClick={() => setSelectedFriend(null)}>Close Chat</button>
+                <button className="mt-2 px-4 py-1 bg-gradient-to-r from-gray-700 to-purple-700 text-white rounded-lg font-medium shadow hover:bg-gray-800/80 transition-all text-sm" onClick={() => setSelectedFriend(null)}>Close Chat</button>
               </div>
             </div>
           )}

@@ -6,6 +6,7 @@ import { getFriendRequests } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 // import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 import ChangeNameForm from './ChangeNameForm';
+// removed duplicate useState import
 
 
 const NavBar: React.FC = () => {
@@ -32,6 +33,7 @@ const NavBar: React.FC = () => {
     fetchRequests();
   }, [user]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -94,6 +96,12 @@ const NavBar: React.FC = () => {
             <span className="text-purple-200 text-sm">
               Welcome back!
             </span>
+            <button
+              className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-medium shadow hover:bg-purple-700/80 transition-all"
+              onClick={() => setShowProfileModal(true)}
+            >
+              Edit Profile
+            </button>
           </div>
         </div>
 
@@ -158,6 +166,24 @@ const NavBar: React.FC = () => {
           </button>
         </div>
       </div> {/* END desktop nav main flex container */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
+            <h2 className="text-2xl font-bold mb-2 text-purple-700 dark:text-purple-300 text-center">Edit Profile</h2>
+            <form className="flex flex-col gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
+              <input className="px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-black dark:text-white" defaultValue={userProfile?.name || ''} />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Email</label>
+              <input className="px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-black dark:text-white" defaultValue={userProfile?.email || ''} />
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Bio</label>
+              <textarea className="px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-black dark:text-white" defaultValue={(userProfile as any)?.bio || ''} />
+              <div className="flex justify-center mt-4">
+                <button type="button" className="px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       </div> {/* END nav main container */}
 
       {/* Mobile Navigation */}
