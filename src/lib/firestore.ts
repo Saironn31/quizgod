@@ -187,10 +187,18 @@ export const addFriend = async (currentUid: string, identifier: string): Promise
   if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
   // Add friendUid to current user's friends array
   const userRef = doc(db, 'users', currentUid);
-  await updateDoc(userRef, {
-    friends: arrayUnion(friendUid),
-    updatedAt: new Date()
-  });
+  const friendRef = doc(db, 'users', friendUid);
+  // Update both users for mutual friendship
+  await Promise.all([
+    updateDoc(userRef, {
+      friends: arrayUnion(friendUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRef, {
+      friends: arrayUnion(currentUid),
+      updatedAt: new Date()
+    })
+  ]);
   return friendUid;
 };
 
