@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest, removeFriend } from '@/lib/firestore';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import PrivateChat from '@/components/PrivateChat';
 import NavBar from '@/components/NavBar';
 import FriendRequestForm from '@/components/AddFriendForm';
@@ -18,20 +20,27 @@ const FriendsPage: React.FC = () => {
   const [requestsLoading, setRequestsLoading] = useState(false);
 
   useEffect(() => {
-    const fetchFriends = async () => {
-      if (!userProfile?.friends || !userProfile.friends.length) return;
-      setLoading(true);
+    if (!user?.uid) return;
+    setLoading(true);
+    const userDocRef = doc(db, 'users', user.uid);
+    const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
+      const data = docSnap.data();
+      if (!data?.friends || !data.friends.length) {
+        setFriends([]);
+        setLoading(false);
+        return;
+      }
       const profiles = await Promise.all(
-        userProfile.friends.map(async (uid: string) => {
+        data.friends.map(async (uid: string) => {
           const profile = await getUserProfile(uid);
           return profile;
         })
       );
       setFriends(profiles.filter(Boolean));
       setLoading(false);
-    };
-    fetchFriends();
-  }, [userProfile]);
+    });
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   useEffect(() => {
     const fetchRequests = async () => {
