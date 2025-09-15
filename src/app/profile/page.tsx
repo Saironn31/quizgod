@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import NavBar from '@/components/NavBar';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateUserProfile } from '@/lib/firestore';
 
@@ -28,8 +29,11 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 flex items-center justify-center">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 flex flex-col items-center justify-center">
+      <div className="w-full max-w-4xl px-4 pt-8">
+        <NavBar />
+      </div>
+      <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400 mt-4">
         <h2 className="text-2xl font-bold mb-4 text-purple-700 dark:text-purple-300 text-center">Edit Profile</h2>
         <form className="flex flex-col gap-4" onSubmit={handleSave}>
           <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>
