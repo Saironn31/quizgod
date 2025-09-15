@@ -14,6 +14,7 @@ const FriendsPage: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
+  const [requestProfiles, setRequestProfiles] = useState<{ [uid: string]: any }>({});
   const [requestsLoading, setRequestsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,6 +42,24 @@ const FriendsPage: React.FC = () => {
       setRequestsLoading(false);
     };
     fetchRequests();
+  }, [user]);
+
+  // Fetch sender profiles for friend requests
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      const uids = friendRequests
+        .filter(req => req.type === 'received')
+        .map(req => req.senderUid);
+      const uniqueUids = Array.from(new Set(uids));
+      const profiles: { [uid: string]: any } = {};
+      await Promise.all(uniqueUids.map(async uid => {
+        const profile = await getUserProfile(uid);
+        if (profile) profiles[uid] = profile;
+      }));
+      setRequestProfiles(profiles);
+    };
+    if (friendRequests.length > 0) fetchProfiles();
+  }, [friendRequests]);
   }, [user]);
 
   return (
@@ -77,7 +96,22 @@ const FriendsPage: React.FC = () => {
                   {friendRequests.map(req => (
                     <div key={req.id} className="bg-white/10 rounded-lg border border-purple-400/30 p-4 w-full max-w-md flex flex-col items-center">
                       <div className="text-white font-medium mb-1">
-                        {req.type === 'received' ? `From: ${req.senderUid}` : `To: ${req.receiverUid}`}
+                        {req.type === 'received' ? (
+                          <>
+                            From: {requestProfiles[req.senderUid]?.username ? (
+                              <span
+                                className="underline cursor-pointer text-purple-200 hover:text-purple-400"
+                                onClick={() => { setSelectedFriend(requestProfiles[req.senderUid]); setShowProfileModal(true); }}
+                              >
+                                {requestProfiles[req.senderUid].username}
+                              </span>
+                            ) : req.senderUid}
+                          </>
+                        ) : (
+                          <>
+                            To: {requestProfiles[req.receiverUid]?.username ? requestProfiles[req.receiverUid].username : req.receiverUid}
+                          </>
+                        )}
                       </div>
                       <div className="text-purple-200 text-xs mb-2">Status: {req.status}</div>
                       {req.type === 'received' && req.status === 'pending' && (
