@@ -25,6 +25,7 @@ const FriendsPage: React.FC = () => {
     const userDocRef = doc(db, 'users', user.uid);
     const unsubscribe = onSnapshot(userDocRef, async (docSnap) => {
       const data = docSnap.data();
+      console.log('Firestore friends listener triggered for UID:', user?.uid, 'Friends:', data?.friends);
       if (!data?.friends || !data.friends.length) {
         setFriends([]);
         setLoading(false);
