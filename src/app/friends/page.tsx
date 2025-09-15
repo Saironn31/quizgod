@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile } from '@/lib/firestore';
+import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest } from '@/lib/firestore';
 import PrivateChat from '@/components/PrivateChat';
 import NavBar from '@/components/NavBar';
 import FriendRequestForm from '@/components/AddFriendForm';
@@ -11,6 +11,8 @@ const FriendsPage: React.FC = () => {
   const [friends, setFriends] = useState<any[]>([]);
   const [selectedFriend, setSelectedFriend] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [friendRequests, setFriendRequests] = useState<any[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
 
   useEffect(() => {
     const fetchFriends = async () => {
@@ -28,6 +30,17 @@ const FriendsPage: React.FC = () => {
     fetchFriends();
   }, [userProfile]);
 
+  useEffect(() => {
+    const fetchRequests = async () => {
+      if (!user?.uid) return;
+      setRequestsLoading(true);
+      const requests = await getFriendRequests(user.uid);
+      setFriendRequests(requests);
+      setRequestsLoading(false);
+    };
+    fetchRequests();
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -41,6 +54,31 @@ const FriendsPage: React.FC = () => {
             <p className="text-purple-200 mb-4">Connect and chat with your friends</p>
             <div className="flex justify-center mb-4">
               <FriendRequestForm />
+            </div>
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold text-white mb-2">Friend Requests</h2>
+              {requestsLoading ? (
+                <p className="text-purple-200">Loading requests...</p>
+              ) : friendRequests.length === 0 ? (
+                <p className="text-purple-400">No pending requests</p>
+              ) : (
+                <div className="flex flex-col gap-3 items-center">
+                  {friendRequests.map(req => (
+                    <div key={req.id} className="bg-white/10 rounded-lg border border-purple-400/30 p-4 w-full max-w-md flex flex-col items-center">
+                      <div className="text-white font-medium mb-1">
+                        {req.type === 'received' ? `From: ${req.senderUid}` : `To: ${req.receiverUid}`}
+                      </div>
+                      <div className="text-purple-200 text-xs mb-2">Status: {req.status}</div>
+                      {req.type === 'received' && req.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={async () => { await acceptFriendRequest(req.id); window.location.reload(); }}>Accept</button>
+                          <button className="px-3 py-1 bg-red-600 text-white rounded" onClick={async () => { await declineFriendRequest(req.id); window.location.reload(); }}>Decline</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           {loading ? (

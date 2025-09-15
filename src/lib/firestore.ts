@@ -1,4 +1,19 @@
 /**
+ * Get friend requests for a user (received and sent)
+ */
+export const getFriendRequests = async (uid: string): Promise<any[]> => {
+  const friendRequestsRef = collection(db, 'friendRequests');
+  const receivedQuery = query(friendRequestsRef, where('receiverUid', '==', uid), where('status', '==', 'pending'));
+  const sentQuery = query(friendRequestsRef, where('senderUid', '==', uid), where('status', '==', 'pending'));
+  const [receivedSnap, sentSnap] = await Promise.all([
+    getDocs(receivedQuery),
+    getDocs(sentQuery)
+  ]);
+  const received = receivedSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'received' }));
+  const sent = sentSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'sent' }));
+  return [...received, ...sent];
+};
+/**
  * Share a personal quiz to a class (copies quiz and assigns classId)
  */
 export const shareQuizToClass = async (quizId: string, targetClassId: string, userId: string): Promise<string> => {
