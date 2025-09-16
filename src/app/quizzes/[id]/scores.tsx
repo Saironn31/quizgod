@@ -81,11 +81,17 @@ export default function QuizScoresPage() {
         {/* Record Details Modal */}
         {selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-lg w-full relative">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-2xl w-full relative">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>
               <h3 className="text-xl font-bold mb-2 text-purple-700 dark:text-purple-300">Quiz Record Details</h3>
+              {quizInfo && (
+                <>
+                  <div className="mb-2 text-gray-700 dark:text-gray-200 font-semibold">Quiz: {quizInfo.title}</div>
+                  <div className="mb-2 text-gray-700 dark:text-gray-200">Subject: {quizInfo.subject}</div>
+                </>
+              )}
               <div className="mb-2 text-gray-700 dark:text-gray-200">User ID: {selectedRecord.userId}</div>
               <div className="mb-2 text-gray-700 dark:text-gray-200">Score: {selectedRecord.score}</div>
               <div className="mb-2 text-gray-700 dark:text-gray-200">Date: {new Date(selectedRecord.timestamp.seconds ? selectedRecord.timestamp.seconds * 1000 : selectedRecord.timestamp).toLocaleString()}</div>
@@ -96,10 +102,12 @@ export default function QuizScoresPage() {
                 ) : (
                   <ul className="list-disc ml-6 text-red-500">
                     {selectedRecord.mistakes.map((m: any, idx: number) => (
-                      <li key={idx}>
-                        Q: {m.question}
-                        <br />User Answer: {typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}
-                        <br />Correct: {typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}
+                      <li key={idx} className="mb-4">
+                        <span className="font-semibold text-white">Q: {m.question}</span>
+                        <br />
+                        <span className="text-purple-200">User Answer: <span className="font-bold">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}</span></span>
+                        <br />
+                        <span className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></span>
                       </li>
                     ))}
                   </ul>
