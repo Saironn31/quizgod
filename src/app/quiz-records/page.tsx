@@ -116,7 +116,7 @@ export default function QuizRecordsPage() {
         {selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
             <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
-              <div className="absolute left-0 top-0 w-full"><NavBar /></div>
+              <div className="mb-8"><NavBar /></div>
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>

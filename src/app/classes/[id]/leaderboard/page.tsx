@@ -59,6 +59,7 @@ export default function LeaderboardPage() {
   const [quizzes, setQuizzes] = useState<{ key: string; quiz: Quiz }[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>(specificQuiz || 'all');
   const [sortBy, setSortBy] = useState<'score' | 'time' | 'quizzes'>('score');
+  const [selectedRecord, setSelectedRecord] = useState<QuizScore | null>(null);
 
   useEffect(() => {
     const user = localStorage.getItem("qg_user");
@@ -297,69 +298,52 @@ export default function LeaderboardPage() {
         </div>
 
         {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
-          /* Quiz-specific scores */
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} Results
-              </h2>
+          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
+            <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {quizSpecificScores.map((score, idx) => (
+                <div key={`${score.username}-${score.completedAt}`} className="bg-white/10 rounded-xl p-4 border border-purple-700 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold">{score.username[0].toUpperCase()}</div>
+                      <div className="font-semibold text-white text-lg">{score.username}{score.username === currentUser && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}</div>
+                    </div>
+                    <div className="text-purple-200 text-sm mb-1">Score: <span className="font-bold text-green-400">{score.score}</span></div>
+                    <div className="text-purple-200 text-sm mb-1">Percentage: <span className="font-bold">{score.percentage}%</span></div>
+                    <div className="text-purple-200 text-sm mb-1">Time: {formatTime(score.completionTime)}</div>
+                    <div className="text-purple-200 text-sm mb-1">Completed: {new Date(score.completedAt).toLocaleString()}</div>
+                  </div>
+                  <button className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold shadow hover:bg-purple-700/80 transition-all" onClick={() => setSelectedRecord(score)}>
+                    View Details
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {quizSpecificScores.map((score, index) => (
-                    <tr key={`${score.username}-${score.completedAt}`} className={score.username === currentUser ? 'bg-blue-50' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-lg">{getRankIcon(index + 1)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
-                            {score.username[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {score.username}
-                              {score.username === currentUser && (
-                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="font-semibold">{score.score}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          score.percentage >= 80 ? 'bg-green-100 text-green-800' :
-                          score.percentage >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {score.percentage}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTime(score.completionTime)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(score.completedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* Member Record Details Modal */}
+            {selectedRecord && (
+              <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
+                <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
+                  <div className="mb-8"><nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit"><span className="font-semibold text-white text-lg">{selectedRecord.username}</span></nav></div>
+                  <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
+                    ✖
+                  </button>
+                  <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
+                  <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
+                  <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
+                  <div className="mb-2 text-purple-100">User ID: <span className="font-bold">{selectedRecord.username}</span></div>
+                  <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
+                  <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
+                  <div className="mb-6">
+                    <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
+                    {/* If you have mistakes data, display here. Otherwise, show a message. */}
+                    <div className="text-purple-200">(Mistake details not available in current leaderboard data. Integrate mistake data if possible.)</div>
+                  </div>
+                  <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Overall leaderboard */
