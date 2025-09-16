@@ -144,6 +144,12 @@ const NavBar: React.FC = () => {
             Classes
           </Link>
           <Link 
+            href="/quiz-records" 
+            className="px-5 py-2 rounded-xl text-purple-300 hover:bg-purple-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
+          >
+            Quiz Records
+          </Link>
+          <Link 
             href="/friends" 
             className="px-5 py-2 rounded-xl text-pink-300 hover:bg-pink-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105 relative"
           >
