@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useParams, useSearchParams } from "next/navigation";
@@ -54,7 +55,7 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const specificQuiz = searchParams.get('quiz');
   
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { user } = useAuth();
   const [classData, setClassData] = useState<Class | null>(null);
   const [allScores, setAllScores] = useState<QuizScore[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -64,12 +65,6 @@ export default function LeaderboardPage() {
   const [selectedRecord, setSelectedRecord] = useState<QuizScore | null>(null);
 
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (user) {
-      setCurrentUser(user);
-    } else {
-      setCurrentUser(null);
-    }
     loadClassData(params.id as string);
   }, [params.id]);
 
@@ -244,7 +239,7 @@ export default function LeaderboardPage() {
     }
   };
 
-  if (!currentUser) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
@@ -273,7 +268,7 @@ export default function LeaderboardPage() {
             <Link href={`/classes/${classData.id}`} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
               ← Back to Class
             </Link>
-            <span className="text-gray-700 dark:text-gray-200">Welcome, {currentUser}!</span>
+            <span className="text-gray-700 dark:text-gray-200">Welcome, {user?.displayName || user?.email || "User"}!</span>
           </div>
         </div>
       </nav>
@@ -340,7 +335,7 @@ export default function LeaderboardPage() {
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold">{score.username[0].toUpperCase()}</div>
-                      <div className="font-semibold text-white text-lg">{score.username}{score.username === currentUser && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}</div>
+                      <div className="font-semibold text-white text-lg">{score.username}{score.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}</div>
                     </div>
                     <div className="text-purple-200 text-sm mb-1">Score: <span className="font-bold text-green-400">{score.score}</span></div>
                     <div className="text-purple-200 text-sm mb-1">Percentage: <span className="font-bold">{score.percentage}%</span></div>
@@ -418,7 +413,7 @@ export default function LeaderboardPage() {
                     {leaderboard
                       .filter(entry => entry.quizzesCompleted > 0)
                       .map((entry, index) => (
-                      <tr key={entry.username} className={entry.username === currentUser ? 'bg-blue-50' : ''}>
+                      <tr key={entry.username} className={entry.username === (user?.displayName || user?.email) ? 'bg-blue-50' : ''}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-lg">{getRankIcon(index + 1)}</span>
                         </td>
@@ -430,7 +425,7 @@ export default function LeaderboardPage() {
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {entry.username}
-                                {entry.username === currentUser && (
+                                {entry.username === (user?.displayName || user?.email) && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
                                 )}
                                 {entry.username === classData.createdBy && (
