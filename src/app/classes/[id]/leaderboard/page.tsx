@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -33,6 +34,7 @@ interface QuizScore {
   completedAt: string;
   quizKey: string;
   quizTitle: string;
+  mistakes?: any[];
 }
 
 interface LeaderboardEntry {
@@ -126,31 +128,34 @@ export default function LeaderboardPage() {
     }
   };
 
-  const loadLeaderboardData = () => {
+  const loadLeaderboardData = async () => {
     if (!classData) return;
-
-    // Collect all scores from class members
-    const allMemberScores: QuizScore[] = [];
-    
-    classData.members.forEach(member => {
-      const memberScores = localStorage.getItem(`qg_quiz_scores_${member}`);
-      if (memberScores) {
-        const scores = JSON.parse(memberScores);
-        scores.forEach((score: QuizScore) => {
-          // Only include scores from class quizzes
-          const classQuizKeys = quizzes.map(q => q.key);
-          if (classQuizKeys.includes(score.quizKey)) {
-            allMemberScores.push({
-              ...score,
-              username: member
-            });
-          }
-        });
-      }
-    });
-
-    setAllScores(allMemberScores);
-    generateLeaderboard(allMemberScores);
+    // Fetch all quiz records for class members from Firestore
+    try {
+      const q = query(
+        collection(db, "quizRecords"),
+        where("userId", "in", classData.members),
+        orderBy("timestamp", "desc")
+      );
+      const snap = await getDocs(q);
+      const allMemberScores: QuizScore[] = snap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          username: data.userId,
+          score: data.score,
+          percentage: data.percentage,
+          completionTime: data.completionTime,
+          completedAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : data.timestamp,
+          quizKey: data.quizId,
+          quizTitle: data.quizTitle || data.quizId,
+          mistakes: data.mistakes || [],
+        };
+      });
+      setAllScores(allMemberScores);
+      generateLeaderboard(allMemberScores);
+    } catch (err) {
+      console.error("Failed to fetch leaderboard records:", err);
+    }
   };
 
   const generateLeaderboard = (scores: QuizScore[]) => {
@@ -329,24 +334,29 @@ export default function LeaderboardPage() {
         {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
           <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
             <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {quizSpecificScores.map((score, idx) => (
-                <div key={`${score.username}-${score.completedAt}`} className="bg-white/10 rounded-xl p-4 border border-purple-700 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white text-lg font-bold">{score.username[0].toUpperCase()}</div>
-                      <div className="font-semibold text-white text-lg">{score.username}{score.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}</div>
+            <div className="bg-white/10 rounded-xl p-4">
+              <ul className="divide-y divide-purple-300">
+                {quizSpecificScores.map((record) => (
+                  <li
+                    key={`${record.username}-${record.completedAt}`}
+                    className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
+                    onClick={() => setSelectedRecord(record)}
+                  >
+                    <div>
+                      <div className="font-semibold text-white">
+                        User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
+                      </div>
+                      <div className="text-purple-200 text-sm">
+                        Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
+                      </div>
+                      <div className="text-purple-200 text-sm">
+                        Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
+                      </div>
                     </div>
-                    <div className="text-purple-200 text-sm mb-1">Score: <span className="font-bold text-green-400">{score.score}</span></div>
-                    <div className="text-purple-200 text-sm mb-1">Percentage: <span className="font-bold">{score.percentage}%</span></div>
-                    <div className="text-purple-200 text-sm mb-1">Time: {formatTime(score.completionTime)}</div>
-                    <div className="text-purple-200 text-sm mb-1">Completed: {new Date(score.completedAt).toLocaleString()}</div>
-                  </div>
-                  <button className="mt-4 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-bold shadow hover:bg-purple-700/80 transition-all" onClick={() => setSelectedRecord(score)}>
-                    View Details
-                  </button>
-                </div>
-              ))}
+                    <div className="text-purple-300">View Details →</div>
+                  </li>
+                ))}
+              </ul>
             </div>
             {/* Member Record Details Modal */}
             {selectedRecord && (
@@ -364,8 +374,21 @@ export default function LeaderboardPage() {
                   <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
                   <div className="mb-6">
                     <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
-                    {/* If you have mistakes data, display here. Otherwise, show a message. */}
-                    <div className="text-purple-200">(Mistake details not available in current leaderboard data. Integrate mistake data if possible.)</div>
+                    {selectedRecord.mistakes && selectedRecord.mistakes.length > 0 ? (
+                      <div className="space-y-4">
+                        {selectedRecord.mistakes.map((m: any, idx: number) => (
+                          <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
+                            <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                              <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
+                              <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-green-400 font-bold">No mistakes! 🎉</div>
+                    )}
                   </div>
                   <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
                     Close
