@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { getQuizById } from "@/lib/firestore";
 import NavBar from "@/components/NavBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
@@ -9,6 +10,7 @@ import { db } from "@/lib/firebase";
 export default function QuizRecordsPage() {
   const { user } = useAuth();
   const [quizRecords, setQuizRecords] = useState<any[]>([]);
+  const [quizInfoMap, setQuizInfoMap] = useState<Record<string, { title: string; subject: string }> >({});
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [classQuizzes, setClassQuizzes] = useState<{ quizId: string; className: string }[]>([]);
@@ -25,7 +27,19 @@ export default function QuizRecordsPage() {
           orderBy("timestamp", "desc")
         );
         const snap = await getDocs(q);
-        setQuizRecords(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        const records = snap.docs.map((doc) => {
+          const data = doc.data();
+          return { id: doc.id, quizId: data.quizId, ...data };
+        });
+        setQuizRecords(records);
+        // Fetch quiz info for each record
+        const quizIds = Array.from(new Set(records.map(r => r.quizId)));
+        const infoMap: Record<string, { title: string; subject: string }> = {};
+        await Promise.all(quizIds.map(async (quizId) => {
+          const quiz = await getQuizById(quizId);
+          if (quiz) infoMap[quizId] = { title: quiz.title, subject: quiz.subject };
+        }));
+        setQuizInfoMap(infoMap);
       } catch (err) {
         console.error("Failed to fetch quiz records:", err);
       } finally {
@@ -64,7 +78,7 @@ export default function QuizRecordsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <NavBar />
+  <div className="sticky top-0 z-40"><NavBar /></div>
         <div className="max-w-3xl mx-auto mt-12">
           <h2 className="text-2xl font-bold mb-4 text-white">📊 Your Quiz Records</h2>
           {loadingRecords ? (
@@ -81,7 +95,12 @@ export default function QuizRecordsPage() {
                     onClick={() => setSelectedRecord(record)}
                   >
                     <div>
-                      <div className="font-semibold text-white">Quiz: {record.quizId}</div>
+                      <div className="font-semibold text-white">
+                        Quiz: {quizInfoMap[record.quizId]?.title || record.quizId}
+                      </div>
+                      <div className="text-purple-200 text-sm">
+                        Subject: {quizInfoMap[record.quizId]?.subject || "Unknown"}
+                      </div>
                       <div className="text-purple-200 text-sm">
                         Score: {record.score} | {new Date(record.timestamp.seconds ? record.timestamp.seconds * 1000 : record.timestamp).toLocaleString()}
                       </div>
@@ -124,12 +143,13 @@ export default function QuizRecordsPage() {
         {/* Record Details Modal */}
         {selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-lg w-full relative">
+            <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-2xl w-full relative">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>
               <h3 className="text-xl font-bold mb-2 text-purple-700 dark:text-purple-300">Quiz Record Details</h3>
-              <div className="mb-2 text-gray-700 dark:text-gray-200">Quiz ID: {selectedRecord.quizId}</div>
+              <div className="mb-2 text-gray-700 dark:text-gray-200 font-semibold">Quiz: {quizInfoMap[selectedRecord.quizId]?.title || selectedRecord.quizId}</div>
+              <div className="mb-2 text-gray-700 dark:text-gray-200">Subject: {quizInfoMap[selectedRecord.quizId]?.subject || "Unknown"}</div>
               <div className="mb-2 text-gray-700 dark:text-gray-200">Score: {selectedRecord.score}</div>
               <div className="mb-2 text-gray-700 dark:text-gray-200">Date: {new Date(selectedRecord.timestamp.seconds ? selectedRecord.timestamp.seconds * 1000 : selectedRecord.timestamp).toLocaleString()}</div>
               <div className="mb-4">
@@ -139,10 +159,12 @@ export default function QuizRecordsPage() {
                 ) : (
                   <ul className="list-disc ml-6 text-red-500">
                     {selectedRecord.mistakes.map((m: any, idx: number) => (
-                      <li key={idx}>
-                        Q: {m.question}
-                        <br />Your Answer: {typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}
-                        <br />Correct: {typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}
+                      <li key={idx} className="mb-4">
+                        <span className="font-semibold text-white">Q: {m.question}</span>
+                        <br />
+                        <span className="text-purple-200">Your Answer: <span className="font-bold">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}</span></span>
+                        <br />
+                        <span className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></span>
                       </li>
                     ))}
                   </ul>

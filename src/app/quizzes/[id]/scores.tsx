@@ -4,6 +4,7 @@ import NavBar from "@/components/NavBar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useParams } from "next/navigation";
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { getQuizById } from "@/lib/firestore";
 import { db } from "@/lib/firebase";
 
 export default function QuizScoresPage() {
@@ -13,6 +14,7 @@ export default function QuizScoresPage() {
   const [records, setRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+  const [quizInfo, setQuizInfo] = useState<{ title: string; subject: string } | null>(null);
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -26,6 +28,9 @@ export default function QuizScoresPage() {
         );
         const snap = await getDocs(q);
         setRecords(snap.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        // Fetch quiz info
+        const quiz = await getQuizById(quizId);
+        if (quiz) setQuizInfo({ title: quiz.title, subject: quiz.subject });
       } catch (err) {
         console.error("Failed to fetch quiz records:", err);
       } finally {
@@ -38,9 +43,15 @@ export default function QuizScoresPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <NavBar />
+  <div className="sticky top-0 z-40"><NavBar /></div>
         <div className="max-w-3xl mx-auto mt-12">
           <h2 className="text-2xl font-bold mb-4 text-white">👥 Class Quiz Records</h2>
+          {quizInfo && (
+            <div className="mb-4">
+              <div className="font-semibold text-white">Quiz: {quizInfo.title}</div>
+              <div className="text-purple-200 text-sm">Subject: {quizInfo.subject}</div>
+            </div>
+          )}
           {loading ? (
             <div className="text-purple-200">Loading records...</div>
           ) : records.length === 0 ? (
