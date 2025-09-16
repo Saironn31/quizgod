@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -83,17 +85,38 @@ export default function LeaderboardPage() {
     }
   }, [classData, selectedQuiz, sortBy]);
 
-  const loadClassData = (classId: string) => {
+  const loadClassData = async (classId: string) => {
     const classInfo = localStorage.getItem(`qg_class_${classId}`);
-    if (!classInfo) {
-      alert("Class not found!");
-      window.location.href = "/classes";
+    if (classInfo) {
+      const parsedClass = JSON.parse(classInfo);
+      setClassData(parsedClass);
+      loadClassQuizzes(classId);
       return;
     }
-
-    const parsedClass = JSON.parse(classInfo);
-    setClassData(parsedClass);
-    loadClassQuizzes(classId);
+    // Fallback: fetch from Firestore
+    try {
+      const classRef = doc(db, "classes", classId);
+      const classSnap = await getDoc(classRef);
+      if (classSnap.exists()) {
+        const classDataFS = classSnap.data();
+        setClassData({
+          id: classId,
+          name: classDataFS.name || "",
+          description: classDataFS.description || "",
+          code: classDataFS.code || "",
+          createdBy: classDataFS.createdBy || "",
+          createdAt: classDataFS.createdAt || "",
+          members: classDataFS.members || [],
+        });
+        loadClassQuizzes(classId);
+      } else {
+        alert("Class not found!");
+        window.location.href = "/classes";
+      }
+    } catch (err) {
+      alert("Error loading class data");
+      window.location.href = "/classes";
+    }
   };
 
   const loadClassQuizzes = (classId: string) => {
