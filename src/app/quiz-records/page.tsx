@@ -111,66 +111,38 @@ export default function QuizRecordsPage() {
               </ul>
             </div>
           )}
-          {/* Class Quizzes Section */}
-          <div className="mt-10">
-            <h3 className="text-xl font-bold mb-2 text-purple-300">Class Quizzes</h3>
-            {loadingClassQuizzes ? (
-              <div className="text-purple-200">Loading class quizzes...</div>
-            ) : classQuizzes.length === 0 ? (
-              <div className="text-purple-200">No class quizzes found.</div>
-            ) : (
-              <div className="bg-white/10 rounded-xl p-4">
-                <ul className="divide-y divide-purple-300">
-                  {classQuizzes.map((quiz) => (
-                    <li
-                      key={quiz.quizId}
-                      className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
-                    >
-                      <Link href={`/quizzes/${quiz.quizId}/scores`} className="flex-1">
-                        <div>
-                          <div className="font-semibold text-white">Quiz ID: {quiz.quizId}</div>
-                          <div className="text-purple-200 text-sm">Class: {quiz.className}</div>
-                        </div>
-                      </Link>
-                      <div className="text-purple-300">View Scores →</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
         </div>
         {/* Record Details Modal */}
         {selectedRecord && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-8 max-w-2xl w-full relative">
-              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setSelectedRecord(null)}>
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+            <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-2xl shadow-2xl p-8 max-w-2xl w-full relative border border-purple-700">
+              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>
-              <h3 className="text-xl font-bold mb-2 text-purple-700 dark:text-purple-300">Quiz Record Details</h3>
-              <div className="mb-2 text-gray-700 dark:text-gray-200 font-semibold">Quiz: {quizInfoMap[selectedRecord.quizId]?.title || selectedRecord.quizId}</div>
-              <div className="mb-2 text-gray-700 dark:text-gray-200">Subject: {quizInfoMap[selectedRecord.quizId]?.subject || "Unknown"}</div>
-              <div className="mb-2 text-gray-700 dark:text-gray-200">Score: {selectedRecord.score}</div>
-              <div className="mb-2 text-gray-700 dark:text-gray-200">Date: {new Date(selectedRecord.timestamp.seconds ? selectedRecord.timestamp.seconds * 1000 : selectedRecord.timestamp).toLocaleString()}</div>
-              <div className="mb-4">
-                <div className="font-semibold mb-1">Mistakes:</div>
+              <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
+              <div className="mb-2 text-white font-bold text-lg">Quiz: {quizInfoMap[selectedRecord.quizId]?.title || selectedRecord.quizId}</div>
+              <div className="mb-2 text-purple-200">Subject: {quizInfoMap[selectedRecord.quizId]?.subject || "Unknown"}</div>
+              <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
+              <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.timestamp.seconds ? selectedRecord.timestamp.seconds * 1000 : selectedRecord.timestamp).toLocaleString()}</div>
+              <div className="mb-6">
+                <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
                 {selectedRecord.mistakes.length === 0 ? (
-                  <div className="text-green-500">No mistakes! 🎉</div>
+                  <div className="text-green-400 font-bold">No mistakes! 🎉</div>
                 ) : (
-                  <ul className="list-disc ml-6 text-red-500">
+                  <div className="space-y-4">
                     {selectedRecord.mistakes.map((m: any, idx: number) => (
-                      <li key={idx} className="mb-4">
-                        <span className="font-semibold text-white">Q: {m.question}</span>
-                        <br />
-                        <span className="text-purple-200">Your Answer: <span className="font-bold">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}</span></span>
-                        <br />
-                        <span className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></span>
-                      </li>
+                      <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
+                        <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                          <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}</span></div>
+                          <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 )}
               </div>
-              <button className="mt-2 px-4 py-2 bg-purple-600 text-white rounded-lg" onClick={() => setSelectedRecord(null)}>
+              <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
                 Close
               </button>
             </div>
