@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from '@/contexts/AuthContext';
-import { getQuizById, FirebaseQuiz } from '@/lib/firestore';
+import { getQuizById, FirebaseQuiz, saveQuizRecord } from '@/lib/firestore';
 
 export default function QuizPlayerPage() {
   const params = useParams();
@@ -82,21 +82,39 @@ export default function QuizPlayerPage() {
     }
   };
 
-  const handleFinishQuiz = () => {
-    if (!quiz || !user?.email) return;
+  const handleFinishQuiz = async () => {
+    if (!quiz || !user?.uid) return;
 
     let correctCount = 0;
+    const mistakes: Array<{ question: string; selected: number; correct: number }> = [];
     quiz.questions.forEach((question, index) => {
       if (selectedAnswers[index] === question.correct) {
         correctCount++;
+      } else {
+        mistakes.push({
+          question: question.question,
+          selected: selectedAnswers[index],
+          correct: question.correct
+        });
       }
     });
 
     setScore(correctCount);
     setShowResults(true);
 
-    // TODO: Save score to Firebase for leaderboard functionality
-    // This would require implementing a scores collection in Firestore
+    // Save quiz record to Firestore
+    try {
+      await saveQuizRecord({
+        userId: user.uid,
+        quizId: quiz.id,
+        score: correctCount,
+        mistakes,
+        selectedAnswers,
+        timestamp: new Date()
+      });
+    } catch (err) {
+      console.error('Failed to save quiz record:', err);
+    }
   };
 
   const formatTime = (seconds: number) => {

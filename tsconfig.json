@@ -40,6 +40,9 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
+    "functions/node_modules",
+    "functions/lib",
+    "functions/src",
     "node_modules"
   ]
 }

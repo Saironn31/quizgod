@@ -827,6 +827,25 @@ export const getQuizById = async (quizId: string): Promise<FirebaseQuiz | null> 
   }
 };
 
+// Quiz Record operations
+export interface QuizRecord {
+  id?: string;
+  userId: string;
+  quizId: string;
+  score: number;
+  mistakes: Array<{ question: string; selected: number; correct: number }>;
+  selectedAnswers: number[];
+  timestamp: Date;
+}
+
+export const saveQuizRecord = async (record: Omit<QuizRecord, 'id'>): Promise<string> => {
+  const ref = await addDoc(collection(db, 'quizRecords'), {
+    ...record,
+    timestamp: new Date()
+  });
+  return ref.id;
+};
+
 // Migration and utility functions
 export const migrateLocalDataToFirestore = async (userId: string, userEmail: string) => {
   try {
