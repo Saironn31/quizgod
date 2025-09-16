@@ -63,11 +63,11 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
-      return;
+    if (user) {
+      setCurrentUser(user);
+    } else {
+      setCurrentUser(null);
     }
-    setCurrentUser(user);
     loadClassData(params.id as string);
   }, [params.id]);
 
