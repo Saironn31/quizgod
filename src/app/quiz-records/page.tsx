@@ -114,8 +114,9 @@ export default function QuizRecordsPage() {
         </div>
         {/* Record Details Modal */}
         {selectedRecord && (
-          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-2xl shadow-2xl p-8 max-w-2xl w-full relative border border-purple-700">
+          <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 overflow-auto">
+            <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-2xl shadow-2xl p-8 max-w-2xl w-full relative border border-purple-700 max-h-screen overflow-y-auto">
+              <div className="absolute left-0 top-0 w-full"><NavBar /></div>
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>
@@ -134,7 +135,7 @@ export default function QuizRecordsPage() {
                       <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
                         <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
-                          <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : m.selected}</span></div>
+                          <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
                           <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
                         </div>
                       </div>
