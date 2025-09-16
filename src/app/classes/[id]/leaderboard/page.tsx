@@ -132,25 +132,33 @@ export default function LeaderboardPage() {
     if (!classData) return;
     // Fetch all quiz records for class members from Firestore
     try {
-      const q = query(
-        collection(db, "quizRecords"),
-        where("userId", "in", classData.members),
-        orderBy("timestamp", "desc")
-      );
-      const snap = await getDocs(q);
-      const allMemberScores: QuizScore[] = snap.docs.map(doc => {
-        const data = doc.data();
-        return {
-          username: data.userId,
-          score: data.score,
-          percentage: data.percentage,
-          completionTime: data.completionTime,
-          completedAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : data.timestamp,
-          quizKey: data.quizId,
-          quizTitle: data.quizTitle || data.quizId,
-          mistakes: data.mistakes || [],
-        };
-      });
+      // Batch queries for >10 members
+      const memberChunks = [];
+      for (let i = 0; i < classData.members.length; i += 10) {
+        memberChunks.push(classData.members.slice(i, i + 10));
+      }
+      let allMemberScores: QuizScore[] = [];
+      for (const chunk of memberChunks) {
+        const q = query(
+          collection(db, "quizRecords"),
+          where("userId", "in", chunk),
+          orderBy("timestamp", "desc")
+        );
+        const snap = await getDocs(q);
+        allMemberScores = allMemberScores.concat(snap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            username: data.userId,
+            score: data.score,
+            percentage: data.percentage,
+            completionTime: data.completionTime,
+            completedAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : data.timestamp,
+            quizKey: data.quizId,
+            quizTitle: data.quizTitle || data.quizId,
+            mistakes: data.mistakes || [],
+          };
+        }));
+      }
       setAllScores(allMemberScores);
       generateLeaderboard(allMemberScores);
     } catch (err) {
