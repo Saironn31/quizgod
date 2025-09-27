@@ -1,5 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -30,6 +34,7 @@ interface QuizScore {
   completedAt: string;
   quizKey: string;
   quizTitle: string;
+  mistakes?: any[];
 }
 
 interface LeaderboardEntry {
@@ -52,21 +57,16 @@ export default function LeaderboardPage() {
   const searchParams = useSearchParams();
   const specificQuiz = searchParams.get('quiz');
   
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const { user } = useAuth();
   const [classData, setClassData] = useState<Class | null>(null);
   const [allScores, setAllScores] = useState<QuizScore[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [quizzes, setQuizzes] = useState<{ key: string; quiz: Quiz }[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>(specificQuiz || 'all');
   const [sortBy, setSortBy] = useState<'score' | 'time' | 'quizzes'>('score');
+  const [selectedRecord, setSelectedRecord] = useState<QuizScore | null>(null);
 
   useEffect(() => {
-    const user = localStorage.getItem("qg_user");
-    if (!user) {
-      window.location.href = "/";
-      return;
-    }
-    setCurrentUser(user);
     loadClassData(params.id as string);
   }, [params.id]);
 
@@ -82,17 +82,38 @@ export default function LeaderboardPage() {
     }
   }, [classData, selectedQuiz, sortBy]);
 
-  const loadClassData = (classId: string) => {
+  const loadClassData = async (classId: string) => {
     const classInfo = localStorage.getItem(`qg_class_${classId}`);
-    if (!classInfo) {
-      alert("Class not found!");
-      window.location.href = "/classes";
+    if (classInfo) {
+      const parsedClass = JSON.parse(classInfo);
+      setClassData(parsedClass);
+      loadClassQuizzes(classId);
       return;
     }
-
-    const parsedClass = JSON.parse(classInfo);
-    setClassData(parsedClass);
-    loadClassQuizzes(classId);
+    // Fallback: fetch from Firestore
+    try {
+      const classRef = doc(db, "classes", classId);
+      const classSnap = await getDoc(classRef);
+      if (classSnap.exists()) {
+        const classDataFS = classSnap.data();
+        setClassData({
+          id: classId,
+          name: classDataFS.name || "",
+          description: classDataFS.description || "",
+          code: classDataFS.code || "",
+          createdBy: classDataFS.createdBy || "",
+          createdAt: classDataFS.createdAt || "",
+          members: classDataFS.members || [],
+        });
+        loadClassQuizzes(classId);
+      } else {
+        alert("Class not found!");
+        window.location.href = "/classes";
+      }
+    } catch (err) {
+      alert("Error loading class data");
+      window.location.href = "/classes";
+    }
   };
 
   const loadClassQuizzes = (classId: string) => {
@@ -107,31 +128,42 @@ export default function LeaderboardPage() {
     }
   };
 
-  const loadLeaderboardData = () => {
+  const loadLeaderboardData = async () => {
     if (!classData) return;
-
-    // Collect all scores from class members
-    const allMemberScores: QuizScore[] = [];
-    
-    classData.members.forEach(member => {
-      const memberScores = localStorage.getItem(`qg_quiz_scores_${member}`);
-      if (memberScores) {
-        const scores = JSON.parse(memberScores);
-        scores.forEach((score: QuizScore) => {
-          // Only include scores from class quizzes
-          const classQuizKeys = quizzes.map(q => q.key);
-          if (classQuizKeys.includes(score.quizKey)) {
-            allMemberScores.push({
-              ...score,
-              username: member
-            });
-          }
-        });
+    // Fetch all quiz records for class members from Firestore
+    try {
+      // Batch queries for >10 members
+      const memberChunks = [];
+      for (let i = 0; i < classData.members.length; i += 10) {
+        memberChunks.push(classData.members.slice(i, i + 10));
       }
-    });
-
-    setAllScores(allMemberScores);
-    generateLeaderboard(allMemberScores);
+      let allMemberScores: QuizScore[] = [];
+      for (const chunk of memberChunks) {
+        const q = query(
+          collection(db, "quizRecords"),
+          where("userId", "in", chunk),
+          orderBy("timestamp", "desc")
+        );
+        const snap = await getDocs(q);
+        allMemberScores = allMemberScores.concat(snap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            username: data.userId,
+            score: data.score,
+            percentage: data.percentage,
+            completionTime: data.completionTime,
+            completedAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : data.timestamp,
+            quizKey: data.quizId,
+            quizTitle: data.quizTitle || data.quizId,
+            mistakes: data.mistakes || [],
+          };
+        }));
+      }
+      setAllScores(allMemberScores);
+      generateLeaderboard(allMemberScores);
+    } catch (err) {
+      console.error("Failed to fetch leaderboard records:", err);
+    }
   };
 
   const generateLeaderboard = (scores: QuizScore[]) => {
@@ -220,7 +252,18 @@ export default function LeaderboardPage() {
     }
   };
 
-  if (!currentUser || !classData) {
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600 dark:text-red-400">Login Required</h2>
+          <p className="text-gray-700 dark:text-gray-200 mb-6">You must be logged in to view the class quiz leaderboard.</p>
+          <Link href="/" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition-all">Go to Homepage</Link>
+        </div>
+      </div>
+    );
+  }
+  if (!classData) {
     return <div>Loading...</div>;
   }
 
@@ -238,7 +281,7 @@ export default function LeaderboardPage() {
             <Link href={`/classes/${classData.id}`} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
               ← Back to Class
             </Link>
-            <span className="text-gray-700 dark:text-gray-200">Welcome, {currentUser}!</span>
+            <span className="text-gray-700 dark:text-gray-200">Welcome, {user?.displayName || user?.email || "User"}!</span>
           </div>
         </div>
       </nav>
@@ -297,69 +340,70 @@ export default function LeaderboardPage() {
         </div>
 
         {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
-          /* Quiz-specific scores */
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} Results
-              </h2>
+          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
+            <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
+            <div className="bg-white/10 rounded-xl p-4">
+              <ul className="divide-y divide-purple-300">
+                {quizSpecificScores.map((record) => (
+                  <li
+                    key={`${record.username}-${record.completedAt}`}
+                    className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
+                    onClick={() => setSelectedRecord(record)}
+                  >
+                    <div>
+                      <div className="font-semibold text-white">
+                        User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
+                      </div>
+                      <div className="text-purple-200 text-sm">
+                        Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
+                      </div>
+                      <div className="text-purple-200 text-sm">
+                        Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
+                      </div>
+                    </div>
+                    <div className="text-purple-300">View Details →</div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Percentage</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {quizSpecificScores.map((score, index) => (
-                    <tr key={`${score.username}-${score.completedAt}`} className={score.username === currentUser ? 'bg-blue-50' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-lg">{getRankIcon(index + 1)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
-                            {score.username[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {score.username}
-                              {score.username === currentUser && (
-                                <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
-                              )}
+            {/* Member Record Details Modal */}
+            {selectedRecord && (
+              <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
+                <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
+                  <div className="mb-8"><nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit"><span className="font-semibold text-white text-lg">{selectedRecord.username}</span></nav></div>
+                  <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
+                    ✖
+                  </button>
+                  <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
+                  <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
+                  <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
+                  <div className="mb-2 text-purple-100">User ID: <span className="font-bold">{selectedRecord.username}</span></div>
+                  <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
+                  <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
+                  <div className="mb-6">
+                    <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
+                    {selectedRecord.mistakes && selectedRecord.mistakes.length > 0 ? (
+                      <div className="space-y-4">
+                        {selectedRecord.mistakes.map((m: any, idx: number) => (
+                          <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
+                            <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
+                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                              <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
+                              <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="font-semibold">{score.score}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          score.percentage >= 80 ? 'bg-green-100 text-green-800' :
-                          score.percentage >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {score.percentage}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatTime(score.completionTime)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(score.completedAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-green-400 font-bold">No mistakes! 🎉</div>
+                    )}
+                  </div>
+                  <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           /* Overall leaderboard */
@@ -400,7 +444,7 @@ export default function LeaderboardPage() {
                     {leaderboard
                       .filter(entry => entry.quizzesCompleted > 0)
                       .map((entry, index) => (
-                      <tr key={entry.username} className={entry.username === currentUser ? 'bg-blue-50' : ''}>
+                      <tr key={entry.username} className={entry.username === (user?.displayName || user?.email) ? 'bg-blue-50' : ''}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className="text-lg">{getRankIcon(index + 1)}</span>
                         </td>
@@ -412,7 +456,7 @@ export default function LeaderboardPage() {
                             <div>
                               <div className="text-sm font-medium text-gray-900">
                                 {entry.username}
-                                {entry.username === currentUser && (
+                                {entry.username === (user?.displayName || user?.email) && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
                                 )}
                                 {entry.username === classData.createdBy && (

@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.googleapis.com https://*.firebaseapp.com https://*.googleusercontent.com https://*.firebasestorage.app",
-              "connect-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://*.firestore.googleapis.com https://vercel.live wss://*.vercel.app",
+              "connect-src 'self' https://*.firebaseapp.com https://*.googleapis.com https://*.firestore.googleapis.com https://vercel.live wss://*.vercel.app https://smnjootmzkihsobrwarn.supabase.co",
               "frame-src 'self' https://vercel.live"
             ].join('; ')
           }

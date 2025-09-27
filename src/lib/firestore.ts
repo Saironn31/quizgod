@@ -1,3 +1,39 @@
+/**
+ * Get friend requests for a user (received and sent)
+ */
+export const getFriendRequests = async (uid: string): Promise<any[]> => {
+  const friendRequestsRef = collection(db, 'friendRequests');
+  const receivedQuery = query(friendRequestsRef, where('receiverUid', '==', uid), where('status', '==', 'pending'));
+  const sentQuery = query(friendRequestsRef, where('senderUid', '==', uid), where('status', '==', 'pending'));
+  const [receivedSnap, sentSnap] = await Promise.all([
+    getDocs(receivedQuery),
+    getDocs(sentQuery)
+  ]);
+  const received = receivedSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'received' }));
+  const sent = sentSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), type: 'sent' }));
+  return [...received, ...sent];
+};
+/**
+ * Share a personal quiz to a class (copies quiz and assigns classId)
+ */
+export const shareQuizToClass = async (quizId: string, targetClassId: string, userId: string): Promise<string> => {
+  // Get the quiz
+  const quizRef = doc(db, 'quizzes', quizId);
+  const quizSnap = await getDoc(quizRef);
+  if (!quizSnap.exists()) throw new Error('Quiz not found');
+  const quizData = quizSnap.data();
+  // Copy quiz and assign classId
+  const newQuizData = {
+    ...quizData,
+    classId: targetClassId,
+    isPersonal: false,
+    userId,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+  const newQuizRef = await addDoc(collection(db, 'quizzes'), newQuizData);
+  return newQuizRef.id;
+};
 import { 
   collection, 
   doc, 
@@ -16,6 +52,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+  import { Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 
 // Helper function to convert Firestore Timestamps to Dates
@@ -34,18 +71,62 @@ const convertTimestamps = (data: any) => {
 };
 
 // Enhanced Types for complete system
+export interface ChatMessage {
+  id?: string;
+  senderUid: string;
+  senderName: string;
+  content: string;
+  timestamp: Date;
+  classId?: string; // For class-wide chat
+  recipientUid?: string; // For private chat
+}
 export interface FirebaseUser {
   uid: string;
   email: string;
   name: string;
   username?: string;
   profilePicture?: string; // URL to profile picture
+  friends?: string[]; // Array of user UIDs
   preferences?: {
     theme: 'light' | 'dark';
   };
   createdAt: Date;
   updatedAt: Date;
 }
+
+// --- Friend Request Functions ---
+/**
+ * Send a friend request by username or email
+ */
+export const sendFriendRequest = async (currentUid: string, identifier: string): Promise<string> => {
+  // identifier can be username or email
+  const usersQuery = query(collection(db, 'users'),
+    where('username', '==', identifier));
+  const usernameSnapshot = await getDocs(usersQuery);
+  let friendUid = '';
+  if (!usernameSnapshot.empty) {
+    friendUid = usernameSnapshot.docs[0].id;
+  } else {
+    // Try email if username not found
+    const emailQuery = query(collection(db, 'users'),
+      where('email', '==', identifier));
+    const emailSnapshot = await getDocs(emailQuery);
+    if (!emailSnapshot.empty) {
+      friendUid = emailSnapshot.docs[0].id;
+    }
+  }
+  if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
+  // Create friend request document in friendRequests collection
+  const friendRequestsRef = collection(db, 'friendRequests');
+  await addDoc(friendRequestsRef, {
+    senderUid: currentUid,
+    receiverUid: friendUid,
+    status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  return friendUid;
+};
 
 export interface FirebaseClass {
   id: string;
@@ -56,10 +137,49 @@ export interface FirebaseClass {
   members: string[]; // Array of user emails
   memberRoles: { [email: string]: 'president' | 'member' };
   joinCode: string;
+
   isPublic: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
+
+/**
+ * Accept a friend request
+ */
+export const acceptFriendRequest = async (requestId: string): Promise<void> => {
+  const friendRequestsRef = doc(db, 'friendRequests', requestId);
+  const requestSnap = await getDoc(friendRequestsRef);
+  if (!requestSnap.exists()) throw new Error('Friend request not found');
+  const request = requestSnap.data();
+  const senderUid = request.senderUid;
+  const receiverUid = request.receiverUid;
+  // Add each user to the other's friends array
+  const senderRef = doc(db, 'users', senderUid);
+  const receiverRef = doc(db, 'users', receiverUid);
+  await Promise.all([
+    updateDoc(senderRef, {
+      friends: arrayUnion(receiverUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(receiverRef, {
+      friends: arrayUnion(senderUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRequestsRef, {
+      status: 'accepted',
+      updatedAt: new Date()
+    })
+  ]);
+};
+
+/**
+ * Decline a friend request
+ */
+export const declineFriendRequest = async (requestId: string): Promise<void> => {
+  const friendRequestsRef = doc(db, 'friendRequests', requestId);
+  await updateDoc(friendRequestsRef, {
+    status: 'declined',
+    updatedAt: new Date()
+  });
+};
 
 export interface FirebaseSubject {
   id: string;
@@ -98,6 +218,96 @@ export interface UserClassMembership {
 }
 
 // User operations
+/**
+ * Send a chat message (class-wide or private)
+ */
+export const sendChatMessage = async (message: Omit<ChatMessage, 'id' | 'timestamp'>): Promise<string> => {
+  const msgData = {
+    ...message,
+    timestamp: new Date()
+  };
+  const ref = await addDoc(collection(db, 'chatMessages'), msgData);
+  return ref.id;
+};
+
+/**
+ * Get chat messages for a class
+ */
+export const getClassChatMessages = async (classId: string): Promise<ChatMessage[]> => {
+  const msgsQuery = query(collection(db, 'chatMessages'), where('classId', '==', classId), orderBy('timestamp', 'asc'));
+  const snap = await getDocs(msgsQuery);
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate?.() || new Date() } as ChatMessage));
+};
+
+/**
+ * Get private chat messages between two users
+ */
+export const getPrivateChatMessages = async (uid1: string, uid2: string): Promise<ChatMessage[]> => {
+  const msgsQuery = query(collection(db, 'chatMessages'),
+    where('recipientUid', 'in', [uid1, uid2]),
+    where('senderUid', 'in', [uid1, uid2]),
+    orderBy('timestamp', 'asc'));
+  const snap = await getDocs(msgsQuery);
+  // Only messages where sender/recipient are the two users
+  return snap.docs
+    .map(doc => ({ id: doc.id, ...doc.data(), timestamp: doc.data().timestamp?.toDate?.() || new Date() } as ChatMessage))
+    .filter(msg => (msg.senderUid === uid1 && msg.recipientUid === uid2) || (msg.senderUid === uid2 && msg.recipientUid === uid1));
+};
+/**
+ * Add a friend by username or email
+ */
+export const addFriend = async (currentUid: string, identifier: string): Promise<string> => {
+  // identifier can be username or email
+  const usersQuery = query(collection(db, 'users'),
+    where('username', '==', identifier));
+  const usernameSnapshot = await getDocs(usersQuery);
+  let friendUid = '';
+  if (!usernameSnapshot.empty) {
+    friendUid = usernameSnapshot.docs[0].id;
+  } else {
+    // Try email if username not found
+    const emailQuery = query(collection(db, 'users'),
+      where('email', '==', identifier));
+    const emailSnapshot = await getDocs(emailQuery);
+    if (!emailSnapshot.empty) {
+      friendUid = emailSnapshot.docs[0].id;
+    }
+  }
+  if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
+  // Add friendUid to current user's friends array
+  const userRef = doc(db, 'users', currentUid);
+  const friendRef = doc(db, 'users', friendUid);
+  // Update both users for mutual friendship
+  await Promise.all([
+    updateDoc(userRef, {
+      friends: arrayUnion(friendUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRef, {
+      friends: arrayUnion(currentUid),
+      updatedAt: new Date()
+    })
+  ]);
+  return friendUid;
+};
+
+/**
+ * Remove a friend by UID
+ */
+export const removeFriend = async (currentUid: string, friendUid: string): Promise<void> => {
+  const userRef = doc(db, 'users', currentUid);
+  const friendRef = doc(db, 'users', friendUid);
+  await Promise.all([
+    updateDoc(userRef, {
+      friends: arrayRemove(friendUid),
+      updatedAt: new Date()
+    }),
+    updateDoc(friendRef, {
+      friends: arrayRemove(currentUid),
+      updatedAt: new Date()
+    })
+  ]);
+};
 export const createUserProfile = async (uid: string, email: string, name: string, username?: string) => {
   const userRef = doc(db, 'users', uid);
   const userData: any = {
@@ -141,48 +351,54 @@ export const getUserProfile = async (uid: string): Promise<FirebaseUser | null> 
 };
 
 // Profile picture operations
-export const uploadProfilePicture = async (uid: string, file: File): Promise<string> => {
-  try {
-    // Create a unique filename
-    const timestamp = Date.now();
-    const fileName = `profile_${uid}_${timestamp}.${file.name.split('.').pop()}`;
-    const storageRef = ref(storage, `profile-pictures/${fileName}`);
-    
-    // Upload the file
-    await uploadBytes(storageRef, file);
-    
-    // Get the download URL
-    const downloadURL = await getDownloadURL(storageRef);
-    
-    // Update user profile with new picture URL
-    await updateUserProfile(uid, { profilePicture: downloadURL });
-    
-    return downloadURL;
-  } catch (error) {
-    console.error('Error uploading profile picture:', error);
-    throw error;
-  }
-};
-
-export const deleteProfilePicture = async (uid: string, profilePictureUrl: string): Promise<void> => {
-  try {
-    // Extract the file path from the URL
-    const url = new URL(profilePictureUrl);
-    const filePath = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
-    const storageRef = ref(storage, filePath);
-    
-    // Delete from storage
-    await deleteObject(storageRef);
-    
-    // Remove from user profile
-    await updateUserProfile(uid, { profilePicture: undefined });
-  } catch (error) {
-    console.error('Error deleting profile picture:', error);
-    throw error;
-  }
-};
+// Removed profile picture upload and delete functions
 
 // Class operations
+/**
+ * Delete a class and all its quizzes (president only)
+ */
+export const deleteClassWithQuizzes = async (classId: string): Promise<void> => {
+  // Delete all quizzes for this class
+  const quizzesQuery = query(collection(db, 'quizzes'), where('classId', '==', classId));
+  const quizzesSnapshot = await getDocs(quizzesQuery);
+  const batch = writeBatch(db);
+  quizzesSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete all subjects for this class
+  const subjectsQuery = query(collection(db, 'subjects'), where('classId', '==', classId));
+  const subjectsSnapshot = await getDocs(subjectsQuery);
+  subjectsSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete class membership records
+  const membershipsQuery = query(collection(db, 'classMemberships'), where('classId', '==', classId));
+  const membershipsSnapshot = await getDocs(membershipsQuery);
+  membershipsSnapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+  // Delete the class itself
+  batch.delete(doc(db, 'classes', classId));
+  await batch.commit();
+};
+/**
+ * Remove a member from a class. Only president should call this.
+ * @param classId - The class document ID
+ * @param memberEmail - The email of the member to remove
+ */
+export const removeMemberFromClass = async (classId: string, memberEmail: string): Promise<void> => {
+  const classRef = doc(db, 'classes', classId);
+  // Remove member from class document
+  await updateDoc(classRef, {
+    members: arrayRemove(memberEmail),
+    [`memberRoles.${memberEmail}`]: null,
+    updatedAt: new Date()
+  });
+  // Remove membership record
+  const membershipsQuery = query(
+    collection(db, 'classMemberships'),
+    where('classId', '==', classId),
+    where('userEmail', '==', memberEmail)
+  );
+  const membershipsSnap = await getDocs(membershipsQuery);
+  for (const docSnap of membershipsSnap.docs) {
+    await deleteDoc(docSnap.ref);
+  }
+};
 export const createClass = async (
   name: string, 
   creatorId: string, 
@@ -223,40 +439,61 @@ export const createClass = async (
 
 export const joinClass = async (joinCode: string, userId: string, userEmail: string): Promise<boolean> => {
   try {
+    console.log('Attempting to join class with code:', joinCode);
     const classesQuery = query(collection(db, 'classes'), where('joinCode', '==', joinCode));
     const querySnapshot = await getDocs(classesQuery);
     
     if (querySnapshot.empty) {
+      console.log('No classes found with join code:', joinCode);
       throw new Error('Invalid join code');
     }
     
     const classDoc = querySnapshot.docs[0];
     const classData = classDoc.data() as FirebaseClass;
+    console.log('Found class:', classData.name, 'with members:', classData.members);
     
     if (classData.members.includes(userEmail)) {
       throw new Error('Already a member of this class');
     }
     
+    console.log('Starting class update...');
     // Update class with new member
-    await updateDoc(classDoc.ref, {
-      members: arrayUnion(userEmail),
-      [`memberRoles.${userEmail}`]: 'member',
-      updatedAt: new Date()
-    });
+    try {
+      await updateDoc(classDoc.ref, {
+        members: arrayUnion(userEmail),
+        [`memberRoles.${userEmail}`]: 'member',
+        updatedAt: new Date()
+      });
+      console.log('Class document updated successfully');
+    } catch (updateError) {
+      console.error('Error updating class document:', updateError);
+      throw new Error(`Failed to update class: ${updateError}`);
+    }
     
+    console.log('Creating membership record...');
     // Create membership record
-    await addDoc(collection(db, 'classMemberships'), {
-      userId,
-      userEmail,
-      classId: classDoc.id,
-      role: 'member',
-      joinedAt: new Date()
-    });
+    try {
+      await addDoc(collection(db, 'classMemberships'), {
+        userId,
+        userEmail,
+        classId: classDoc.id,
+        role: 'member',
+        joinedAt: new Date()
+      });
+      console.log('Membership record created successfully');
+    } catch (membershipError) {
+      console.error('Error creating membership record:', membershipError);
+      throw new Error(`Failed to create membership record: ${membershipError}`);
+    }
     
+    console.log('Successfully joined class');
     return true;
   } catch (error) {
     console.error('Error joining class:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw new Error(`Failed to join class: ${error.message}`);
+    }
+    throw new Error('Failed to join class: Unknown error');
   }
 };
 
@@ -271,10 +508,17 @@ export const getUserClasses = async (userEmail: string): Promise<FirebaseClass[]
       const data = doc.data();
       return {
         id: doc.id,
-        ...data,
+        name: data.name,
+        description: data.description,
+        creatorId: data.creatorId,
+        creatorEmail: data.creatorEmail,
+        members: data.members || [],
+        memberRoles: data.memberRoles || {},
+        joinCode: data.joinCode,
+        isPublic: data.isPublic,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date()
-      } as FirebaseClass;
+      };
     });
   } catch (error) {
     console.error('Error getting user classes:', error);
@@ -581,6 +825,25 @@ export const getQuizById = async (quizId: string): Promise<FirebaseQuiz | null> 
     console.error('Error getting quiz by ID:', error);
     return null;
   }
+};
+
+// Quiz Record operations
+export interface QuizRecord {
+  id?: string;
+  userId: string;
+  quizId: string;
+  score: number;
+  mistakes: Array<{ question: string; selected: number; correct: number }>;
+  selectedAnswers: number[];
+  timestamp: Date;
+}
+
+export const saveQuizRecord = async (record: Omit<QuizRecord, 'id'>): Promise<string> => {
+  const ref = await addDoc(collection(db, 'quizRecords'), {
+    ...record,
+    timestamp: new Date()
+  });
+  return ref.id;
 };
 
 // Migration and utility functions

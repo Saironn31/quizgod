@@ -2,6 +2,7 @@
 
 ## Console Errors You're Seeing:
 ```
+Error getting class subjects: FirebaseError: The query requires an index
 Error getting personal quizzes: FirebaseError: The query requires an index
 Error getting class quizzes: FirebaseError: The query requires an index
 ```
@@ -10,12 +11,17 @@ Error getting class quizzes: FirebaseError: The query requires an index
 
 **Copy these URLs and open them in your browser:**
 
-### Index 1: Personal Quizzes (Click this link)
+### Index 1: Class Subjects (Click this link)
+```
+https://console.firebase.google.com/v1/r/project/quizgod-app/firestore/indexes?create_composite=Ckxwcm9qZWN0cy9xdWl6Z29kLWFwcC9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvc3ViamVjdHMvaW5kZXhlcy9fEAEaCwoHY2xhc3NJZBABGg0KCWNyZWF0ZWRBdBACGgwKCF9fbmFtZV9fEAI
+```
+
+### Index 2: Personal Quizzes (Click this link)
 ```
 https://console.firebase.google.com/v1/r/project/quizgod-app/firestore/indexes?create_composite=Cktwcm9qZWN0cy9xdWl6Z29kLWFwcC9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcXVpenplcy9pbmRleGVzL18QARoOCgppc1BlcnNvbmFsEAEaCgoGdXNlcklkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg
 ```
 
-### Index 2: Class Quizzes (Click this link)
+### Index 3: Class Quizzes (Click this link)
 ```
 https://console.firebase.google.com/v1/r/project/quizgod-app/firestore/indexes?create_composite=Cktwcm9qZWN0cy9xdWl6Z29kLWFwcC9kYXRhYmFzZXMvKGRlZmF1bHQpL2NvbGxlY3Rpb25Hcm91cHMvcXVpenplcy9pbmRleGVzL18QARoLCgdjbGFzc0lkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAg
 ```

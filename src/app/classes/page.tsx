@@ -105,7 +105,7 @@ export default function ClassesPage() {
 
     try {
       setJoining(true);
-      const success = await joinClass(joinCode.trim(), user.uid, user.email);
+      const success = await joinClass(joinCode.trim().toUpperCase(), user.uid, user.email);
       
       if (success) {
         // Reload classes to show the joined class
@@ -118,7 +118,11 @@ export default function ClassesPage() {
       }
     } catch (error) {
       console.error('Error joining class:', error);
-      alert("Failed to join class. Please try again.");
+      if (error instanceof Error) {
+        alert(`Failed to join class: ${error.message}`);
+      } else {
+        alert("Failed to join class. Please try again.");
+      }
     } finally {
       setJoining(false);
     }

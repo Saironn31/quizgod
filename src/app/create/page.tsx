@@ -27,6 +27,8 @@ export default function CreatePage() {
   const [questions, setQuestions] = useState<Question[]>([{ question: "", options: ["", "", "", ""], correct: 0 }]);
   const [subjects, setSubjects] = useState<ExtendedFirebaseSubject[]>([]);
   const [classes, setClasses] = useState<FirebaseClass[]>([]);
+  const [allSubjects, setAllSubjects] = useState<ExtendedFirebaseSubject[]>([]);
+  const [allClasses, setAllClasses] = useState<FirebaseClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
@@ -68,12 +70,62 @@ export default function CreatePage() {
         }
       });
       
+      setAllSubjects(extendedSubjects);
+      setAllClasses(userClasses);
       setSubjects(extendedSubjects);
       setClasses(userClasses);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Filter functions for dynamic dropdown updates
+  const handleSubjectChange = (selectedSubject: string) => {
+    setSubject(selectedSubject);
+    
+    if (selectedSubject) {
+      const subjectObj = allSubjects.find(s => s.name === selectedSubject);
+      
+      if (subjectObj?.classId) {
+        // Subject belongs to a class - filter classes to only show that class and personal option
+        const relevantClass = allClasses.find(c => c.id === subjectObj.classId);
+        setClasses(relevantClass ? [relevantClass] : []);
+        setSelectedClass(subjectObj.classId);
+      } else {
+        // Personal subject - filter classes to remove options that don't have this subject
+        const classesWithSubject = allClasses.filter(c => 
+          allSubjects.some(s => s.classId === c.id && s.name === selectedSubject)
+        );
+        setClasses(classesWithSubject);
+        if (selectedClass && !classesWithSubject.some(c => c.id === selectedClass)) {
+          setSelectedClass("");
+        }
+      }
+    } else {
+      // No subject selected - show all classes
+      setClasses(allClasses);
+    }
+  };
+
+  const handleClassChange = (selectedClassId: string) => {
+    setSelectedClass(selectedClassId);
+    
+    if (selectedClassId) {
+      // Class selected - filter subjects to only show subjects from that class and personal subjects
+      const classSubjects = allSubjects.filter(s => 
+        s.classId === selectedClassId || s.source === 'personal'
+      );
+      setSubjects(classSubjects);
+      
+      // If current subject is not in the filtered list, clear it
+      if (subject && !classSubjects.some(s => s.name === subject)) {
+        setSubject("");
+      }
+    } else {
+      // No class selected (personal quiz) - show all subjects
+      setSubjects(allSubjects);
     }
   };
 
@@ -226,7 +278,7 @@ export default function CreatePage() {
                     <select 
                       className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       value={subject} 
-                      onChange={e => setSubject(e.target.value)}
+                      onChange={e => handleSubjectChange(e.target.value)}
                     >
                       <option value="">Select subject</option>
                       {subjects.map(s => (
@@ -244,7 +296,7 @@ export default function CreatePage() {
                     <select 
                       className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       value={selectedClass} 
-                      onChange={e => setSelectedClass(e.target.value)}
+                      onChange={e => handleClassChange(e.target.value)}
                     >
                       <option value="">Personal quiz (no class)</option>
                       {classes.map(c => (

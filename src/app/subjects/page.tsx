@@ -14,6 +14,8 @@ import {
 interface ExtendedFirebaseSubject extends FirebaseSubject {
   source?: 'personal' | 'class';
   className?: string;
+  creatorName?: string;
+  creatorUsername?: string;
 }
 
 export default function SubjectsPage() {
@@ -45,21 +47,33 @@ export default function SubjectsPage() {
       const userClasses = await getUserClasses(user.email);
       
       // Mark subjects with their source and class name
-      const extendedSubjects: ExtendedFirebaseSubject[] = allSubjects.map(subject => {
+      const extendedSubjects: ExtendedFirebaseSubject[] = await Promise.all(allSubjects.map(async subject => {
+        let creatorName, creatorUsername;
+        try {
+          const res = await import('@/lib/firestore');
+          const getUserProfile = res.getUserProfile;
+          const creatorProfile = await getUserProfile(subject.userId);
+          creatorName = creatorProfile?.name;
+          creatorUsername = creatorProfile?.username;
+        } catch {}
         if (subject.classId) {
           const parentClass = userClasses.find(c => c.id === subject.classId);
           return {
             ...subject,
             source: 'class' as const,
-            className: parentClass?.name || 'Unknown Class'
+            className: parentClass?.name || 'Unknown Class',
+            creatorName,
+            creatorUsername
           };
         } else {
           return {
             ...subject,
-            source: 'personal' as const
+            source: 'personal' as const,
+            creatorName,
+            creatorUsername
           };
         }
-      });
+      }));
       
       // Sort by creation date (newest first)
       extendedSubjects.sort((a, b) => {
@@ -163,19 +177,13 @@ export default function SubjectsPage() {
         </div>
 
         <div className="max-w-6xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl p-4 sm:p-6 lg:p-8">
-            {/* Header */}
+          <div className="max-w-6xl mx-auto">
+            {/* Header only, quick actions removed */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">📚 My Subjects</h1>
                 <p className="text-purple-200 mt-1">Organize your quiz topics and subjects</p>
               </div>
-              <Link 
-                href="/create" 
-                className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg text-center"
-              >
-                ➕ Create Quiz
-              </Link>
             </div>
 
             {/* Add Subject Form */}
@@ -233,29 +241,21 @@ export default function SubjectsPage() {
                 <p className="text-purple-200 mb-4">Add your first subject to start organizing your quizzes!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {subjects.map((subject) => (
-                  <div key={subject.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 sm:p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                          {subject.name}
-                        </h3>
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            subject.source === 'class' 
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
-                              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                          }`}>
-                            {subject.source === 'class' ? `👥 ${subject.className}` : '👤 Personal'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2">
+                  <div key={subject.id} className="bg-white rounded-lg shadow p-4">
+                    <h3 className="text-lg font-semibold text-gray-800">{subject.name}</h3>
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold mb-2 ${
+                      subject.source === 'class'
+                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                    }`}>
+                      {subject.source === 'class' ? `👥 ${subject.className}` : '👤 Personal'}
+                    </span>
+                    <div className="flex gap-2 mt-2">
+                      <span className="text-xs text-gray-400">Created by {subject.creatorName ?? subject.creatorUsername ?? subject.userId}</span>
                       <Link 
-                        href={`/create?subject=${encodeURIComponent(subject.name)}`} 
+                        href={subject.source === 'class' && subject.classId ? `/create?subject=${encodeURIComponent(subject.name)}&classId=${encodeURIComponent(subject.classId)}` : `/create?subject=${encodeURIComponent(subject.name)}`}
                         className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
                       >
                         ➕ Create Quiz
@@ -276,30 +276,6 @@ export default function SubjectsPage() {
               </div>
             )}
 
-            {/* Quick Links */}
-            <div className="mt-8 p-4 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">🔗 Quick Actions</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Link 
-                  href="/create" 
-                  className="flex items-center justify-center p-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
-                >
-                  📝 Create Quiz
-                </Link>
-                <Link 
-                  href="/ai-quiz" 
-                  className="flex items-center justify-center p-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-                >
-                  🧠 AI Quiz Generator
-                </Link>
-                <Link 
-                  href="/quizzes" 
-                  className="flex items-center justify-center p-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-                >
-                  🎮 My Quizzes
-                </Link>
-              </div>
-            </div>
           </div>
         </div>
       </div>
