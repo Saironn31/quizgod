@@ -176,16 +176,13 @@ export default function QuizPlayerPage() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-4 text-center">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-3xl mx-4 text-center">
           <h1 className="text-3xl font-bold mb-6">Quiz Complete! 🎉</h1>
-          
           <div className="space-y-4">
             <div className={`text-6xl ${passed ? 'text-green-400' : 'text-yellow-400'}`}>
               {passed ? '🏆' : '📚'}
             </div>
-            
             <h2 className="text-2xl font-semibold">{quiz.title}</h2>
-            
             <div className="bg-white/20 rounded-lg p-6">
               <div className="text-4xl font-bold mb-2">
                 {score}/{quiz.questions.length}
@@ -207,7 +204,41 @@ export default function QuizPlayerPage() {
               </div>
             </div>
 
-            <div className="flex gap-4 justify-center mt-6">
+            {/* Detailed Results */}
+            <div className="mt-8 text-left">
+              <h3 className="text-xl font-bold mb-4 text-center">Question Review</h3>
+              <div className="space-y-6">
+                {quiz.questions.map((question, idx) => {
+                  const correctIdx = question.correct;
+                  const userIdx = selectedAnswers[idx];
+                  const correctText = question.options[correctIdx];
+                  const userText = userIdx !== -1 ? question.options[userIdx] : "No answer";
+                  const isCorrect = userIdx === correctIdx;
+                  return (
+                    <div key={idx} className={`rounded-lg p-4 border ${isCorrect ? 'border-green-400 bg-green-900/20' : 'border-red-400 bg-red-900/20'}`}>
+                      <div className="font-semibold mb-2">Q{idx + 1}: {question.question}</div>
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                        <div>
+                          <span className="font-bold text-green-400">Correct Answer:</span> <span className="font-mono">{correctText}</span>
+                        </div>
+                        <div>
+                          <span className="font-bold text-blue-400">Your Answer:</span> <span className="font-mono">{userText}</span>
+                        </div>
+                        <div>
+                          {isCorrect ? (
+                            <span className="inline-block px-2 py-1 rounded bg-green-500 text-white text-xs font-bold">Correct</span>
+                          ) : (
+                            <span className="inline-block px-2 py-1 rounded bg-red-500 text-white text-xs font-bold">Incorrect</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-4 justify-center mt-8">
               <Link 
                 href="/quizzes" 
                 className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
