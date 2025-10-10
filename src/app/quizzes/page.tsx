@@ -23,6 +23,30 @@ export default function QuizzesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const { user } = useAuth();
 
+  // Load preferences
+  useEffect(() => {
+    try {
+      const { loadPreference } = require('@/utils/preferences');
+      const savedSearch = loadPreference('quizzes_search');
+      const savedSubject = loadPreference('quizzes_subjectFilter');
+      if (savedSearch) setSearchTerm(savedSearch);
+      if (savedSubject) setSelectedSubject(savedSubject);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // Persist preferences
+  useEffect(() => {
+    try {
+      const { savePreference } = require('@/utils/preferences');
+      savePreference('quizzes_search', searchTerm);
+      savePreference('quizzes_subjectFilter', selectedSubject);
+    } catch (e) {
+      // ignore
+    }
+  }, [searchTerm, selectedSubject]);
+
   useEffect(() => {
     if (!user?.uid || !user?.email) {
       setLoading(false);

@@ -203,6 +203,27 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
 function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData: FirebaseClass }) {
   const [sortBy, setSortBy] = useState<'name' | 'subject'>('name');
 
+  // Load saved sort preference
+  useEffect(() => {
+    try {
+      const { loadPreference } = require('@/utils/preferences');
+      const saved = loadPreference('classes_sortBy');
+      if (saved === 'name' || saved === 'subject') setSortBy(saved);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // Save sort preference
+  useEffect(() => {
+    try {
+      const { savePreference } = require('@/utils/preferences');
+      savePreference('classes_sortBy', sortBy);
+    } catch (e) {
+      // ignore
+    }
+  }, [sortBy]);
+
   const sortedQuizzes = [...quizzes].sort((a, b) => {
     if (sortBy === 'name') {
       return a.title.localeCompare(b.title);

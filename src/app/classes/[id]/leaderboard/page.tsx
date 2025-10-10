@@ -66,6 +66,27 @@ export default function LeaderboardPage() {
   const [quizzes, setQuizzes] = useState<{ key: string; quiz: Quiz }[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>(specificQuiz || 'all');
   const [sortBy, setSortBy] = useState<'score' | 'time' | 'quizzes'>('score');
+
+  // Load saved leaderboard sort preference
+  useEffect(() => {
+    try {
+      const { loadPreference } = require('@/utils/preferences');
+      const saved = loadPreference('leaderboard_sortBy');
+      if (saved === 'score' || saved === 'time' || saved === 'quizzes') setSortBy(saved);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  // Save leaderboard sort preference
+  useEffect(() => {
+    try {
+      const { savePreference } = require('@/utils/preferences');
+      savePreference('leaderboard_sortBy', sortBy);
+    } catch (e) {
+      // ignore
+    }
+  }, [sortBy]);
   const [userProfiles, setUserProfiles] = useState<{ [uid: string]: { username: string; name: string } }>({});
   const [selectedRecord, setSelectedRecord] = useState<QuizScore | null>(null);
 
