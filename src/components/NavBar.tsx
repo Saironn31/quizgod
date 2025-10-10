@@ -13,11 +13,13 @@ const NavBar: React.FC = () => {
   // Notifications popup state
   const [showNotifications, setShowNotifications] = useState(false);
   // Example notifications (replace with real data)
+  // Notifications with links
   const notifications = [
-    { id: 1, text: 'You have a new friend request.' },
-    { id: 2, text: 'Your quiz was played by 3 users.' },
-    { id: 3, text: 'Class invite accepted.' }
+    { id: 1, text: 'You have a new friend request.', link: '/friends' },
+    { id: 2, text: 'Your quiz was played by 3 users.', link: '/quiz-records' },
+    { id: 3, text: 'Class invite accepted.', link: '/classes' }
   ];
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
   // Handler for deleting profile picture
   // Removed profile picture delete handler
 
@@ -190,14 +192,25 @@ const NavBar: React.FC = () => {
           </button>
           {/* Notifications Popup */}
           {showNotifications && (
-            <div className="absolute right-8 top-16 z-[9999] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900">
+            <div className="absolute right-8 top-16 z-[99999] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900">
               <h3 className="font-bold text-lg mb-2 text-yellow-700">Notifications</h3>
               {notifications.length === 0 ? (
                 <div className="text-gray-500">No notifications.</div>
               ) : (
                 <ul className="space-y-2">
                   {notifications.map(n => (
-                    <li key={n.id} className="bg-yellow-100 rounded px-3 py-2 text-sm">{n.text}</li>
+                    <li
+                      key={n.id}
+                      className="bg-yellow-100 rounded px-3 py-2 text-sm cursor-pointer hover:bg-yellow-200 transition"
+                      onClick={() => {
+                        if (n.link && router) {
+                          router.push(n.link);
+                          setShowNotifications(false);
+                        }
+                      }}
+                    >
+                      {n.text}
+                    </li>
                   ))}
                 </ul>
               )}
