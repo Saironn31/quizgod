@@ -991,6 +991,7 @@ export const getUserQuizRecords = async (userId: string): Promise<QuizRecord[]> 
       id: doc.id,
       userId: data.userId,
       quizId: data.quizId,
+      subject: data.subject || undefined,
       score: data.score,
       mistakes: data.mistakes,
       selectedAnswers: data.selectedAnswers,
@@ -1001,6 +1002,21 @@ export const getUserQuizRecords = async (userId: string): Promise<QuizRecord[]> 
 };
 // Migration and utility functions
 export const migrateLocalDataToFirestore = async (userId: string, userEmail: string) => {
+    // Migrate historical quizRecords to populate missing subject fields
+    const recordsQuery = query(
+      collection(db, 'quizRecords'),
+      where('userId', '==', userId)
+    );
+    const recordsSnap = await getDocs(recordsQuery);
+    for (const doc of recordsSnap.docs) {
+      const data = doc.data();
+      if (!data.subject && data.quizId) {
+        const quiz = await getQuizById(data.quizId);
+        if (quiz?.subject) {
+          await doc.ref.update({ subject: quiz.subject });
+        }
+      }
+    }
   try {
     console.log('Starting migration of localStorage data to Firestore...');
     
