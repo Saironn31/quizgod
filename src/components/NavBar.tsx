@@ -2,12 +2,11 @@
 import AddFriendForm from './AddFriendForm';
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
-import { getFriendRequests } from '@/lib/firestore';
+import { getFriendRequests, getUserQuizRecords } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 // import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 import ChangeNameForm from './ChangeNameForm';
-// removed duplicate useState import
-
+import { FaChartBar, FaCheckCircle, FaCalendarAlt } from 'react-icons/fa';
 
 const NavBar: React.FC = () => {
   // All hooks and handlers inside function
@@ -100,6 +99,20 @@ const NavBar: React.FC = () => {
     }
   };
 
+  const [userStats, setUserStats] = useState<{ quizzesTaken: number; avgScore: number; lastQuizDate: Date | null }>({ quizzesTaken: 0, avgScore: 0, lastQuizDate: null });
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user?.uid) return;
+      const records = await getUserQuizRecords(user.uid);
+      const quizzesTaken = records.length;
+      const avgScore = quizzesTaken > 0 ? Math.round(records.reduce((sum, r) => sum + (r.score || 0), 0) / quizzesTaken) : 0;
+      const lastQuizDate = quizzesTaken > 0 ? records.reduce((latest, r) => r.timestamp > latest ? r.timestamp : latest, records[0].timestamp) : null;
+      setUserStats({ quizzesTaken, avgScore, lastQuizDate });
+    };
+    fetchUserStats();
+  }, [user?.uid]);
+
   // Removed triggerFileInput logic
 
   // (Removed duplicate useEffect outside function body)
@@ -111,49 +124,55 @@ const NavBar: React.FC = () => {
         <div className="flex items-center gap-3 flex-1">
           <Link 
             href="/" 
-            className="px-5 py-2 rounded-xl text-blue-600 hover:bg-blue-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105"
+              className="px-6 py-2 rounded-xl text-blue-700 bg-blue-100/30 hover:bg-blue-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-blue-600/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
             Home
           </Link>
           <Link 
             href="/create" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+              className="px-6 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
           >
             Create Quiz
           </Link>
           <Link 
             href="/ai-quiz" 
-            className="px-5 py-2 rounded-xl text-yellow-400 hover:bg-yellow-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-yellow-400/30"
+              className="px-6 py-2 rounded-xl text-yellow-700 bg-yellow-100/30 hover:bg-yellow-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-yellow-500/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
           >
             AI Quiz
           </Link>
           <Link 
             href="/subjects" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+              className="px-6 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
           >
             Subjects
           </Link>
           <Link 
             href="/quizzes" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+              className="px-6 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
           >
             My Quizzes
           </Link>
           <Link 
             href="/classes" 
-            className="px-5 py-2 rounded-xl text-green-600 hover:bg-green-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-green-600/30"
+              className="px-6 py-2 rounded-xl text-green-800 bg-green-100/30 hover:bg-green-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-green-700/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400"
           >
             Classes
           </Link>
           <Link 
             href="/quiz-records" 
-            className="px-5 py-2 rounded-xl text-purple-700 hover:bg-purple-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-purple-700/30"
+            className="px-6 py-2 rounded-xl text-purple-800 bg-purple-100/30 hover:bg-purple-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-purple-700/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
           >
             Quiz Records
           </Link>
           <Link 
+            href="/analytics" 
+            className="px-6 py-2 rounded-xl text-teal-800 bg-teal-100/30 hover:bg-teal-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-teal-700/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+          >
+            Analytics
+          </Link>
+          <Link 
             href="/friends" 
-            className="px-5 py-2 rounded-xl text-pink-600 hover:bg-pink-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-pink-600/30 relative"
+            className="px-6 py-2 rounded-xl text-pink-700 bg-pink-100/30 hover:bg-pink-500/40 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-pink-600/30 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-pink-400 relative"
           >
             Friends
             {pendingRequests > 0 && (
@@ -166,17 +185,46 @@ const NavBar: React.FC = () => {
         {/* Right Section - Profile, Notifications, Theme Toggle & Logout */}
         <div className="flex items-center gap-4">
           {/* Profile Details, Welcome, Name */}
-          <div className="flex flex-col items-end text-right">
+            <div className="flex flex-col items-end text-right mr-2">
             <span className="font-semibold text-white text-lg">
               {getDisplayName()}
             </span>
             <span className="text-purple-200 text-sm">
               Welcome back!
             </span>
+            {/* Quick Stats */}
+            <div className="mt-1 text-xs text-teal-200 flex flex-col gap-1">
+              <span className="flex items-center gap-2" title="Total quizzes you've taken">
+                <FaCheckCircle className="text-green-400" aria-label="Quizzes Taken" />
+                Quizzes Taken: <b>{userStats.quizzesTaken}</b>
+              </span>
+              <span className="flex items-center gap-2" title="Your average score across all quizzes">
+                <FaChartBar className="text-blue-300" aria-label="Average Score" />
+                Avg. Score: <b>{userStats.avgScore}</b>
+              </span>
+              <span className="flex items-center gap-2" title="Date of your last quiz attempt">
+                <FaCalendarAlt className="text-yellow-300" aria-label="Last Quiz Date" />
+                Last Quiz: <b>{userStats.lastQuizDate ? userStats.lastQuizDate.toLocaleDateString() : 'N/A'}</b>
+              </span>
+            </div>
             <a
               href="/profile"
               className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-medium shadow hover:bg-purple-700/80 transition-all text-center"
             >
+                <div className="flex gap-2 mt-2">
+                  <a
+                    href="/profile"
+                    className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-medium shadow hover:bg-purple-700/80 transition-all text-center"
+                  >
+                    Profile
+                  </a>
+                  <button 
+                    onClick={handleLogout} 
+                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg text-xs font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all text-center"
+                  >
+                    Logout
+                  </button>
+                </div>
               Profile
             </a>
           </div>
