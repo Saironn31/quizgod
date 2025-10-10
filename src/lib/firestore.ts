@@ -953,6 +953,7 @@ export interface QuizRecord {
   id?: string;
   userId: string;
   quizId: string;
+  subject?: string;
   score: number;
   mistakes: Array<{ question: string; selected: number; correct: number }>;
   selectedAnswers: number[];
@@ -960,8 +961,15 @@ export interface QuizRecord {
 }
 
 export const saveQuizRecord = async (record: Omit<QuizRecord, 'id'>): Promise<string> => {
+  // Fetch subject from quiz if not provided
+  let subject = record.subject;
+  if (!subject && record.quizId) {
+    const quiz = await getQuizById(record.quizId);
+    subject = quiz?.subject;
+  }
   const ref = await addDoc(collection(db, 'quizRecords'), {
     ...record,
+    subject,
     timestamp: new Date()
   });
   return ref.id;
