@@ -105,7 +105,7 @@ export default function QuizRecordsPage() {
                         Subject: {quizInfoMap[record.quizId]?.subject || "Unknown"}
                       </div>
                       <div className="text-purple-200 text-sm">
-                        Score: {record.score} | {new Date(record.timestamp.seconds ? record.timestamp.seconds * 1000 : record.timestamp).toLocaleString()}
+                        Score: {record.score} | {record.timestamp.toLocaleString()}
                       </div>
                     </div>
                     <div className="text-purple-300">View Details →</div>

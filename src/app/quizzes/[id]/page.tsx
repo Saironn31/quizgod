@@ -18,6 +18,56 @@ export default function QuizPlayerPage() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Load quiz progress from localStorage
+  const loadQuizProgress = () => {
+    if (!user?.uid || !params.id) return;
+    
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    const savedProgress = localStorage.getItem(progressKey);
+    
+    if (savedProgress) {
+      try {
+        const progress = JSON.parse(savedProgress);
+        setCurrentQuestionIndex(progress.currentQuestionIndex || 0);
+        setSelectedAnswers(progress.selectedAnswers || []);
+        setTimeLeft(progress.timeLeft || 0);
+        setQuizStarted(progress.quizStarted || false);
+        setShowResults(progress.showResults || false);
+        setScore(progress.score || 0);
+      } catch (error) {
+        console.error('Failed to load quiz progress:', error);
+        // Clear corrupted data
+        localStorage.removeItem(progressKey);
+      }
+    }
+  };
+
+  // Save quiz progress to localStorage
+  const saveQuizProgress = () => {
+    if (!user?.uid || !params.id || showResults) return;
+    
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    const progress = {
+      currentQuestionIndex,
+      selectedAnswers,
+      timeLeft,
+      quizStarted,
+      showResults,
+      score,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(progressKey, JSON.stringify(progress));
+  };
+
+  // Clear quiz progress
+  const clearQuizProgress = () => {
+    if (!user?.uid || !params.id) return;
+    
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    localStorage.removeItem(progressKey);
+  };
+
   useEffect(() => {
     loadQuiz();
   }, [params.id]);
@@ -34,8 +84,40 @@ export default function QuizPlayerPage() {
       }
 
       setQuiz(quizData);
-      setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
-      setTimeLeft(quizData.questions.length * 60); // 1 minute per question
+      
+      // Load saved progress or initialize new quiz
+      const progressKey = `quiz_progress_${user?.uid}_${params.id}`;
+      const savedProgress = localStorage.getItem(progressKey);
+      
+      if (savedProgress) {
+        try {
+          const progress = JSON.parse(savedProgress);
+          // Check if progress is recent (within last 24 hours)
+          const isRecent = progress.timestamp && (Date.now() - progress.timestamp) < 24 * 60 * 60 * 1000;
+          
+          if (isRecent) {
+            setCurrentQuestionIndex(progress.currentQuestionIndex || 0);
+            setSelectedAnswers(progress.selectedAnswers || new Array(quizData.questions.length).fill(-1));
+            setTimeLeft(progress.timeLeft || quizData.questions.length * 60);
+            setQuizStarted(progress.quizStarted || false);
+            setShowResults(progress.showResults || false);
+            setScore(progress.score || 0);
+          } else {
+            // Clear old progress
+            localStorage.removeItem(progressKey);
+            setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
+            setTimeLeft(quizData.questions.length * 60);
+          }
+        } catch (error) {
+          console.error('Failed to load quiz progress:', error);
+          localStorage.removeItem(progressKey);
+          setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
+          setTimeLeft(quizData.questions.length * 60);
+        }
+      } else {
+        setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
+        setTimeLeft(quizData.questions.length * 60);
+      }
     } catch (error) {
       console.error("Error loading quiz:", error);
       router.push("/quizzes");
@@ -55,14 +137,61 @@ export default function QuizPlayerPage() {
     }
   }, [timeLeft, quizStarted, showResults]);
 
+  // Auto-save progress when question changes or time updates
+  useEffect(() => {
+    if (quizStarted && !showResults && user?.uid && params.id) {
+      const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+      const progress = {
+        currentQuestionIndex,
+        selectedAnswers,
+        timeLeft,
+        quizStarted,
+        showResults,
+        score,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(progressKey, JSON.stringify(progress));
+    }
+  }, [currentQuestionIndex, selectedAnswers, timeLeft, quizStarted, showResults, score, user?.uid, params.id]);
+
   const handleStartQuiz = () => {
+    if (!quiz || !user) return;
+    
     setQuizStarted(true);
+    
+    // Save initial progress to localStorage
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    const progress = {
+      currentQuestionIndex: 0,
+      selectedAnswers: new Array(quiz.questions.length).fill(-1),
+      timeLeft: quiz.questions.length * 60,
+      quizStarted: true,
+      showResults: false,
+      score: 0,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(progressKey, JSON.stringify(progress));
   };
 
   const handleAnswerSelect = (answerIndex: number) => {
+    if (!quiz || !user) return;
+    
     const newAnswers = [...selectedAnswers];
     newAnswers[currentQuestionIndex] = answerIndex;
     setSelectedAnswers(newAnswers);
+    
+    // Save progress to localStorage
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    const progress = {
+      currentQuestionIndex,
+      selectedAnswers: newAnswers,
+      timeLeft,
+      quizStarted,
+      showResults,
+      score,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(progressKey, JSON.stringify(progress));
   };
 
   const handleNextQuestion = () => {
@@ -94,6 +223,7 @@ export default function QuizPlayerPage() {
       }
     });
 
+    const percentage = Math.round((correctCount / quiz.questions.length) * 100);
     setScore(correctCount);
     setShowResults(true);
 
@@ -103,10 +233,15 @@ export default function QuizPlayerPage() {
         userId: user.uid,
         quizId: quiz.id,
         score: correctCount,
+        percentage: percentage,
         mistakes,
         selectedAnswers,
         timestamp: new Date()
       });
+      
+      // Clear saved progress after successful save
+      const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+      localStorage.removeItem(progressKey);
     } catch (err) {
       console.error('Failed to save quiz record:', err);
     }

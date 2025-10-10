@@ -21,6 +21,13 @@ interface ClassAnalyticsStats {
   memberCount: number;
 }
 
+interface ClassAnalyticsTabProps {
+  classData: any;
+  user: any;
+  quizzes: any[];
+  subjects: any[];
+}
+
 export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }: ClassAnalyticsTabProps) {
   const [stats, setStats] = useState<ClassAnalyticsStats>({ 
     quizzesTaken: 0, 

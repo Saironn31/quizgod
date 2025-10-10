@@ -14,6 +14,14 @@ interface MemberAnalyticsStats {
   subjectPerformance: { subject: string; score: number }[];
 }
 
+interface MemberAnalyticsTabProps {
+  classId: string;
+  memberId: string;
+  quizzes: any[];
+  subjects: any[];
+  onBack: () => void;
+}
+
 export default function MemberAnalyticsTab({ classId, memberId, quizzes, subjects, onBack }: MemberAnalyticsTabProps) {
   const [stats, setStats] = useState<MemberAnalyticsStats>({ 
     quizzesTaken: 0, 

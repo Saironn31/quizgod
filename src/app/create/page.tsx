@@ -33,6 +33,55 @@ export default function CreatePage() {
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
 
+  // Load saved form data from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedData = localStorage.getItem('create_quiz_draft');
+      if (savedData) {
+        const draft = JSON.parse(savedData);
+        const isRecent = draft.timestamp && (Date.now() - draft.timestamp) < 7 * 24 * 60 * 60 * 1000; // 7 days
+        
+        if (isRecent) {
+          setTitle(draft.title || "");
+          setSubject(draft.subject || "");
+          setDescription(draft.description || "");
+          setSelectedClass(draft.selectedClass || "");
+          setQuestions(draft.questions || [{ question: "", options: ["", "", "", ""], correct: 0 }]);
+        } else {
+          localStorage.removeItem('create_quiz_draft');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      localStorage.removeItem('create_quiz_draft');
+    }
+  }, []);
+
+  // Auto-save form data to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Don't save if form is completely empty
+    const isEmpty = !title && !subject && !description && !selectedClass && 
+                    questions.length === 1 && !questions[0].question && 
+                    questions[0].options.every(opt => !opt);
+    
+    if (isEmpty) return;
+    
+    const draft = {
+      title,
+      subject,
+      description,
+      selectedClass,
+      questions,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('create_quiz_draft', JSON.stringify(draft));
+  }, [title, subject, description, selectedClass, questions]);
+
   useEffect(() => {
     if (!user?.uid || !user?.email) {
       setLoading(false);
@@ -203,6 +252,9 @@ export default function CreatePage() {
 
       alert("Quiz created successfully!");
       
+      // Clear saved draft from localStorage
+      localStorage.removeItem('create_quiz_draft');
+      
       // Reset form
       setTitle("");
       setSubject("");
@@ -215,6 +267,17 @@ export default function CreatePage() {
       alert("Failed to create quiz. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleClearDraft = () => {
+    if (confirm('Are you sure you want to clear this draft? This cannot be undone.')) {
+      localStorage.removeItem('create_quiz_draft');
+      setTitle("");
+      setSubject("");
+      setSelectedClass("");
+      setDescription("");
+      setQuestions([{ question: "", options: ["", "", "", ""], correct: 0 }]);
     }
   };
 
@@ -246,7 +309,7 @@ export default function CreatePage() {
 
         <div className="max-w-4xl mx-auto">
           <div className="bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl p-6 sm:p-8">
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-white">➕ Create Quiz</h1>
               <Link 
                 href="/quizzes" 
@@ -255,6 +318,22 @@ export default function CreatePage() {
                 ← My Quizzes
               </Link>
             </div>
+
+            {/* Draft indicator */}
+            {(title || subject || description || questions.some(q => q.question || q.options.some(o => o))) && (
+              <div className="mb-6 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-300">💾</span>
+                  <span className="text-sm text-blue-200">Draft auto-saved</span>
+                </div>
+                <button
+                  onClick={handleClearDraft}
+                  className="text-xs px-3 py-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors"
+                >
+                  Clear Draft
+                </button>
+              </div>
+            )}
 
             {loading ? (
               <div className="text-center py-8">

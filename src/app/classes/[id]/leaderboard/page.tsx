@@ -6,6 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { getQuizById } from "@/lib/firestore";
 
 interface Class {
   id: string;
@@ -39,6 +40,7 @@ interface QuizScore {
 
 interface LeaderboardEntry {
   username: string;
+  displayName?: string;
   totalScore: number;
   averageScore: number;
   quizzesCompleted: number;
@@ -64,6 +66,7 @@ export default function LeaderboardPage() {
   const [quizzes, setQuizzes] = useState<{ key: string; quiz: Quiz }[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<string>(specificQuiz || 'all');
   const [sortBy, setSortBy] = useState<'score' | 'time' | 'quizzes'>('score');
+  const [userProfiles, setUserProfiles] = useState<{ [uid: string]: { username: string; name: string } }>({});
   const [selectedRecord, setSelectedRecord] = useState<QuizScore | null>(null);
 
   useEffect(() => {
@@ -78,9 +81,33 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     if (classData) {
+      loadUserProfiles();
       loadLeaderboardData();
     }
   }, [classData, selectedQuiz, sortBy]);
+
+  const loadUserProfiles = async () => {
+    if (!classData?.members) return;
+    const profiles: { [uid: string]: { username: string; name: string } } = {};
+    
+    for (const memberId of classData.members) {
+      try {
+        const userRef = doc(db, 'users', memberId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          profiles[memberId] = {
+            username: userData.username || memberId,
+            name: userData.name || userData.username || memberId
+          };
+        }
+      } catch (err) {
+        console.error(`Failed to load profile for ${memberId}:`, err);
+      }
+    }
+    
+    setUserProfiles(profiles);
+  };
 
   const loadClassData = async (classId: string) => {
     const classInfo = localStorage.getItem(`qg_class_${classId}`);
@@ -145,19 +172,33 @@ export default function LeaderboardPage() {
           orderBy("timestamp", "desc")
         );
         const snap = await getDocs(q);
-        allMemberScores = allMemberScores.concat(snap.docs.map(doc => {
+        allMemberScores = allMemberScores.concat(await Promise.all(snap.docs.map(async (doc) => {
           const data = doc.data();
+          // Use stored percentage or calculate if not available (for backward compatibility)
+          let percentage = data.percentage || 0;
+          if (!percentage && data.score !== undefined) {
+            // Fetch quiz data from Firestore to calculate percentage
+            try {
+              const quiz = await getQuizById(data.quizId);
+              if (quiz?.questions) {
+                percentage = Math.round((data.score / quiz.questions.length) * 100);
+              }
+            } catch (err) {
+              console.error(`Failed to fetch quiz ${data.quizId} for percentage calculation:`, err);
+            }
+          }
+          
           return {
             username: data.userId,
-            score: data.score,
-            percentage: data.percentage,
-            completionTime: data.completionTime,
+            score: data.score || 0,
+            percentage: percentage,
+            completionTime: data.completionTime || 0,
             completedAt: data.timestamp?.seconds ? new Date(data.timestamp.seconds * 1000).toISOString() : data.timestamp,
             quizKey: data.quizId,
             quizTitle: data.quizTitle || data.quizId,
             mistakes: data.mistakes || [],
           };
-        }));
+        })));
       }
       setAllScores(allMemberScores);
       generateLeaderboard(allMemberScores);
@@ -171,8 +212,10 @@ export default function LeaderboardPage() {
 
     // Initialize all members
     classData?.members.forEach(member => {
+      const profile = userProfiles[member] || { username: member, name: member };
       memberStats[member] = {
-        username: member,
+        username: profile.username,
+        displayName: profile.name,
         totalScore: 0,
         averageScore: 0,
         quizzesCompleted: 0,
@@ -451,11 +494,14 @@ export default function LeaderboardPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
-                              {entry.username[0].toUpperCase()}
+                              {(entry.displayName || entry.username)[0].toUpperCase()}
                             </div>
                             <div>
                               <div className="text-sm font-medium text-gray-900">
-                                {entry.username}
+                                {entry.displayName || entry.username}
+                                {entry.displayName && entry.displayName !== entry.username && (
+                                  <div className="text-xs text-gray-500">@{entry.username}</div>
+                                )}
                                 {entry.username === (user?.displayName || user?.email) && (
                                   <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
                                 )}

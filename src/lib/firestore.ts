@@ -23,6 +23,7 @@ export const getClassQuizRecords = async (classId: string): Promise<QuizRecord[]
         userId: data.userId,
         quizId: data.quizId,
         score: data.score,
+        percentage: data.percentage || 0,
         mistakes: data.mistakes,
         selectedAnswers: data.selectedAnswers,
         timestamp: data.timestamp?.toDate?.() || new Date()
@@ -56,6 +57,7 @@ export const getClassMemberQuizRecords = async (classId: string, userId: string)
         userId: data.userId,
         quizId: data.quizId,
         score: data.score,
+        percentage: data.percentage || 0,
         mistakes: data.mistakes,
         selectedAnswers: data.selectedAnswers,
         timestamp: data.timestamp?.toDate?.() || new Date()
@@ -254,7 +256,8 @@ export interface FirebaseClass {
   members: string[]; // Array of user emails
   memberRoles: { [email: string]: 'president' | 'member' };
   joinCode: string;
-
+  createdAt?: string;
+  president?: string;
   isPublic: boolean;
 }
 
@@ -302,6 +305,8 @@ export interface FirebaseSubject {
   id: string;
   name: string;
   userId: string;
+  creatorName?: string;
+  creatorUsername?: string;
   classId?: string; // Optional - belongs to class if set
   isPersonal: boolean;
   createdAt: Date;
@@ -965,6 +970,7 @@ export interface QuizRecord {
   quizId: string;
   subject?: string;
   score: number;
+  percentage: number;
   mistakes: Array<{ question: string; selected: number; correct: number }>;
   selectedAnswers: number[];
   timestamp: Date;
@@ -1003,6 +1009,7 @@ export const getUserQuizRecords = async (userId: string): Promise<QuizRecord[]> 
       quizId: data.quizId,
       subject: data.subject || undefined,
       score: data.score,
+      percentage: data.percentage || 0,
       mistakes: data.mistakes,
       selectedAnswers: data.selectedAnswers,
       timestamp: data.timestamp?.toDate?.() || new Date()

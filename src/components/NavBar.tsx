@@ -10,6 +10,7 @@ interface Notification {
   id: string;
   text: string;
   link: string;
+  dismissible?: boolean;
 }
 
 const NavBar: React.FC = () => {
@@ -18,6 +19,10 @@ const NavBar: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
+
+  const dismissNotification = (notificationId: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+  };
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -30,7 +35,8 @@ const NavBar: React.FC = () => {
         notifArr.push({ 
           id: 'friend', 
           text: `You have ${receivedRequests.length} new friend request${receivedRequests.length > 1 ? 's' : ''}.`, 
-          link: '/friends' 
+          link: '/friends',
+          dismissible: true
         });
       }
       
@@ -40,7 +46,8 @@ const NavBar: React.FC = () => {
         notifArr.push({ 
           id: 'friend-accepted', 
           text: `${acceptedCount} of your friend request${acceptedCount > 1 ? 's were' : ' was'} accepted!`, 
-          link: '/friends' 
+          link: '/friends',
+          dismissible: true
         });
       }
       
@@ -49,7 +56,7 @@ const NavBar: React.FC = () => {
       const playCounts = await res.getQuizPlayCountsForUser(user.uid);
       Object.entries(playCounts).forEach(([quizId, count]) => {
         if (count > 0) {
-          notifArr.push({ id: `quiz-${quizId}`, text: `Your quiz was played by ${count} user${count > 1 ? 's' : ''}.`, link: '/quiz-records' });
+          notifArr.push({ id: `quiz-${quizId}`, text: `Your quiz was played by ${count} user${count > 1 ? 's' : ''}.`, link: '/quiz-records', dismissible: true });
         }
       });
       
@@ -199,15 +206,31 @@ const NavBar: React.FC = () => {
                 {notifications.map(n => (
                   <li
                     key={n.id}
-                    className="bg-yellow-100 rounded px-3 py-2 text-sm cursor-pointer hover:bg-yellow-200 transition"
-                    onClick={() => {
-                      if (n.link && router) {
-                        router.push(n.link);
-                        setShowNotifications(false);
-                      }
-                    }}
+                    className="bg-yellow-100 rounded px-3 py-2 text-sm cursor-pointer hover:bg-yellow-200 transition relative group"
                   >
-                    {n.text}
+                    <div
+                      className="flex-1"
+                      onClick={() => {
+                        if (n.link && router) {
+                          router.push(n.link);
+                          setShowNotifications(false);
+                        }
+                      }}
+                    >
+                      {n.text}
+                    </div>
+                    <button
+                      className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        dismissNotification(n.id);
+                      }}
+                      aria-label="Dismiss notification"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </li>
                 ))}
               </ul>

@@ -28,6 +28,35 @@ export default function AIQuizGenerator() {
   const [newSubject, setNewSubject] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
+  
+  // Load saved draft from localStorage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    try {
+      const savedData = localStorage.getItem('ai_quiz_draft');
+      if (savedData) {
+        const draft = JSON.parse(savedData);
+        const isRecent = draft.timestamp && (Date.now() - draft.timestamp) < 7 * 24 * 60 * 60 * 1000; // 7 days
+        
+        if (isRecent) {
+          setQuizTitle(draft.quizTitle || "");
+          setQuizQuestions(draft.quizQuestions || "");
+          setSelectedSubject(draft.selectedSubject || "");
+          setSelectedClass(draft.selectedClass || "");
+          if (draft.showQuizForm) {
+            setShowQuizForm(true);
+          }
+        } else {
+          localStorage.removeItem('ai_quiz_draft');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load draft:', error);
+      localStorage.removeItem('ai_quiz_draft');
+    }
+  }, []);
+  
   // Dynamic filtering logic
   useEffect(() => {
     // Filter subjects based on selected class
@@ -59,6 +88,26 @@ export default function AIQuizGenerator() {
   const quizFormRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // Don't save if form is completely empty
+    const isEmpty = !quizTitle && !quizQuestions && !selectedSubject && !selectedClass && !showQuizForm;
+    if (isEmpty) return;
+    
+    const draft = {
+      quizTitle,
+      quizQuestions,
+      selectedSubject,
+      selectedClass,
+      showQuizForm,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('ai_quiz_draft', JSON.stringify(draft));
+  }, [quizTitle, quizQuestions, selectedSubject, selectedClass, showQuizForm]);
 
   useEffect(() => {
     if (!user?.uid || !user?.email) {
@@ -168,6 +217,9 @@ export default function AIQuizGenerator() {
       }
 
       await createQuiz(quizData);
+
+      // Clear saved draft
+      localStorage.removeItem('ai_quiz_draft');
 
       // Reset form
       setQuizTitle("");
