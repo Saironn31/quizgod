@@ -1167,6 +1167,62 @@ export const subscribeToClassSubjects = (
   });
 };
 
+export const subscribeToClassChatMessages = (
+  classId: string,
+  callback: (messages: ChatMessage[]) => void
+) => {
+  const q = query(
+    collection(db, 'chatMessages'),
+    where('classId', '==', classId),
+    orderBy('timestamp', 'asc')
+  );
+  
+  return onSnapshot(q, (querySnapshot) => {
+    const messages = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...convertTimestamps(doc.data())
+    } as ChatMessage));
+    callback(messages);
+  });
+};
+
+export const subscribeToFriendRequests = (
+  userId: string,
+  callback: (requests: any[]) => void
+) => {
+  const q = query(
+    collection(db, 'friendRequests'),
+    where('receiverUid', '==', userId),
+    where('status', '==', 'pending')
+  );
+  
+  return onSnapshot(q, (querySnapshot) => {
+    const requests = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...convertTimestamps(doc.data())
+    }));
+    callback(requests);
+  });
+};
+
+export const subscribeToSentFriendRequests = (
+  userId: string,
+  callback: (requests: any[]) => void
+) => {
+  const q = query(
+    collection(db, 'friendRequests'),
+    where('senderUid', '==', userId)
+  );
+  
+  return onSnapshot(q, (querySnapshot) => {
+    const requests = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...convertTimestamps(doc.data())
+    }));
+    callback(requests);
+  });
+};
+
 /**
  * Add all members of a class as friends for the current user (mutual friendship)
  * @param currentUid - UID of the current user

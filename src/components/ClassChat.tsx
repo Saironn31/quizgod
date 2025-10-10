@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { sendChatMessage, getClassChatMessages } from '@/lib/firestore';
+import { sendChatMessage, subscribeToClassChatMessages } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ClassChatProps {
@@ -14,14 +14,11 @@ const ClassChat: React.FC<ClassChatProps> = ({ classId }) => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchMessages = async () => {
-      const msgs = await getClassChatMessages(classId);
+    const unsubscribe = subscribeToClassChatMessages(classId, (msgs) => {
       setMessages(msgs);
       chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Poll every 3s
-    return () => clearInterval(interval);
+    });
+    return unsubscribe;
   }, [classId]);
 
   const handleSend = async (e: React.FormEvent) => {

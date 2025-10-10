@@ -2,7 +2,7 @@
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getFriendRequests, getUserQuizRecords } from '@/lib/firestore';
+import { getFriendRequests, subscribeToFriendRequests, subscribeToSentFriendRequests, getUserQuizRecords } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 // import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 
@@ -20,16 +20,31 @@ const NavBar: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user?.uid) return;
-      // Friend request notification
-      const requests = await getFriendRequests(user.uid);
-      const pendingCount = requests.filter(r => r.type === 'received' && r.status === 'pending').length;
-      const notifArr = [];
-      if (pendingCount > 0) {
-        notifArr.push({ id: 'friend', text: `You have ${pendingCount} new friend request${pendingCount > 1 ? 's' : ''}.`, link: '/friends' });
+    if (!user?.uid) return;
+    
+    const updateNotifications = async (receivedRequests: any[] = [], sentRequests: any[] = []) => {
+      const notifArr: Notification[] = [];
+      
+      // Friend request notifications (received)
+      if (receivedRequests.length > 0) {
+        notifArr.push({ 
+          id: 'friend', 
+          text: `You have ${receivedRequests.length} new friend request${receivedRequests.length > 1 ? 's' : ''}.`, 
+          link: '/friends' 
+        });
       }
-      // Quiz played notification (dynamic)
+      
+      // Accepted friend requests (sent requests that are accepted)
+      const acceptedCount = sentRequests.filter(r => r.status === 'accepted').length;
+      if (acceptedCount > 0) {
+        notifArr.push({ 
+          id: 'friend-accepted', 
+          text: `${acceptedCount} of your friend request${acceptedCount > 1 ? 's were' : ' was'} accepted!`, 
+          link: '/friends' 
+        });
+      }
+      
+      // Quiz played notifications (keep polling for now, could be optimized later)
       const res = await import('@/lib/firestore');
       const playCounts = await res.getQuizPlayCountsForUser(user.uid);
       Object.entries(playCounts).forEach(([quizId, count]) => {
@@ -37,11 +52,29 @@ const NavBar: React.FC = () => {
           notifArr.push({ id: `quiz-${quizId}`, text: `Your quiz was played by ${count} user${count > 1 ? 's' : ''}.`, link: '/quiz-records' });
         }
       });
-      // Example: class invite accepted (static, replace with real logic if needed)
-      notifArr.push({ id: 'class', text: 'Class invite accepted.', link: '/classes' });
+      
       setNotifications(notifArr);
     };
-    fetchNotifications();
+
+    // Subscribe to received friend requests
+    const unsubscribeReceived = subscribeToFriendRequests(user.uid, (requests) => {
+      // We need both received and sent to update properly
+      // For now, just update with received
+      updateNotifications(requests, []);
+    });
+
+    // Subscribe to sent friend requests
+    const unsubscribeSent = subscribeToSentFriendRequests(user.uid, (requests) => {
+      updateNotifications([], requests);
+    });
+
+    // Initial load
+    updateNotifications();
+
+    return () => {
+      unsubscribeReceived();
+      unsubscribeSent();
+    };
   }, [user?.uid]);
   // Handler for deleting profile picture
   // Removed profile picture delete handler
