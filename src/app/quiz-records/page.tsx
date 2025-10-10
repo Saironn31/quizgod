@@ -1,17 +1,17 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { getQuizById } from "@/lib/firestore";
+import { getQuizById, QuizRecord } from "@/lib/firestore";
 import NavBar from "@/components/NavBar";
 import { useAuth } from "@/contexts/AuthContext";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, orderBy, Timestamp } from "firebase/firestore";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
 
 export default function QuizRecordsPage() {
   const { user } = useAuth();
-  const [quizRecords, setQuizRecords] = useState<any[]>([]);
+  const [quizRecords, setQuizRecords] = useState<QuizRecord[]>([]);
   const [quizInfoMap, setQuizInfoMap] = useState<Record<string, { title: string; subject: string }> >({});
-  const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<QuizRecord | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [classQuizzes, setClassQuizzes] = useState<{ quizId: string; className: string }[]>([]);
   const [loadingClassQuizzes, setLoadingClassQuizzes] = useState(false);
@@ -27,9 +27,9 @@ export default function QuizRecordsPage() {
           orderBy("timestamp", "desc")
         );
         const snap = await getDocs(q);
-        const records = snap.docs.map((doc) => {
+        const records: QuizRecord[] = snap.docs.map((doc) => {
           const data = doc.data();
-          return { id: doc.id, quizId: data.quizId, ...data };
+          return { id: doc.id, ...data } as QuizRecord;
         });
         setQuizRecords(records);
         // Fetch quiz info for each record
@@ -126,28 +126,28 @@ export default function QuizRecordsPage() {
               <div className="mb-2 text-white font-bold text-lg">Quiz: {quizInfoMap[selectedRecord.quizId]?.title || selectedRecord.quizId}</div>
               <div className="mb-2 text-purple-200">Subject: {quizInfoMap[selectedRecord.quizId]?.subject || "Unknown"}</div>
               <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
-              <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.timestamp.seconds ? selectedRecord.timestamp.seconds * 1000 : selectedRecord.timestamp).toLocaleString()}</div>
+              <div className="mb-2 text-purple-100">Date: {selectedRecord.timestamp instanceof Timestamp ? selectedRecord.timestamp.toDate().toLocaleString() : selectedRecord.timestamp.toLocaleString()}</div>
               <div className="mb-6">
                 <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
                 {selectedRecord.mistakes.length === 0 ? (
                   <div className="text-green-400 font-bold">No mistakes! 🎉</div>
                 ) : (
                   <div className="space-y-4">
-                    {selectedRecord.mistakes.map((m: any, idx: number) => (
+                    {selectedRecord.mistakes.map((m, idx: number) => (
                       <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
                         <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
                           <div className="text-purple-200">
                             Your Answer: <span className="font-bold text-red-400">
-                              {typeof m.selected === "number" && quizInfoMap[selectedRecord.quizId] && selectedRecord.questions ?
-                                selectedRecord.questions[idx]?.options?.[m.selected] || String.fromCharCode(65 + m.selected)
+                              {typeof m.selected === "number" ?
+                                String.fromCharCode(65 + m.selected)
                                 : (m.selected === "@" ? "No answer" : m.selected)}
                             </span>
                           </div>
                           <div className="text-green-300">
                             Correct: <span className="font-bold">
-                              {typeof m.correct === "number" && quizInfoMap[selectedRecord.quizId] && selectedRecord.questions ?
-                                selectedRecord.questions[idx]?.options?.[m.correct] || String.fromCharCode(65 + m.correct)
+                              {typeof m.correct === "number" ?
+                                String.fromCharCode(65 + m.correct)
                                 : m.correct}
                             </span>
                           </div>

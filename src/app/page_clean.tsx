@@ -71,7 +71,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <AuthModal isOpen={showAuth} mode={authMode} onClose={() => setShowAuth(false)} onAuth={() => setIsLoggedIn(true)} />
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </div>
   );
 }

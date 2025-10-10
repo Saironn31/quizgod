@@ -1,13 +1,15 @@
 "use client";
 import React, { useState } from 'react';
 import PrivateChat from './PrivateChat';
+import ClassChat from './ClassChat';
 import { useAuth } from '@/contexts/AuthContext';
+import { FirebaseUser } from '@/lib/firestore';
 
 const ChatOverlay: React.FC = () => {
   const { user, userProfile } = useAuth();
   const [open, setOpen] = useState(false);
-  const [friend, setFriend] = useState<any | null>(null);
-  const [friends, setFriends] = useState<any[]>([]);
+  const [friend, setFriend] = useState<FirebaseUser | null>(null);
+  const [friends, setFriends] = useState<FirebaseUser[]>([]);
   const [lastMessages, setLastMessages] = useState<{ [uid: string]: string }>({});
   const [chatMode, setChatMode] = useState<'private' | 'class'>('private');
   const [classId, setClassId] = useState<string | null>(null);
@@ -30,7 +32,7 @@ const ChatOverlay: React.FC = () => {
           return profile;
         })
       );
-      setFriends(profiles.filter(Boolean));
+      setFriends(profiles.filter((profile): profile is FirebaseUser => profile !== null));
       // Get last messages for each friend
       const lastMsgs: { [uid: string]: string } = {};
       for (const f of profiles) {
@@ -64,9 +66,9 @@ const ChatOverlay: React.FC = () => {
                 className={`px-2 py-1 rounded ${chatMode === 'class' ? 'bg-purple-500 text-white' : 'bg-white text-purple-700'}`}
                 onClick={() => {
                   setChatMode('class');
-                  // Example: set classId and className from user context or props
-                  setClassId(userProfile?.currentClassId || null);
-                  setClassName(userProfile?.currentClassName || 'Class');
+                  // TODO: Implement class selection logic
+                  setClassId(null);
+                  setClassName('Class');
                 }}
               >Class</button>
             </div>
@@ -116,8 +118,6 @@ const ChatOverlay: React.FC = () => {
                 <button className="text-lg ml-2" onClick={() => setOpen(false)} aria-label="Close chat">✖</button>
               </div>
               <div className="p-2 flex-1">
-                {/* ClassChat component, pass classId */}
-                {/* @ts-ignore-next-line */}
                 {classId && <ClassChat classId={classId} />}
               </div>
             </div>

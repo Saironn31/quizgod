@@ -202,6 +202,7 @@ export interface FirebaseUser {
   name: string;
   username?: string;
   profilePicture?: string; // URL to profile picture
+  bio?: string; // User biography
   friends?: string[]; // Array of user UIDs
   preferences?: {
     theme: 'light' | 'dark';
@@ -498,12 +499,21 @@ export const deleteClassWithQuizzes = async (classId: string): Promise<void> => 
  */
 export const removeMemberFromClass = async (classId: string, memberEmail: string): Promise<void> => {
   const classRef = doc(db, 'classes', classId);
-  // Remove member from class document
+  const classSnap = await getDoc(classRef);
+  if (!classSnap.exists()) throw new Error('Class not found');
+
+  const classData = classSnap.data();
+  const updatedMembers = (classData.members || []).filter((email: string) => email !== memberEmail);
+  const updatedMemberRoles = { ...classData.memberRoles };
+  delete updatedMemberRoles[memberEmail];
+
+  // Update class document
   await updateDoc(classRef, {
-    members: arrayRemove(memberEmail),
-    [`memberRoles.${memberEmail}`]: null,
+    members: updatedMembers,
+    memberRoles: updatedMemberRoles,
     updatedAt: new Date()
   });
+
   // Remove membership record
   const membershipsQuery = query(
     collection(db, 'classMemberships'),
@@ -1013,7 +1023,7 @@ export const migrateLocalDataToFirestore = async (userId: string, userEmail: str
       if (!data.subject && data.quizId) {
         const quiz = await getQuizById(data.quizId);
         if (quiz?.subject) {
-          await doc.ref.update({ subject: quiz.subject });
+          await updateDoc(doc.ref, { subject: quiz.subject });
         }
       }
     }
@@ -1185,5 +1195,3 @@ export const addClassMembersAsFriends = async (currentUid: string, classId: stri
   await batch.commit();
   return memberUids;
 };
-
-export { getUserQuizRecords };

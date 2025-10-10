@@ -136,7 +136,7 @@ export default function QuizPlayerPage() {
         <div className="text-center">
           <div className="text-4xl mb-4">❌</div>
           <h1 className="text-2xl font-bold mb-4">Quiz Not Found</h1>
-          <p className="text-purple-200 mb-4">The quiz you're looking for doesn't exist.</p>
+          <p className="text-purple-200 mb-4">The quiz you&apos;re looking for doesn&apos;t exist.</p>
           <Link href="/quizzes" className="text-blue-400 hover:underline">
             ← Back to Quizzes
           </Link>

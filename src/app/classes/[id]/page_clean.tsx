@@ -1,6 +1,5 @@
 "use client";
 import { useAuth } from '@/contexts/AuthContext';
-import { User } from 'firebase/auth';
 import {
   getClassById,
   getClassSubjects,
@@ -20,7 +19,7 @@ import ClassChat from '@/components/ClassChat';
 import ClassAnalyticsTab from './ClassAnalyticsTab';
 import MemberAnalyticsTab from './MemberAnalyticsTab';
 
-function OverviewTab({ classData, subjects, quizzes }: { classData: FirebaseClass, subjects: FirebaseSubject[], quizzes: FirebaseQuiz[] }) {
+function OverviewTab({ classData, subjects, quizzes }: { classData: any, subjects: any[], quizzes: any[] }) {
   if (!classData) return null;
   return (
     <div className="space-y-8">
@@ -76,7 +75,7 @@ function OverviewTab({ classData, subjects, quizzes }: { classData: FirebaseClas
 }
 
 function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectName, setNewSubjectName, addSubject, deleteSubject }: {
-  subjects: FirebaseSubject[],
+  subjects: any[],
   showAddSubject: boolean,
   setShowAddSubject: (v: boolean) => void,
   newSubjectName: string,
@@ -84,17 +83,6 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
   addSubject: () => void,
   deleteSubject: (id: string) => void
 }) {
-  const [selectedSubject, setSelectedSubject] = useState<FirebaseSubject | null>(null);
-  const [subjectQuizzes, setSubjectQuizzes] = useState<FirebaseQuiz[]>([]);
-
-  const viewSubjectQuizzes = async (subject: FirebaseSubject) => {
-    setSelectedSubject(subject);
-    // Filter quizzes that belong to this subject
-    const quizzes = await import('@/lib/firestore').then(res => res.getClassQuizzes(subject.classId || ''));
-    const filteredQuizzes = quizzes.filter((quiz: FirebaseQuiz) => quiz.subjectId === subject.id || quiz.subject === subject.name);
-    setSubjectQuizzes(filteredQuizzes);
-  };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -131,44 +119,6 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
           </div>
         </>
       )}
-      {/* Subject Quizzes Modal */}
-      {selectedSubject && (
-        <>
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={() => setSelectedSubject(null)} />
-          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl p-8 z-[9999] w-full max-w-4xl max-h-[80vh] overflow-y-auto flex flex-col gap-4 border border-white/20">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">📝 Quizzes in &ldquo;{selectedSubject.name}&rdquo;</h3>
-              <button
-                onClick={() => setSelectedSubject(null)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-              >
-                ✕ Close
-              </button>
-            </div>
-            {subjectQuizzes.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-4">📝</div>
-                <h4 className="text-lg font-semibold text-gray-700 mb-2">No Quizzes Yet</h4>
-                <p className="text-gray-500">Create quizzes for this subject to see them here!</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {subjectQuizzes.map((quiz: FirebaseQuiz) => (
-                  <div key={quiz.id} className="bg-gray-50 rounded-lg p-4 border">
-                    <h4 className="text-lg font-semibold text-gray-800">{quiz.title}</h4>
-                    {quiz.description && <p className="text-sm text-gray-600 mt-1">{quiz.description}</p>}
-                    <p className="text-sm text-gray-500 mt-2">Questions: {quiz.questions?.length ?? 0}</p>
-                    <div className="mt-3 flex gap-2">
-                      <Link href={`/quizzes/${quiz.id}`} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">🎮 Play</Link>
-                      <Link href={`/classes/${selectedSubject.classId}/leaderboard?quiz=${quiz.id}`} className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">🏆 Scores</Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
-      )}
       {subjects.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">📚</div>
@@ -184,12 +134,6 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
               <p className="text-sm text-gray-500 mt-1">Created by {subject.creatorName ?? subject.creatorUsername ?? subject.userId}</p>
               <p className="text-xs text-gray-400 mt-1">{new Date(subject.createdAt).toLocaleDateString()}</p>
               <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => viewSubjectQuizzes(subject)}
-                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  📝 View Quizzes
-                </button>
                 <button onClick={() => deleteSubject(subject.id)} className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">Delete</button>
               </div>
             </div>
@@ -200,33 +144,12 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
   );
 }
 
-function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData: FirebaseClass }) {
-  const [sortBy, setSortBy] = useState<'name' | 'subject'>('name');
-
-  const sortedQuizzes = [...quizzes].sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.title.localeCompare(b.title);
-    } else {
-      return (a.subject || '').localeCompare(b.subject || '');
-    }
-  });
-
+function QuizzesTab({ quizzes, classData }: { quizzes: any[], classData: any }) {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">📝 Class Quizzes</h2>
-        <div className="flex gap-3 items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'subject')}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="name">Name</option>
-              <option value="subject">Subject</option>
-            </select>
-          </div>
+        <div className="flex gap-3">
           <Link href="/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">➕ Create Quiz</Link>
           <Link href="/ai-quiz" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">🤖 AI Quiz</Link>
         </div>
@@ -243,7 +166,7 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedQuizzes.map((quiz: FirebaseQuiz) => (
+          {quizzes.map((quiz: any) => (
             <div key={quiz.id} className="bg-white rounded-lg shadow p-6">
               <h3 className="text-xl font-semibold text-gray-800">{quiz.title}</h3>
               <p className="text-sm text-gray-500 mt-1">Subject: {quiz.subject}</p>
@@ -262,8 +185,8 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
 }
 
 function MembersTab({ classData, user, isPresident, setSelectedMember, setActiveTab }: {
-  classData: FirebaseClass,
-  user: User | null,
+  classData: any,
+  user: any,
   isPresident: boolean,
   setSelectedMember: (m: string) => void,
   setActiveTab: (t: 'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics') => void
@@ -543,11 +466,9 @@ export default function ClassDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8 sm:mb-12">
+        <div className="flex justify-between items-center mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <div className="flex-shrink-0">
-            <NavBar />
-          </div>
+          <NavBar />
           {isPresident && (
             <button
               onClick={async () => {
@@ -561,7 +482,7 @@ export default function ClassDetailPage() {
                   alert('Failed to delete class.');
                 }
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex-shrink-0"
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors ml-4"
             >
               Delete Class
             </button>
@@ -579,7 +500,7 @@ export default function ClassDetailPage() {
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics')}
+                onClick={() => setActiveTab(tab.id as any)}
                 className={`py-3 px-6 rounded-lg font-medium text-sm transition-all duration-200 ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-lg' : 'bg-white/10 text-purple-200 hover:bg-white/20 hover:text-white'}`}
               >
                 {tab.label}
@@ -619,10 +540,7 @@ export default function ClassDetailPage() {
           <MembersTab classData={classData} user={user} isPresident={isPresident} setSelectedMember={setSelectedMember} setActiveTab={setActiveTab} />
         )}
         {activeTab === 'memberAnalytics' && selectedMember && (
-          <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} onBack={() => {
-            setSelectedMember(null);
-            setActiveTab('members');
-          }} />
+          <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} />
         )}
       </div>
     </div>

@@ -6,9 +6,10 @@ interface MemberAnalyticsTabProps {
   memberId: string;
   quizzes: any[];
   subjects: any[];
+  onBack: () => void;
 }
 
-export default function MemberAnalyticsTab({ classId, memberId, quizzes, subjects }: MemberAnalyticsTabProps) {
+export default function MemberAnalyticsTab({ classId, memberId, quizzes, subjects, onBack }: MemberAnalyticsTabProps) {
   const [stats, setStats] = useState({ quizzesTaken: 0, avgScore: 0 });
 
   useEffect(() => {
@@ -34,6 +35,14 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
 
   return (
     <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
+      <div className="w-full flex justify-start mb-4">
+        <button
+          onClick={onBack}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+        >
+          ← Back to Members
+        </button>
+      </div>
       <h2 className="text-xl font-semibold mb-4 text-purple-200">Member Analytics</h2>
       <div className="flex flex-col gap-4">
         <div>

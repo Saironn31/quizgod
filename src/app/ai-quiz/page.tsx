@@ -10,7 +10,8 @@ import {
   createSubject,
   createQuiz,
   getUserClasses,
-  FirebaseClass
+  FirebaseClass,
+  FirebaseQuiz
 } from '@/lib/firestore';
 
 interface ExtendedSubject extends FirebaseSubject {
@@ -150,7 +151,7 @@ export default function AIQuizGenerator() {
       // Find the selected subject
       const selectedSubjectObj = subjects.find(s => s.name === selectedSubject);
       
-      const quizData: any = {
+      const quizData: Omit<FirebaseQuiz, 'id' | 'createdAt' | 'updatedAt'> = {
         title: quizTitle.trim(),
         subject: selectedSubject,
         questions: parseQuizQuestions(quizQuestions),

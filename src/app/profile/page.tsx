@@ -8,7 +8,7 @@ const ProfilePage: React.FC = () => {
   const { userProfile, user, refreshUserProfile } = useAuth();
   const [name, setName] = useState(userProfile?.name || '');
   const [email, setEmail] = useState(userProfile?.email || '');
-  const [bio, setBio] = useState((userProfile as any)?.bio || '');
+  const [bio, setBio] = useState(userProfile?.bio || '');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -18,11 +18,13 @@ const ProfilePage: React.FC = () => {
     setMessage('');
     try {
       if (!user?.uid) throw new Error('User not logged in');
-  await updateUserProfile(user.uid, { name, email, ...(bio && { bio }) } as any);
+      await updateUserProfile(user.uid, { name, email, ...(bio && { bio }) });
       setMessage('Profile updated!');
-      refreshUserProfile && refreshUserProfile();
-    } catch (err: any) {
-      setMessage(err.message || 'Failed to update profile');
+      if (refreshUserProfile) {
+        refreshUserProfile();
+      }
+    } catch (err: unknown) {
+      setMessage(err instanceof Error ? err.message : 'Failed to update profile');
     } finally {
       setLoading(false);
     }
