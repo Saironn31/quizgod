@@ -2,7 +2,7 @@
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { getFriendRequests, subscribeToFriendRequests, subscribeToSentFriendRequests, getUserQuizRecords } from '@/lib/firestore';
+import { getFriendRequests, subscribeToFriendRequests, subscribeToSentFriendRequests, getUserQuizRecords, acceptFriendRequest, declineFriendRequest, getUserProfile } from '@/lib/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 // import { uploadProfilePicture, deleteProfilePicture } from '@/lib/firestore';
 
@@ -30,14 +30,26 @@ const NavBar: React.FC = () => {
     const updateNotifications = async (receivedRequests: any[] = [], sentRequests: any[] = []) => {
       const notifArr: Notification[] = [];
       
-      // Friend request notifications (received)
+      // Friend request notifications (received) - include details
       if (receivedRequests.length > 0) {
-        notifArr.push({ 
-          id: 'friend', 
-          text: `You have ${receivedRequests.length} new friend request${receivedRequests.length > 1 ? 's' : ''}.`, 
-          link: '/friends',
-          dismissible: true
-        });
+        for (const req of receivedRequests) {
+          try {
+            const profile = await getUserProfile(req.senderUid);
+            notifArr.push({
+              id: `friend_${req.id}`,
+              text: `${profile?.name || profile?.username || req.senderUid} sent you a friend request`,
+              link: '/friends',
+              dismissible: false
+            });
+          } catch (e) {
+            notifArr.push({
+              id: `friend_${req.id}`,
+              text: `You have a new friend request`,
+              link: '/friends',
+              dismissible: false
+            });
+          }
+        }
       }
       
       // Accepted friend requests (sent requests that are accepted)
@@ -206,31 +218,65 @@ const NavBar: React.FC = () => {
                 {notifications.map(n => (
                   <li
                     key={n.id}
-                    className="bg-yellow-100 rounded px-3 py-2 text-sm cursor-pointer hover:bg-yellow-200 transition relative group"
+                    className="bg-yellow-100 rounded px-3 py-2 text-sm transition relative"
                   >
-                    <div
-                      className="flex-1"
-                      onClick={() => {
-                        if (n.link && router) {
-                          router.push(n.link);
-                          setShowNotifications(false);
-                        }
-                      }}
-                    >
-                      {n.text}
-                    </div>
-                    <button
-                      className="ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500 hover:text-red-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dismissNotification(n.id);
-                      }}
-                      aria-label="Dismiss notification"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                    {/* If this is a friend request notification, show accept/decline */}
+                    {n.id.startsWith('friend_') ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex-1 mr-2">{n.text}</div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const reqId = n.id.replace('friend_', '');
+                              try {
+                                await acceptFriendRequest(reqId);
+                                // remove notification and refresh pending count
+                                dismissNotification(n.id);
+                                if (user?.uid) {
+                                  const requests = await getFriendRequests(user.uid);
+                                  setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+                                }
+                              } catch (err) {
+                                console.error('Accept failed', err);
+                                alert('Failed to accept request');
+                              }
+                            }}
+                            className="px-3 py-1 bg-green-600 text-white rounded"
+                          >Accept</button>
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              const reqId = n.id.replace('friend_', '');
+                              try {
+                                await declineFriendRequest(reqId);
+                                dismissNotification(n.id);
+                                if (user?.uid) {
+                                  const requests = await getFriendRequests(user.uid);
+                                  setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+                                }
+                              } catch (err) {
+                                console.error('Decline failed', err);
+                                alert('Failed to decline request');
+                              }
+                            }}
+                            className="px-3 py-1 bg-red-600 text-white rounded"
+                          >Decline</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className="flex-1"
+                        onClick={() => {
+                          if (n.link && router) {
+                            router.push(n.link);
+                            setShowNotifications(false);
+                          }
+                        }}
+                      >
+                        {n.text}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
