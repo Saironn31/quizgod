@@ -270,22 +270,12 @@ export default function AIQuizGenerator() {
                   </div>
                 </div>
 
-                {/* Image Analysis */}
-                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">🖼️ Image Analysis Prompt</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Upload an image to Claude/ChatGPT and use this prompt</p>
-                  <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed">
-                    Analyze this image and create a quiz with 5 multiple choice questions about what you see. Include questions about details, concepts, or content visible in the image. Format with A) B) C) D) options and mark correct answers with *.
-                  </div>
-                </div>
-
-                {/* Subject-Specific Generator */}
-                <div className="p-4 bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/30 dark:to-orange-900/30 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📚 Subject Quiz Prompt</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Generate quizzes for specific topics or subjects</p>
-                  <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed">
-                    Create a quiz about [TOPIC/SUBJECT] with 8-10 multiple choice questions. Cover key concepts, definitions, and important details. Use A) B) C) D) format and mark correct answers with *. Make questions challenging but fair for [EDUCATION LEVEL].
-                  </div>
+                {/* Recommended AI Link */}
+                <div className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">🤖 Recommended AI</h3>
+                  <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
+                    chat.deepseek.com
+                  </a>
                 </div>
               </div>
 
