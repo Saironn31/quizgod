@@ -177,7 +177,9 @@ const NavBar: React.FC = () => {
     <nav className="bg-gradient-to-r from-[#181824] to-[#3a2a5d] px-6 py-3 sm:py-4 flex items-center justify-between rounded-xl shadow-lg border border-white/10 max-w-full overflow-x-auto">
       {/* Logo and Brand */}
       <div className="flex items-center gap-4 flex-shrink-0">
-        <span className="text-pink-300 text-2xl sm:text-3xl font-bold">🧠 QuizGod</span>
+        {/* On very small screens show compact emoji-only brand */}
+        <span className="text-pink-300 text-2xl sm:text-3xl font-bold hidden xs:inline-flex">🧠 QuizGod</span>
+        <span className="text-pink-300 text-2xl sm:text-3xl font-bold inline-flex xs:hidden">🧠</span>
       </div>
       {/* Navigation Links */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -209,77 +211,94 @@ const NavBar: React.FC = () => {
           )}
         </button>
         {showNotifications && (
-          <div className="absolute right-8 top-24 z-[2147483647] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900">
-            <h3 className="font-bold text-lg mb-2 text-yellow-700">Notifications</h3>
+          // On small screens, make notification panel centered and wider
+          <div className="absolute right-8 top-24 z-[2147483647] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900 sm:right-8 sm:top-24 xs:left-1/2 xs:transform xs:-translate-x-1/2 xs:w-[90%]">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg mb-2 text-yellow-700">Notifications</h3>
+              <button onClick={() => { setNotifications([]); setShowNotifications(false); }} className="text-gray-500 hover:text-gray-700 ml-2">✕</button>
+            </div>
             {notifications.length === 0 ? (
               <div className="text-gray-500">No notifications.</div>
             ) : (
-              <ul className="space-y-2">
-                {notifications.map(n => (
-                  <li
-                    key={n.id}
-                    className="bg-yellow-100 rounded px-3 py-2 text-sm transition relative"
-                  >
-                    {/* If this is a friend request notification, show accept/decline */}
-                    {n.id.startsWith('friend_') ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex-1 mr-2">{n.text}</div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const reqId = n.id.replace('friend_', '');
-                              try {
-                                await acceptFriendRequest(reqId);
-                                // remove notification and refresh pending count
-                                dismissNotification(n.id);
-                                if (user?.uid) {
-                                  const requests = await getFriendRequests(user.uid);
-                                  setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
-                                }
-                              } catch (err) {
-                                console.error('Accept failed', err);
-                                alert('Failed to accept request');
+              // Limit visible height to ~3 items and allow scrolling for overflow
+              <div className="max-h-[220px] overflow-auto">
+                <ul className="space-y-2">
+                  {notifications.map(n => (
+                    <li
+                      key={n.id}
+                      className="bg-yellow-100 rounded px-3 py-2 text-sm transition relative flex items-start justify-between"
+                    >
+                      <div className="flex-1 mr-2">
+                        {n.id.startsWith('friend_') ? (
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex-1">{n.text}</div>
+                          </div>
+                        ) : (
+                          <div
+                            className="cursor-pointer"
+                            onClick={() => {
+                              if (n.link && router) {
+                                router.push(n.link);
+                                setShowNotifications(false);
                               }
                             }}
-                            className="px-3 py-1 bg-green-600 text-white rounded"
-                          >Accept</button>
-                          <button
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const reqId = n.id.replace('friend_', '');
-                              try {
-                                await declineFriendRequest(reqId);
-                                dismissNotification(n.id);
-                                if (user?.uid) {
-                                  const requests = await getFriendRequests(user.uid);
-                                  setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+                          >
+                            {n.text}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {n.id.startsWith('friend_') ? (
+                          <>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const reqId = n.id.replace('friend_', '');
+                                try {
+                                  await acceptFriendRequest(reqId);
+                                  // remove notification and refresh pending count
+                                  dismissNotification(n.id);
+                                  if (user?.uid) {
+                                    const requests = await getFriendRequests(user.uid);
+                                    setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+                                  }
+                                } catch (err) {
+                                  console.error('Accept failed', err);
+                                  alert('Failed to accept request');
                                 }
-                              } catch (err) {
-                                console.error('Decline failed', err);
-                                alert('Failed to decline request');
-                              }
-                            }}
-                            className="px-3 py-1 bg-red-600 text-white rounded"
-                          >Decline</button>
-                        </div>
+                              }}
+                              className="px-3 py-1 bg-green-600 text-white rounded"
+                            >Accept</button>
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const reqId = n.id.replace('friend_', '');
+                                try {
+                                  await declineFriendRequest(reqId);
+                                  dismissNotification(n.id);
+                                  if (user?.uid) {
+                                    const requests = await getFriendRequests(user.uid);
+                                    setPendingRequests(requests.filter(r => r.type === 'received' && r.status === 'pending').length);
+                                  }
+                                } catch (err) {
+                                  console.error('Decline failed', err);
+                                  alert('Failed to decline request');
+                                }
+                              }}
+                              className="px-3 py-1 bg-red-600 text-white rounded"
+                            >Decline</button>
+                          </>
+                        ) : (
+                          // Show dismiss (X) only for dismissible notifications
+                          n.dismissible !== false && (
+                            <button onClick={(e) => { e.stopPropagation(); dismissNotification(n.id); }} className="text-gray-600 hover:text-gray-800">✕</button>
+                          )
+                        )}
                       </div>
-                    ) : (
-                      <div
-                        className="flex-1"
-                        onClick={() => {
-                          if (n.link && router) {
-                            router.push(n.link);
-                            setShowNotifications(false);
-                          }
-                        }}
-                      >
-                        {n.text}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
             <button
               className="mt-4 w-full px-4 py-2 bg-yellow-400 text-white rounded hover:bg-yellow-500"

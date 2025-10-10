@@ -78,7 +78,7 @@ export default function QuizRecordsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
           <NavBar />
         </div>

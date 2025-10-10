@@ -159,7 +159,7 @@ export default function ClassesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
           <NavBar />
         </div>
@@ -308,7 +308,12 @@ export default function ClassesPage() {
                       
                       <div className="flex items-center justify-between text-sm text-purple-200 mb-4">
                         <span>👥 {classData.members.length} member{classData.members.length !== 1 ? 's' : ''}</span>
-                        <span>📅 {classData.createdAt.toLocaleDateString()}</span>
+                        <span>📅 {(() => {
+                          const d: any = classData.createdAt;
+                          if (!d) return 'Unknown';
+                          const parsed = (typeof d === 'string' || typeof d === 'number') ? new Date(d) : d;
+                          return isNaN(parsed.getTime()) ? 'Unknown' : parsed.toLocaleDateString();
+                        })()}</span>
                       </div>
                       
                       <div className="flex gap-2 flex-wrap">

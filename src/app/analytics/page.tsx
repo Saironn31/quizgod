@@ -96,24 +96,65 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8 sm:mb-12">
           <div className="text-xl sm:text-2xl font-bold text-white">📊 Analytics</div>
-          <NavBar />
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <button
+              onClick={async () => {
+                if (!confirm('Clear local analytics data (this will remove local drafts, preferences, and local progress)?')) return;
+                try {
+                  // Remove known local keys
+                  const keysToRemove: string[] = [];
+                  // preferences
+                  keysToRemove.push('quizzes_search', 'quizzes_subjectFilter', 'classes_sortBy', 'leaderboard_sortBy');
+                  // drafts
+                  keysToRemove.push('create_quiz_draft', 'ai_quiz_draft');
+                  // quiz progress keys (prefix)
+                  for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key) continue;
+                    if (key.startsWith('quiz_progress_')) keysToRemove.push(key);
+                  }
+                  // unique set
+                  const uniq = Array.from(new Set(keysToRemove));
+                  uniq.forEach(k => localStorage.removeItem(k));
+                  alert('Local analytics data cleared.');
+                  // refetch stats by reloading the page data
+                  window.location.reload();
+                } catch (err) {
+                  console.error('Failed to clear local data', err);
+                  alert('Failed to clear data. Check console for details.');
+                }
+              }}
+              className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
+            >
+              Clear Data
+            </button>
+            <div className="w-full sm:w-auto">
+              <NavBar />
+            </div>
+          </div>
         </div>
         <div className="flex flex-col items-center w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
             <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
               <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
-              <Bar data={barData} options={{
-                plugins: { legend: { display: false } },
-                scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
-              }} />
+              <div className="w-full h-56 sm:h-96">
+                <Bar data={barData} options={{
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
+                }} />
+              </div>
             </div>
             <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
               <h2 className="text-xl font-semibold mb-4 text-purple-200">Top Subjects</h2>
-              <Doughnut data={doughnutData} options={{
-                plugins: { legend: { labels: { color: '#fff' } } },
-              }} />
+              <div className="w-full h-56 sm:h-96 max-w-sm">
+                <Doughnut data={doughnutData} options={{
+                  maintainAspectRatio: false,
+                  plugins: { legend: { labels: { color: '#fff' } } },
+                }} />
+              </div>
             </div>
           </div>
           <div className="mt-10 bg-white/10 rounded-xl shadow-lg p-6 w-full max-w-2xl flex flex-col items-center">

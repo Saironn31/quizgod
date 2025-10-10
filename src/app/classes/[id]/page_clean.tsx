@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import NavBar from '@/components/NavBar';
+import ScoresButton from '@/components/ScoresButton';
 import ClassChat from '@/components/ClassChat';
 import ClassAnalyticsTab from './ClassAnalyticsTab';
 import MemberAnalyticsTab from './MemberAnalyticsTab';
@@ -174,7 +175,7 @@ function QuizzesTab({ quizzes, classData }: { quizzes: any[], classData: any }) 
               <p className="text-sm text-gray-500 mt-2">Questions: {quiz.questions?.length ?? 0}</p>
               <div className="mt-4 flex gap-2">
                 <Link href={`/quizzes/${quiz.id}`} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">🎮 Play Quiz</Link>
-                <Link href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`} className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors text-sm">🏆 Scores</Link>
+                <ScoresButton href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`}>🏆 Scores</ScoresButton>
               </div>
             </div>
           ))}

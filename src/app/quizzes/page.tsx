@@ -160,9 +160,11 @@ export default function QuizzesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <NavBar />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 sm:mb-12 gap-4">
+          <div className="text-xl sm:text-2xl font-bold text-white">� QuizGod</div>
+          <div className="w-full sm:w-auto">
+            <NavBar />
+          </div>
         </div>
 
         {/* Main Content */}
@@ -292,10 +294,10 @@ export default function QuizzesPage() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Link 
                         href={`/quizzes/${quiz.id}`} 
-                        className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
+                        className="w-full sm:flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
                       >
                         🎮 Play
                       </Link>
@@ -306,7 +308,7 @@ export default function QuizzesPage() {
                             navigator.clipboard.writeText(url);
                             alert('Quiz link copied to clipboard!');
                           }}
-                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-sm font-medium"
+                          className="w-full sm:px-4 sm:py-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-sm font-medium"
                           title="Share quiz link"
                         >
                           🔗 Share
@@ -315,7 +317,7 @@ export default function QuizzesPage() {
                       <button 
                         onClick={() => handleDelete(quiz.id, quiz.title)} 
                         disabled={deleting === quiz.id}
-                        className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium disabled:opacity-50"
+                        className="w-full sm:px-4 sm:py-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium disabled:opacity-50"
                         title="Delete quiz"
                       >
                         {deleting === quiz.id ? "⏳" : "🗑️"}

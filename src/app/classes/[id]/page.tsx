@@ -14,6 +14,7 @@ import {
 } from '@/lib/firestore';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import ScoresButton from '@/components/ScoresButton';
 import { useParams, useRouter } from 'next/navigation';
 import NavBar from '@/components/NavBar';
 import ClassChat from '@/components/ClassChat';
@@ -160,7 +161,9 @@ function SubjectsTab({ subjects, showAddSubject, setShowAddSubject, newSubjectNa
                     <p className="text-sm text-gray-500 mt-2">Questions: {quiz.questions?.length ?? 0}</p>
                     <div className="mt-3 flex gap-2">
                       <Link href={`/quizzes/${quiz.id}`} className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm">🎮 Play</Link>
-                      <Link href={`/classes/${selectedSubject.classId}/leaderboard?quiz=${quiz.id}`} className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm">🏆 Scores</Link>
+                      <ScoresButton href={`/classes/${selectedSubject.classId}/leaderboard?quiz=${quiz.id}`}>
+                        🏆 Scores
+                      </ScoresButton>
                     </div>
                   </div>
                 ))}
@@ -272,7 +275,9 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
               <p className="text-sm text-gray-500 mt-2">Questions: {quiz.questions?.length ?? 0}</p>
               <div className="mt-4 flex gap-2">
                 <Link href={`/quizzes/${quiz.id}`} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm">🎮 Play Quiz</Link>
-                <Link href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`} className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors text-sm border border-white/30">🏆 Scores</Link>
+                <ScoresButton href={`/classes/${classData.id}/leaderboard?quiz=${quiz.id}`}>
+                  🏆 Scores
+                </ScoresButton>
               </div>
             </div>
           ))}
@@ -564,9 +569,8 @@ export default function ClassDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4 mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <div className="flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
+          <div className="w-full sm:w-auto">
             <NavBar />
           </div>
           {isPresident && (
@@ -582,7 +586,7 @@ export default function ClassDetailPage() {
                   alert('Failed to delete class.');
                 }
               }}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex-shrink-0"
+              className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex-shrink-0"
             >
               Delete Class
             </button>
