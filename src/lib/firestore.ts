@@ -1,3 +1,69 @@
+import { collection, doc, getDocs, setDoc, deleteDoc, query, where, addDoc, updateDoc, getDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot, orderBy } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase';
+/**
+ * Get all quiz records for quizzes belonging to a class
+ */
+export const getClassQuizRecords = async (classId: string): Promise<QuizRecord[]> => {
+  // Get all quizzes for the class
+  const quizzes = await getClassQuizzes(classId);
+  const quizIds = quizzes.map(q => q.id);
+  if (quizIds.length === 0) return [];
+  // Query all quizRecords for these quizIds
+  const records: QuizRecord[] = [];
+  for (const quizId of quizIds) {
+    const recordsQuery = query(
+      collection(db, 'quizRecords'),
+      where('quizId', '==', quizId)
+    );
+    const recordsSnap = await getDocs(recordsQuery);
+    recordsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      records.push({
+        id: doc.id,
+        userId: data.userId,
+        quizId: data.quizId,
+        score: data.score,
+        mistakes: data.mistakes,
+        selectedAnswers: data.selectedAnswers,
+        timestamp: data.timestamp?.toDate?.() || new Date()
+      });
+    });
+  }
+  return records;
+};
+
+/**
+ * Get all quiz records for a specific member in a class
+ */
+export const getClassMemberQuizRecords = async (classId: string, userId: string): Promise<QuizRecord[]> => {
+  // Get all quizzes for the class
+  const quizzes = await getClassQuizzes(classId);
+  const quizIds = quizzes.map(q => q.id);
+  if (quizIds.length === 0) return [];
+  // Query all quizRecords for these quizIds and userId
+  const records: QuizRecord[] = [];
+  for (const quizId of quizIds) {
+    const recordsQuery = query(
+      collection(db, 'quizRecords'),
+      where('quizId', '==', quizId),
+      where('userId', '==', userId)
+    );
+    const recordsSnap = await getDocs(recordsQuery);
+    recordsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      records.push({
+        id: doc.id,
+        userId: data.userId,
+        quizId: data.quizId,
+        score: data.score,
+        mistakes: data.mistakes,
+        selectedAnswers: data.selectedAnswers,
+        timestamp: data.timestamp?.toDate?.() || new Date()
+      });
+    });
+  }
+  return records;
+};
 /**
  * Get a map of quizId to number of unique users who played it (for notifications)
  */
@@ -104,26 +170,6 @@ export const shareQuizToClass = async (quizId: string, targetClassId: string, us
   const newQuizRef = await addDoc(collection(db, 'quizzes'), newQuizData);
   return newQuizRef.id;
 };
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  setDoc, 
-  deleteDoc, 
-  query, 
-  where,
-  addDoc,
-  updateDoc,
-  getDoc,
-  arrayUnion,
-  arrayRemove,
-  writeBatch,
-  onSnapshot,
-  orderBy
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-  import { Timestamp } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
 
 // Helper function to convert Firestore Timestamps to Dates
 const convertTimestamps = (data: any) => {
@@ -921,6 +967,30 @@ export const saveQuizRecord = async (record: Omit<QuizRecord, 'id'>): Promise<st
   return ref.id;
 };
 
+/**
+ * Get all quiz records for a user (for NavBar analytics summary)
+ */
+export const getUserQuizRecords = async (userId: string): Promise<QuizRecord[]> => {
+  const recordsQuery = query(
+    collection(db, 'quizRecords'),
+    where('userId', '==', userId)
+  );
+  const recordsSnap = await getDocs(recordsQuery);
+  const records: QuizRecord[] = [];
+  recordsSnap.docs.forEach(doc => {
+    const data = doc.data();
+    records.push({
+      id: doc.id,
+      userId: data.userId,
+      quizId: data.quizId,
+      score: data.score,
+      mistakes: data.mistakes,
+      selectedAnswers: data.selectedAnswers,
+      timestamp: data.timestamp?.toDate?.() || new Date()
+    });
+  });
+  return records;
+};
 // Migration and utility functions
 export const migrateLocalDataToFirestore = async (userId: string, userEmail: string) => {
   try {
@@ -1090,4 +1160,6 @@ export const addClassMembersAsFriends = async (currentUid: string, classId: stri
   });
   await batch.commit();
   return memberUids;
-}
+};
+
+export { getUserQuizRecords };
