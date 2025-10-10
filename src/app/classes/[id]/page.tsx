@@ -13,56 +13,12 @@ import {
 } from '@/lib/firestore';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-// ...existing code...
-
-export default function ClassDetailPage() {
-  // ...existing code...
-  const params = useParams();
-  const router = useRouter();
-  const { user } = useAuth();
-  const [classData, setClassData] = useState<FirebaseClass | null>(null);
-  const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
-  const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isPresident, setIsPresident] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics'>('overview');
-  const [showAddSubject, setShowAddSubject] = useState(false);
-  const [newSubjectName, setNewSubjectName] = useState("");
-  const [creating, setCreating] = useState(false);
-    const [selectedMember, setSelectedMember] = useState<string | null>(null);
-    const [showInviteModal, setShowInviteModal] = useState(false);
-  // Add classStats and memberStats state
-  const [classStats, setClassStats] = useState({ quizzesTaken: 0, avgScore: 0 });
-  const [memberStats, setMemberStats] = useState<{ [email: string]: { quizzesTaken: number; avgScore: number } }>({});
-
-  // Scroll to top on tab change
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [activeTab]);
-
-  // Scroll to top when closing add subject modal
-  useEffect(() => {
-    if (!showAddSubject && typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [showAddSubject]);
-
-  // Scroll to top when closing invite modal
-  useEffect(() => {
-    if (!showInviteModal && typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [showInviteModal]);
-  // ...existing code...
 import { useParams, useRouter } from 'next/navigation';
 import NavBar from '@/components/NavBar';
 import ClassChat from '@/components/ClassChat';
 import ClassAnalyticsTab from './ClassAnalyticsTab';
 import MemberAnalyticsTab from './MemberAnalyticsTab';
 
-// Tab components
 function OverviewTab({ classData, subjects, quizzes }: { classData: any, subjects: any[], quizzes: any[] }) {
   if (!classData) return null;
   return (
@@ -228,14 +184,18 @@ function QuizzesTab({ quizzes, classData }: { quizzes: any[], classData: any }) 
   );
 }
 
-function MembersTab({ classData }: { classData: any }) {
+function MembersTab({ classData, user, isPresident, setSelectedMember, setActiveTab }: {
+  classData: any,
+  user: any,
+  isPresident: boolean,
+  setSelectedMember: (m: string) => void,
+  setActiveTab: (t: 'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics') => void
+}) {
   const [removing, setRemoving] = useState<string | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteValue, setInviteValue] = useState("");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState("");
-  const { user } = useAuth();
-  const isPresident = classData.memberRoles && classData.memberRoles[classData.members?.[0]] === 'president';
   const handleRemoveMember = async (memberEmail: string) => {
     if (!window.confirm(`Remove member ${memberEmail} from class?`)) return;
     setRemoving(memberEmail);
@@ -350,9 +310,10 @@ function MembersTab({ classData }: { classData: any }) {
 }
 
 export default function ClassDetailPage() {
+  const { user } = useAuth();
   const params = useParams();
   const router = useRouter();
-    const [inviteValue, setInviteValue] = useState("");
+  const [inviteValue, setInviteValue] = useState("");
   const [classData, setClassData] = useState<FirebaseClass | null>(null);
   const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
   const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
@@ -576,7 +537,7 @@ export default function ClassDetailPage() {
           <ClassAnalyticsTab classData={classData} user={user} quizzes={quizzes} subjects={subjects} />
         )}
         {activeTab === 'members' && (
-          <MembersTab classData={classData} />
+          <MembersTab classData={classData} user={user} isPresident={isPresident} setSelectedMember={setSelectedMember} setActiveTab={setActiveTab} />
         )}
         {activeTab === 'memberAnalytics' && selectedMember && (
           <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} />
