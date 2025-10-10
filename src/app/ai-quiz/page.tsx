@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import NavBar from '@/components/NavBar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -54,6 +54,8 @@ export default function AIQuizGenerator() {
   const [quizQuestions, setQuizQuestions] = useState("");
   const [showSubjectForm, setShowSubjectForm] = useState(false);
   const [showQuizForm, setShowQuizForm] = useState(false);
+  const subjectFormRef = useRef<HTMLDivElement>(null);
+  const quizFormRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -295,7 +297,16 @@ export default function AIQuizGenerator() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📝 Add Subject</h3>
                     <button
-                      onClick={() => setShowSubjectForm(!showSubjectForm)}
+                      onClick={() => {
+                        setShowSubjectForm((prev) => {
+                          if (!prev && subjectFormRef.current) {
+                            setTimeout(() => {
+                              subjectFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 0);
+                          }
+                          return !prev;
+                        });
+                      }}
                       className="px-3 py-1 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors duration-200 text-sm font-medium"
                     >
                       {showSubjectForm ? "Cancel" : "➕ New"}
@@ -303,7 +314,7 @@ export default function AIQuizGenerator() {
                   </div>
                   
                   {showSubjectForm && (
-                    <div className="space-y-3">
+                    <div className="space-y-3" ref={subjectFormRef}>
                       <input
                         type="text"
                         value={newSubject}
@@ -328,7 +339,16 @@ export default function AIQuizGenerator() {
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📝 Create Quiz</h3>
                     <button
-                      onClick={() => setShowQuizForm(!showQuizForm)}
+                      onClick={() => {
+                        setShowQuizForm((prev) => {
+                          if (!prev && quizFormRef.current) {
+                            setTimeout(() => {
+                              quizFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 0);
+                          }
+                          return !prev;
+                        });
+                      }}
                       className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium"
                     >
                       {showQuizForm ? "Cancel" : "➕ New Quiz"}
@@ -336,7 +356,7 @@ export default function AIQuizGenerator() {
                   </div>
                   
                   {showQuizForm && (
-                    <div className="grid md:grid-cols-2 gap-4">
+                    <div className="grid md:grid-cols-2 gap-4" ref={quizFormRef}>
                       <div className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
