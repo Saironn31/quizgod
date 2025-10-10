@@ -16,6 +16,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import NavBar from '@/components/NavBar';
 import ClassChat from '@/components/ClassChat';
+import ClassAnalyticsTab from './ClassAnalyticsTab';
+import MemberAnalyticsTab from './MemberAnalyticsTab';
 
 // Tab components
 function OverviewTab({ classData, subjects, quizzes }: { classData: any, subjects: any[], quizzes: any[] }) {
@@ -276,15 +278,27 @@ function MembersTab({ classData }: { classData: any }) {
                 <p className="text-sm text-gray-500">{member === (classData.president ?? classData.members?.[0]) ? '👑 President' : '👤 Member'}</p>
               </div>
             </div>
-            {isPresident && member !== (classData.president ?? classData.members?.[0]) && (
+            <div className="flex flex-col gap-2 items-end">
+              {isPresident && member !== (classData.president ?? classData.members?.[0]) && (
+                <button
+                  onClick={() => handleRemoveMember(member)}
+                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                  title="Remove member"
+                >
+                  Remove
+                </button>
+              )}
               <button
-                onClick={() => handleRemoveMember(member)}
-                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                title="Remove member"
+                onClick={() => {
+                  setSelectedMember(member);
+                  setActiveTab('memberAnalytics');
+                }}
+                className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 text-xs"
+                title="View Analytics"
               >
-                Remove
+                Analytics
               </button>
-            )}
+            </div>
           </div>
         ))}
       </div>
@@ -301,10 +315,11 @@ export default function ClassDetailPage() {
   const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPresident, setIsPresident] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'quizzes' | 'members'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics'>('overview');
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
   // Add classStats and memberStats state
   const [classStats, setClassStats] = useState({ quizzesTaken: 0, avgScore: 0 });
   const [memberStats, setMemberStats] = useState<{ [email: string]: { quizzesTaken: number; avgScore: number } }>({});
@@ -476,6 +491,7 @@ export default function ClassDetailPage() {
               { id: 'overview', label: '📊 Overview' },
               { id: 'subjects', label: '📚 Subjects' },
               { id: 'quizzes', label: '📝 Quizzes' },
+              { id: 'analytics', label: '📈 Analytics' },
               { id: 'members', label: '👥 Members' }
             ].map(tab => (
               <button
@@ -511,6 +527,9 @@ export default function ClassDetailPage() {
         )}
         {activeTab === 'members' && (
           <MembersTab classData={classData} />
+        )}
+        {activeTab === 'memberAnalytics' && selectedMember && (
+          <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} />
         )}
         {/* Class Analytics Tab */}
         <div>
