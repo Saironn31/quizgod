@@ -65,8 +65,12 @@ const ChatOverlay: React.FC = () => {
                       {f.name?.charAt(0).toUpperCase() || f.username?.charAt(0).toUpperCase() || f.email?.charAt(0).toUpperCase() || '?'}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-800 dark:text-white">{f.name || f.username || f.email}</div>
-                      <div className="text-xs text-purple-600 dark:text-purple-200 truncate">{lastMessages[f.uid] ? `Last: ${lastMessages[f.uid]}` : 'No messages yet.'}</div>
+                      <div className="font-semibold text-gray-800 dark:text-white">{f.username || f.name || f.email}</div>
+                      <div className="text-xs text-purple-600 dark:text-purple-200 truncate">
+                        {lastMessages[f.uid]
+                          ? `${f.username || f.name || f.email}: ${lastMessages[f.uid]}`
+                          : 'No messages yet.'}
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -77,10 +81,10 @@ const ChatOverlay: React.FC = () => {
       )}
       {open && friend && (
         <div className="fixed bottom-4 right-4 z-50 w-80 max-w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
-          <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
-            <span className="font-bold">Chat with {friend.name || friend.username || friend.email}</span>
-            <button className="text-lg" onClick={() => setFriend(null)}>←</button>
-            <button className="text-lg ml-2" onClick={() => setOpen(false)}>✖</button>
+          <div className="flex items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
+            <button className="text-lg mr-2" onClick={() => setFriend(null)} aria-label="Back to friends">←</button>
+            <span className="font-bold flex-1">Chat with {friend.name || friend.username || friend.email}</span>
+            <button className="text-lg ml-2" onClick={() => setOpen(false)} aria-label="Close chat">✖</button>
           </div>
           <div className="p-2">
             <PrivateChat friendUid={friend.uid} friendName={friend.name || friend.username || friend.email} />

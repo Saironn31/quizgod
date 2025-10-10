@@ -244,13 +244,13 @@ export default function AIQuizGenerator() {
 
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-1">🧠 AI Quiz Generator</h1>
-            <p className="text-purple-200">Use AI to help create quizzes and analyze content</p>
+            <h1 className="text-3xl font-extrabold text-yellow-300 mb-1 drop-shadow">🧠 AI Quiz Generator</h1>
+            <p className="text-lg text-white font-semibold drop-shadow">Use AI to help create quizzes and analyze content</p>
           </div>
 
           {loading ? (
             <div className="text-center py-8">
-              <p className="text-purple-200">Loading...</p>
+              <p className="text-lg text-white font-semibold animate-pulse">Loading...</p>
             </div>
           ) : (
             <div className="grid lg:grid-cols-3 gap-6">
@@ -259,9 +259,9 @@ export default function AIQuizGenerator() {
               <div className="lg:col-span-2 space-y-4">
                 {/* PDF Quiz Generator */}
                 <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📄 PDF Quiz Generator Prompt</h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-sm">Copy this prompt and paste it to Claude/ChatGPT along with your PDF content</p>
-                  <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border text-sm text-gray-700 dark:text-gray-300 font-mono leading-relaxed">
+                  <h3 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-2">📄 PDF Quiz Generator Prompt</h3>
+                  <p className="text-base text-blue-900 dark:text-blue-200 font-medium">Copy this prompt and paste it to Claude/ChatGPT along with your PDF content</p>
+                  <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border text-base text-gray-900 dark:text-gray-100 font-mono leading-relaxed">
                     Create a quiz based on the following content. Generate 5-10 multiple choice questions with 4 options each. Mark the correct answer with an asterisk (*). Format like this:<br/><br/>
                     1. What is the main topic?<br/>
                     A) Option 1<br/>
@@ -274,7 +274,7 @@ export default function AIQuizGenerator() {
 
                 {/* Recommended AI Links */}
                 <div className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">🤖 Recommended AI</h3>
+                  <h3 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-3">🤖 Recommended AI</h3>
                   <div className="space-y-2">
                     <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
                       DeepSeek

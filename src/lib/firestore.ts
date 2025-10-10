@@ -1,4 +1,29 @@
 /**
+ * Get a map of quizId to number of unique users who played it (for notifications)
+ */
+export const getQuizPlayCountsForUser = async (userId: string): Promise<{ [quizId: string]: number }> => {
+  // Get all quizzes created by user
+  const quizzes = await getUserQuizzes(userId);
+  const quizIds = quizzes.map(q => q.id);
+  const playCounts: { [quizId: string]: number } = {};
+  for (const quizId of quizIds) {
+    // Get all records for this quiz
+    const recordsQuery = query(
+      collection(db, 'quizRecords'),
+      where('quizId', '==', quizId)
+    );
+    const recordsSnap = await getDocs(recordsQuery);
+    // Count unique userIds
+    const uniqueUserIds = new Set<string>();
+    recordsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.userId) uniqueUserIds.add(data.userId);
+    });
+    playCounts[quizId] = uniqueUserIds.size;
+  }
+  return playCounts;
+};
+/**
  * Send a class invite (friend request) to a class member
  * @param currentUid - UID of the current user (sender)
  * @param memberIdentifier - UID or email/username of the class member to invite

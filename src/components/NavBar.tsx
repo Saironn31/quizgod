@@ -10,16 +10,36 @@ import ChangeNameForm from './ChangeNameForm';
 
 
 const NavBar: React.FC = () => {
-  // Notifications popup state
+  // All hooks and handlers inside function
+  const { user, userProfile, logout, refreshUserProfile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
-  // Example notifications (replace with real data)
-  // Notifications with links
-  const notifications = [
-    { id: 1, text: 'You have a new friend request.', link: '/friends' },
-    { id: 2, text: 'Your quiz was played by 3 users.', link: '/quiz-records' },
-    { id: 3, text: 'Class invite accepted.', link: '/classes' }
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
   const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.uid) return;
+      // Friend request notification
+      const requests = await getFriendRequests(user.uid);
+      const pendingCount = requests.filter(r => r.type === 'received' && r.status === 'pending').length;
+      const notifArr = [];
+      if (pendingCount > 0) {
+        notifArr.push({ id: 'friend', text: `You have ${pendingCount} new friend request${pendingCount > 1 ? 's' : ''}.`, link: '/friends' });
+      }
+      // Quiz played notification (dynamic)
+      const res = await import('@/lib/firestore');
+      const playCounts = await res.getQuizPlayCountsForUser(user.uid);
+      Object.entries(playCounts).forEach(([quizId, count]) => {
+        if (count > 0) {
+          notifArr.push({ id: `quiz-${quizId}`, text: `Your quiz was played by ${count} user${count > 1 ? 's' : ''}.`, link: '/quiz-records' });
+        }
+      });
+      // Example: class invite accepted (static, replace with real logic if needed)
+      notifArr.push({ id: 'class', text: 'Class invite accepted.', link: '/classes' });
+      setNotifications(notifArr);
+    };
+    fetchNotifications();
+  }, [user?.uid]);
   // Handler for deleting profile picture
   // Removed profile picture delete handler
 
@@ -30,8 +50,6 @@ const NavBar: React.FC = () => {
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
-  // All hooks and handlers inside function
-  const { user, userProfile, logout, refreshUserProfile } = useAuth();
   const [pendingRequests, setPendingRequests] = useState(0);
 
   useEffect(() => {
@@ -86,20 +104,69 @@ const NavBar: React.FC = () => {
 
   // (Removed duplicate useEffect outside function body)
   return (
-    <nav className="relative bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl px-8 py-4 min-w-fit" ref={menuRef}>
+    <nav className="relative bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl px-4 py-2 min-w-fit" ref={menuRef}>
       {/* Desktop Navigation */}
-      <div className="hidden md:flex items-center justify-between gap-6">
-        {/* User Profile Section */}
+      <div className="hidden md:flex items-center justify-between gap-6 w-full">
+        {/* Navigation Links */}
+        <div className="flex items-center gap-3 flex-1">
+          <Link 
+            href="/" 
+            className="px-5 py-2 rounded-xl text-blue-600 hover:bg-blue-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105"
+          >
+            Home
+          </Link>
+          <Link 
+            href="/create" 
+            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+          >
+            Create Quiz
+          </Link>
+          <Link 
+            href="/ai-quiz" 
+            className="px-5 py-2 rounded-xl text-yellow-400 hover:bg-yellow-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-yellow-400/30"
+          >
+            AI Quiz
+          </Link>
+          <Link 
+            href="/subjects" 
+            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+          >
+            Subjects
+          </Link>
+          <Link 
+            href="/quizzes" 
+            className="px-5 py-2 rounded-xl text-white hover:bg-white/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-white/30"
+          >
+            My Quizzes
+          </Link>
+          <Link 
+            href="/classes" 
+            className="px-5 py-2 rounded-xl text-green-600 hover:bg-green-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-green-600/30"
+          >
+            Classes
+          </Link>
+          <Link 
+            href="/quiz-records" 
+            className="px-5 py-2 rounded-xl text-purple-700 hover:bg-purple-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-purple-700/30"
+          >
+            Quiz Records
+          </Link>
+          <Link 
+            href="/friends" 
+            className="px-5 py-2 rounded-xl text-pink-600 hover:bg-pink-500/30 transition-all duration-200 font-bold flex items-center gap-2 hover:scale-105 border border-pink-600/30 relative"
+          >
+            Friends
+            {pendingRequests > 0 && (
+              <span className="absolute -top-2 -right-4 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold animate-pulse">
+                {pendingRequests}
+              </span>
+            )}
+          </Link>
+        </div>
+        {/* Right Section - Profile, Notifications, Theme Toggle & Logout */}
         <div className="flex items-center gap-4">
-          <div className="relative">
-            {/* Removed profile picture display and upload UI */}
-            
-            {/* Profile Picture Menu */}
-            {/* Removed profile picture menu UI */}
-          
-          {/* Removed file input for profile picture */}
-          
-          <div className="flex flex-col">
+          {/* Profile Details, Welcome, Name */}
+          <div className="flex flex-col items-end text-right">
             <span className="font-semibold text-white text-lg">
               {getDisplayName()}
             </span>
@@ -113,67 +180,6 @@ const NavBar: React.FC = () => {
               Profile
             </a>
           </div>
-        </div>
-
-        {/* Navigation Links */}
-        <div className="flex items-center gap-3">
-          <Link 
-            href="/" 
-            className="px-5 py-2 rounded-xl text-blue-300 hover:bg-blue-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            Home
-          </Link>
-          <Link 
-            href="/create" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            Create Quiz
-          </Link>
-          <Link 
-            href="/ai-quiz" 
-            className="px-5 py-2 rounded-xl text-yellow-300 hover:bg-yellow-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            AI Quiz
-          </Link>
-          <Link 
-            href="/subjects" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            Subjects
-          </Link>
-          <Link 
-            href="/quizzes" 
-            className="px-5 py-2 rounded-xl text-white hover:bg-white/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            My Quizzes
-          </Link>
-          <Link 
-            href="/classes" 
-            className="px-5 py-2 rounded-xl text-green-300 hover:bg-green-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            Classes
-          </Link>
-          <Link 
-            href="/quiz-records" 
-            className="px-5 py-2 rounded-xl text-purple-300 hover:bg-purple-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105"
-          >
-            Quiz Records
-          </Link>
-          <Link 
-            href="/friends" 
-            className="px-5 py-2 rounded-xl text-pink-300 hover:bg-pink-500/20 transition-all duration-200 font-medium flex items-center gap-2 hover:scale-105 relative"
-          >
-            Friends
-            {pendingRequests > 0 && (
-              <span className="absolute -top-2 -right-4 bg-red-500 text-white text-xs rounded-full px-2 py-0.5 font-bold animate-pulse">
-                {pendingRequests}
-              </span>
-            )}
-          </Link>
-        </div>
-
-        {/* Right Section - Notifications, Theme Toggle & Logout */}
-        <div className="flex items-center gap-4">
           {/* Notifications Icon */}
           <button
             className="relative px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200"
@@ -192,7 +198,7 @@ const NavBar: React.FC = () => {
           </button>
           {/* Notifications Popup */}
           {showNotifications && (
-            <div className="absolute right-8 top-16 z-[99999] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900">
+            <div className="absolute right-8 top-24 z-[2147483647] bg-white rounded-xl shadow-2xl border border-yellow-300 min-w-[260px] max-w-xs p-4 text-gray-900">
               <h3 className="font-bold text-lg mb-2 text-yellow-700">Notifications</h3>
               {notifications.length === 0 ? (
                 <div className="text-gray-500">No notifications.</div>
@@ -229,9 +235,9 @@ const NavBar: React.FC = () => {
         </div>
       </div> {/* END desktop nav main flex container */}
       {/* Removed profile modal, now navigates to /profile page */}
-      </div> {/* END nav main container */}
+  {/* END desktop nav main flex container */}
 
-      {/* Mobile Navigation */}
+  {/* Mobile Navigation */}
       <div className="md:hidden">
         <div className="flex items-center justify-between">
           {/* Mobile User Profile */}

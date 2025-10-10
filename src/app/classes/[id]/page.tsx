@@ -44,7 +44,14 @@ function OverviewTab({ classData, subjects, quizzes }: { classData: any, subject
           <div className="space-y-3 text-sm">
             <div className="flex justify-between items-center py-2 border-b border-white/20">
               <span className="text-purple-200">Class created</span>
-              <span className="text-gray-500">{classData.createdAt ? new Date(classData.createdAt).toLocaleDateString() : 'Unknown'}</span>
+              <span className="text-gray-500">
+                {(() => {
+                  const date = classData.createdAt;
+                  if (!date) return 'Unknown';
+                  const parsed = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+                  return isNaN(parsed.getTime()) ? 'Unknown' : parsed.toLocaleDateString();
+                })()}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b">
               <span>Total subjects</span>
