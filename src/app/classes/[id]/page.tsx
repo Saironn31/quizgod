@@ -177,6 +177,11 @@ function QuizzesTab({ quizzes, classData }: { quizzes: any[], classData: any }) 
 
 function MembersTab({ classData }: { classData: any }) {
   const [removing, setRemoving] = useState<string | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteValue, setInviteValue] = useState("");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState("");
+  const { user } = useAuth();
   const isPresident = classData.memberRoles && classData.memberRoles[classData.members?.[0]] === 'president';
   const handleRemoveMember = async (memberEmail: string) => {
     if (!window.confirm(`Remove member ${memberEmail} from class?`)) return;
@@ -196,8 +201,84 @@ function MembersTab({ classData }: { classData: any }) {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">👥 Class Members</h2>
-        <div className="text-sm text-gray-600">{classData.members?.length ?? 0} member{classData.members?.length !== 1 ? 's' : ''}</div>
+        <div className="flex gap-3 items-center">
+          <div className="text-sm text-gray-600">{classData.members?.length ?? 0} member{classData.members?.length !== 1 ? 's' : ''}</div>
+          <button
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            onClick={() => setShowInviteModal(true)}
+          >
+            ➕ Invite Friend
+          </button>
+        </div>
       </div>
+      {/* Invite Friend Modal */}
+      {showInviteModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]" onClick={() => setShowInviteModal(false)} />
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg shadow-2xl p-8 z-[9999] min-w-[320px] w-full max-w-md flex flex-col gap-4 border border-white/20">
+            <h3 className="text-lg font-semibold mb-4 text-gray-800">Invite Friend to Class</h3>
+            <input
+              type="text"
+              value={inviteValue}
+              onChange={e => setInviteValue(e.target.value)}
+              placeholder="Enter username or email"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            />
+            {inviteError && <div className="text-red-500 text-sm">{inviteError}</div>}
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={async () => {
+                  setInviteLoading(true);
+                  setInviteError("");
+                  try {
+                    const res = await import('@/lib/firestore');
+                    if (!user?.uid) throw new Error('User not found');
+                    await res.sendClassInvite(user.uid, inviteValue);
+                    alert("Invite sent!");
+                    setShowInviteModal(false);
+                    setInviteValue("");
+                  } catch (err) {
+                    setInviteError("Failed to send invite. Check username/email and try again.");
+                  } finally {
+                    setInviteLoading(false);
+                  }
+                }}
+                disabled={!inviteValue.trim() || inviteLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {inviteLoading ? "Sending..." : "Send Invite"}
+              </button>
+      {/* Add All Class Members as Friends */}
+      <div className="mt-8 flex justify-center">
+        <button
+          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+          onClick={async () => {
+            if (!user?.uid) {
+              alert('User not found.');
+              return;
+            }
+            try {
+              const res = await import('@/lib/firestore');
+              await res.addClassMembersAsFriends(user.uid, classData.id);
+              alert('All class members added as friends!');
+            } catch (err) {
+              alert('Failed to add class members as friends.');
+            }
+          }}
+        >
+          ➕ Add All Class Members as Friends
+        </button>
+      </div>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {(classData.members ?? []).map((member: string) => (
           <div key={member} className="bg-white rounded-lg shadow p-4 flex items-center justify-between">

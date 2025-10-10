@@ -19,13 +19,8 @@ export default function QuizPlayerPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user?.uid) {
-      router.push('/');
-      return;
-    }
-    
     loadQuiz();
-  }, [params.id, user]);
+  }, [params.id]);
 
   const loadQuiz = async () => {
     if (!params.id) return;

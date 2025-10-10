@@ -1,4 +1,49 @@
 /**
+ * Send a class invite (friend request) to a class member
+ * @param currentUid - UID of the current user (sender)
+ * @param memberIdentifier - UID or email/username of the class member to invite
+ * @returns UID of invited member
+ */
+/**
+ * Send a class invite (friend request) to a class member
+ * @param currentUid - UID of the current user (sender)
+ * @param memberIdentifier - UID or email/username of the class member to invite
+ * @returns UID of invited member
+ */
+export const sendClassInvite = async (currentUid: string, memberIdentifier: string): Promise<string> => {
+  // Try to find user by UID, username, or email
+  let memberUid = '';
+  // If identifier looks like a UID (length 28, alphanumeric), use directly
+  if (/^[a-zA-Z0-9]{28}$/.test(memberIdentifier)) {
+    memberUid = memberIdentifier;
+  } else {
+    // Try username first
+    const usersQuery = query(collection(db, 'users'), where('username', '==', memberIdentifier));
+    const usernameSnap = await getDocs(usersQuery);
+    if (!usernameSnap.empty) {
+      memberUid = usernameSnap.docs[0].id;
+    } else {
+      // Try email
+      const emailQuery = query(collection(db, 'users'), where('email', '==', memberIdentifier));
+      const emailSnap = await getDocs(emailQuery);
+      if (!emailSnap.empty) {
+        memberUid = emailSnap.docs[0].id;
+      }
+    }
+  }
+  if (!memberUid || memberUid === currentUid) throw new Error('User not found or cannot invite yourself');
+  // Create friend request document in friendRequests collection
+  const friendRequestsRef = collection(db, 'friendRequests');
+  await addDoc(friendRequestsRef, {
+    senderUid: currentUid,
+    receiverUid: memberUid,
+    status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  });
+  return memberUid;
+};
+/**
  * Get friend requests for a user (received and sent)
  */
 export const getFriendRequests = async (uid: string): Promise<any[]> => {
@@ -987,3 +1032,32 @@ export const subscribeToClassSubjects = (
     callback(subjects);
   });
 };
+
+/**
+ * Add all members of a class as friends for the current user (mutual friendship)
+ * @param currentUid - UID of the current user
+ * @param classId - ID of the class
+ */
+export const addClassMembersAsFriends = async (currentUid: string, classId: string): Promise<string[]> => {
+  // Get class document
+  const classRef = doc(db, 'classes', classId);
+  const classSnap = await getDoc(classRef);
+  if (!classSnap.exists()) throw new Error('Class not found');
+  const classData = classSnap.data() as FirebaseClass;
+  // Get all member emails except current user
+  const memberEmails = (classData.members || []).filter(email => !!email);
+  // Get UIDs for all member emails
+  const usersQuery = query(collection(db, 'users'), where('email', 'in', memberEmails));
+  const usersSnap = await getDocs(usersQuery);
+  const memberUids = usersSnap.docs.map(doc => doc.id).filter(uid => uid !== currentUid);
+  // Add each member as friend (mutual)
+  const currentUserRef = doc(db, 'users', currentUid);
+  const batch = writeBatch(db);
+  memberUids.forEach(uid => {
+    const memberRef = doc(db, 'users', uid);
+    batch.update(currentUserRef, { friends: arrayUnion(uid), updatedAt: new Date() });
+    batch.update(memberRef, { friends: arrayUnion(currentUid), updatedAt: new Date() });
+  });
+  await batch.commit();
+  return memberUids;
+}

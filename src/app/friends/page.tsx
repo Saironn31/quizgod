@@ -13,6 +13,8 @@ const FriendsPage: React.FC = () => {
   const [friends, setFriends] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFriend, setSelectedFriend] = useState<any | null>(null);
+  // ChatOverlay trigger state
+  const [chatOverlayFriend, setChatOverlayFriend] = useState<any | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
@@ -164,7 +166,7 @@ const FriendsPage: React.FC = () => {
                   <div className="text-xs text-purple-600 dark:text-purple-200 mb-2 text-center">{friend.username || friend.email}</div>
                   <button
                     className="px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium shadow hover:from-green-600 hover:to-emerald-600 transition-all mt-2"
-                    onClick={() => setSelectedFriend(friend)}
+                    onClick={() => setChatOverlayFriend(friend)}
                   >
                     💬 Chat
                   </button>
@@ -182,17 +184,19 @@ const FriendsPage: React.FC = () => {
               ))}
             </div>
           )}
-          {selectedFriend && (
-            <div className="mt-8 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3 shadow-xl max-w-md mx-auto">
-              <h2 className="text-lg font-bold mb-2 text-gray-800 dark:text-white text-center">💬 Chat with {selectedFriend.name || selectedFriend.username || selectedFriend.email}</h2>
-              <div className="mb-2">
-                <PrivateChat friendUid={selectedFriend.uid} friendName={selectedFriend.name || selectedFriend.username || selectedFriend.email} />
-              </div>
-              <div className="flex justify-center">
-                <button className="mt-2 px-4 py-1 bg-gradient-to-r from-gray-700 to-purple-700 text-white rounded-lg font-medium shadow hover:bg-gray-800/80 transition-all text-sm" onClick={() => setSelectedFriend(null)}>Close Chat</button>
-              </div>
-            </div>
-          )}
+          {/* Remove inline chat modal, use ChatOverlay instead */}
+      {/* ChatOverlay for friend chat at bottom right */}
+      {chatOverlayFriend && (
+        <div className="fixed bottom-4 right-4 z-50 w-80 max-w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
+          <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
+            <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
+            <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
+          </div>
+          <div className="p-2">
+            <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />
+          </div>
+        </div>
+      )}
 
           {showProfileModal && selectedFriend && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
