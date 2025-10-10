@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { getClassMemberQuizRecords } from '@/lib/firestore';
 
-export default function MemberAnalyticsTab({ classId, memberId, quizzes, subjects }) {
+interface MemberAnalyticsTabProps {
+  classId: string;
+  memberId: string;
+  quizzes: any[];
+  subjects: any[];
+}
+
+export default function MemberAnalyticsTab({ classId, memberId, quizzes, subjects }: MemberAnalyticsTabProps) {
   const [stats, setStats] = useState({ quizzesTaken: 0, avgScore: 0 });
 
   useEffect(() => {
@@ -13,7 +20,7 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
       for (const r of records) {
         let percent = 0;
         if (r.quizId) {
-          const quiz = quizzes.find(q => q.id === r.quizId);
+          const quiz = quizzes.find((q: any) => q.id === r.quizId);
           const maxScore = quiz?.questions?.length || 1;
           percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
         }

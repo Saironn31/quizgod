@@ -1,7 +1,40 @@
+"use client";
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  getClassById,
+  getClassSubjects,
+  getClassQuizzes,
+  createSubject,
+  FirebaseClass,
+  FirebaseSubject,
+  FirebaseQuiz,
+  getClassQuizRecords,
+  getClassMemberQuizRecords
+} from '@/lib/firestore';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 // ...existing code...
 
 export default function ClassDetailPage() {
   // ...existing code...
+  const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  const [classData, setClassData] = useState<FirebaseClass | null>(null);
+  const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
+  const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isPresident, setIsPresident] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'subjects' | 'quizzes' | 'analytics' | 'members' | 'memberAnalytics'>('overview');
+  const [showAddSubject, setShowAddSubject] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [creating, setCreating] = useState(false);
+    const [selectedMember, setSelectedMember] = useState<string | null>(null);
+    const [showInviteModal, setShowInviteModal] = useState(false);
+  // Add classStats and memberStats state
+  const [classStats, setClassStats] = useState({ quizzesTaken: 0, avgScore: 0 });
+  const [memberStats, setMemberStats] = useState<{ [email: string]: { quizzesTaken: number; avgScore: number } }>({});
+
   // Scroll to top on tab change
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -23,21 +56,6 @@ export default function ClassDetailPage() {
     }
   }, [showInviteModal]);
   // ...existing code...
-"use client";
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  getClassById,
-  getClassSubjects,
-  getClassQuizzes,
-  createSubject,
-  FirebaseClass,
-  FirebaseSubject,
-  FirebaseQuiz,
-  getClassQuizRecords,
-  getClassMemberQuizRecords
-} from '@/lib/firestore';
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import NavBar from '@/components/NavBar';
 import ClassChat from '@/components/ClassChat';
@@ -334,7 +352,7 @@ function MembersTab({ classData }: { classData: any }) {
 export default function ClassDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+    const [inviteValue, setInviteValue] = useState("");
   const [classData, setClassData] = useState<FirebaseClass | null>(null);
   const [subjects, setSubjects] = useState<FirebaseSubject[]>([]);
   const [quizzes, setQuizzes] = useState<FirebaseQuiz[]>([]);
