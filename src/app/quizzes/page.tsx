@@ -188,7 +188,7 @@ export default function QuizzesPage() {
             </div>
 
             {/* Quiz Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 sm:mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 text-center">
                 <div className="text-2xl sm:text-3xl font-bold">{quizzes.length}</div>
                 <div className="text-sm sm:text-base opacity-90">Total Quizzes</div>
@@ -196,12 +196,6 @@ export default function QuizzesPage() {
               <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4 text-center">
                 <div className="text-2xl sm:text-3xl font-bold">{subjects.length}</div>
                 <div className="text-sm sm:text-base opacity-90">Subjects</div>
-              </div>
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4 text-center">
-                <div className="text-2xl sm:text-3xl font-bold">
-                  {quizzes.reduce((total, q) => total + q.questions.length, 0)}
-                </div>
-                <div className="text-sm sm:text-base opacity-90">Total Questions</div>
               </div>
             </div>
 
@@ -281,6 +275,19 @@ export default function QuizzesPage() {
                       >
                         🎮 Play
                       </Link>
+                      {quiz.source === 'personal' && (
+                        <button
+                          onClick={() => {
+                            const url = `${window.location.origin}/quizzes/${quiz.id}`;
+                            navigator.clipboard.writeText(url);
+                            alert('Quiz link copied to clipboard!');
+                          }}
+                          className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-sm font-medium"
+                          title="Share quiz link"
+                        >
+                          🔗 Share
+                        </button>
+                      )}
                       <button 
                         onClick={() => handleDelete(quiz.id, quiz.title)} 
                         disabled={deleting === quiz.id}

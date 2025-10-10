@@ -78,19 +78,12 @@ export default function QuizRecordsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="sticky top-0 z-40"><NavBar /></div>
+        <div className="flex justify-between items-center mb-8 sm:mb-12">
+          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
+          <NavBar />
+        </div>
         <div className="max-w-3xl mx-auto mt-12">
           <h2 className="text-2xl font-bold mb-4 text-white">📊 Your Quiz Records</h2>
-          <div className="mb-6">
-            <a
-              href="https://chat.deepseek.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold shadow hover:from-cyan-600 hover:to-blue-600 transition-all duration-200"
-            >
-              Recommended AI: DeepSeek
-            </a>
-          </div>
           {loadingRecords ? (
             <div className="text-purple-200">Loading records...</div>
           ) : quizRecords.length === 0 ? (
@@ -126,7 +119,6 @@ export default function QuizRecordsPage() {
         {selectedRecord && (
           <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
             <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
-              <div className="mb-8"><NavBar /></div>
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
                 ✖
               </button>
