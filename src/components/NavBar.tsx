@@ -92,9 +92,10 @@ const NavBar: React.FC = () => {
     try {
       await logout();
       setIsMenuOpen(false); // Close menu after logout
+      if (router) {
+        router.push('/'); // Redirect to home page after logout
+      }
     } catch (error) {
-
-
       alert('Failed to delete profile picture');
     }
   };

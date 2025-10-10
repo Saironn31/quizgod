@@ -3,23 +3,47 @@ import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserQuizRecords } from '@/lib/firestore';
+import { getUserQuizRecords, getQuizById } from '@/lib/firestore';
+import NavBar from '@/components/NavBar';
 
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const Bar = dynamic(() => import('react-chartjs-2').then(mod => mod.Bar), { ssr: false });
 const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
 
+interface TopSubject {
+  subject: string;
+  score: number;
+}
+
+interface AnalyticsStats {
+  quizzesTaken: number;
+  avgScore: number;
+  topSubjects: TopSubject[];
+  scoreHistory: number[];
+}
+
 export default function AnalyticsPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ quizzesTaken: 0, avgScore: 0, topSubjects: [], scoreHistory: [] });
+  const [stats, setStats] = useState<AnalyticsStats>({ quizzesTaken: 0, avgScore: 0, topSubjects: [], scoreHistory: [] });
 
   useEffect(() => {
     async function fetchStats() {
       if (!user?.uid) return;
       const records = await getUserQuizRecords(user.uid);
       const quizzesTaken = records.length;
-      const avgScore = quizzesTaken > 0 ? Math.round(records.reduce((sum, r) => sum + (r.score || 0), 0) / quizzesTaken) : 0;
+      // Normalize each score by quiz length (percentage)
+      let totalPercent = 0;
+      for (const r of records) {
+        let percent = 0;
+        if (r.quizId) {
+          const quiz = await getQuizById(r.quizId);
+          const maxScore = quiz?.questions?.length || 1;
+          percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
+        }
+        totalPercent += percent;
+      }
+      const avgScore = quizzesTaken > 0 ? Math.round(totalPercent / quizzesTaken) : 0;
       const scoreHistory = records.slice(-7).map(r => r.score);
 
       // Aggregate top subjects
@@ -70,8 +94,8 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white flex flex-col items-center py-12 px-4">
-      <h1 className="text-3xl font-bold mb-6">📊 Analytics Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 to-indigo-900 text-white">
+      <NavBar />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
         <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
           <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
