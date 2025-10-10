@@ -1,10 +1,4 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
-import NavBar from "@/components/NavBar";
-import ClassChat from '@/components/ClassChat';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   getClassById,
@@ -13,8 +7,15 @@ import {
   createSubject,
   FirebaseClass,
   FirebaseSubject,
-  FirebaseQuiz
+  FirebaseQuiz,
+  getClassQuizRecords,
+  getClassMemberQuizRecords
 } from '@/lib/firestore';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import NavBar from '@/components/NavBar';
+import ClassChat from '@/components/ClassChat';
 
 // Tab components
 function OverviewTab({ classData, subjects, quizzes }: { classData: any, subjects: any[], quizzes: any[] }) {
@@ -255,27 +256,6 @@ function MembersTab({ classData }: { classData: any }) {
               >
                 {inviteLoading ? "Sending..." : "Send Invite"}
               </button>
-      {/* Add All Class Members as Friends */}
-      <div className="mt-8 flex justify-center">
-        <button
-          className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-          onClick={async () => {
-            if (!user?.uid) {
-              alert('User not found.');
-              return;
-            }
-            try {
-              const res = await import('@/lib/firestore');
-              await res.addClassMembersAsFriends(user.uid, classData.id);
-              alert('All class members added as friends!');
-            } catch (err) {
-              alert('Failed to add class members as friends.');
-            }
-          }}
-        >
-          ➕ Add All Class Members as Friends
-        </button>
-      </div>
               <button
                 onClick={() => setShowInviteModal(false)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
@@ -482,9 +462,47 @@ export default function ClassDetailPage() {
         {activeTab === 'quizzes' && (
           <QuizzesTab quizzes={quizzes} classData={classData} />
         )}
+        {activeTab === 'analytics' && (
+          <ClassAnalyticsTab classData={classData} user={user} quizzes={quizzes} subjects={subjects} />
+        )}
         {activeTab === 'members' && (
           <MembersTab classData={classData} />
         )}
+        {/* Class Analytics Tab */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6 text-white">📈 Class Analytics</h2>
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-purple-200 mb-2">Class-wide Stats</h3>
+            <ul className="space-y-2">
+              <li>Total Subjects: <span className="font-bold text-green-300">{subjects.length}</span></li>
+              <li>Total Quizzes: <span className="font-bold text-purple-300">{quizzes.length}</span></li>
+              <li>Total Members: <span className="font-bold text-blue-300">{classData?.members?.length ?? 0}</span></li>
+              <li>Quizzes Taken: <span className="font-bold text-yellow-300">{classStats.quizzesTaken}</span></li>
+              <li>Average Score: <span className="font-bold text-green-300">{classStats.avgScore}</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-purple-200 mb-2">Your Analytics</h3>
+            <div className="bg-white/20 rounded-lg p-4 mb-4">
+              <p className="text-white">Quizzes Taken: <span className="font-bold text-yellow-300">{memberStats[user.email]?.quizzesTaken ?? '--'}</span></p>
+              <p className="text-white">Average Score: <span className="font-bold text-green-300">{memberStats[user.email]?.avgScore ?? '--'}</span></p>
+            </div>
+          </div>
+          {isPresident && (
+            <div>
+              <h3 className="text-lg font-semibold text-purple-200 mb-2">All Members Analytics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(classData.members ?? []).map((member: string) => (
+                  <div key={member} className="bg-white/20 rounded-lg p-4">
+                    <h4 className="font-bold text-white mb-2">{member}</h4>
+                    <p className="text-white">Quizzes Taken: <span className="font-bold text-yellow-300">{memberStats[member]?.quizzesTaken ?? '--'}</span></p>
+                    <p className="text-white">Average Score: <span className="font-bold text-green-300">{memberStats[member]?.avgScore ?? '--'}</span></p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
         {/* Class-wide chat at the bottom of the page */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
