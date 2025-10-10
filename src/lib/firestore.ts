@@ -601,7 +601,12 @@ export const getClassById = async (classId: string): Promise<FirebaseClass | nul
     const classRef = doc(db, 'classes', classId);
     const classSnap = await getDoc(classRef);
     if (classSnap.exists()) {
-      return { id: classSnap.id, ...classSnap.data() } as FirebaseClass;
+      const data = classSnap.data();
+      // Convert Firestore Timestamps to JS Dates
+      if (data.createdAt?.toDate) data.createdAt = data.createdAt.toDate();
+      if (data.updatedAt?.toDate) data.updatedAt = data.updatedAt.toDate();
+      if (data.joinedAt?.toDate) data.joinedAt = data.joinedAt.toDate();
+      return { id: classSnap.id, ...data } as FirebaseClass;
     }
     return null;
   } catch (error) {
