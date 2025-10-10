@@ -305,6 +305,9 @@ export default function ClassDetailPage() {
   const [showAddSubject, setShowAddSubject] = useState(false);
   const [newSubjectName, setNewSubjectName] = useState("");
   const [creating, setCreating] = useState(false);
+  // Add classStats and memberStats state
+  const [classStats, setClassStats] = useState({ quizzesTaken: 0, avgScore: 0 });
+  const [memberStats, setMemberStats] = useState<{ [email: string]: { quizzesTaken: number; avgScore: number } }>({});
 
   useEffect(() => {
     if (!user?.email) {
@@ -312,6 +315,7 @@ export default function ClassDetailPage() {
       return;
     }
     loadClassData();
+    loadAnalytics();
   }, [params.id, user]);
 
   const loadClassData = async () => {
@@ -355,6 +359,46 @@ export default function ClassDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Load analytics for class and members
+  const loadAnalytics = async () => {
+    if (!params.id || !user?.uid || !user?.email) return;
+    // Get all quiz records for the class
+    const records = await getClassQuizRecords(params.id as string);
+    const quizzesTaken = records.length;
+    let totalPercent = 0;
+    for (const r of records) {
+      let percent = 0;
+      if (r.quizId) {
+        const quiz = quizzes.find(q => q.id === r.quizId);
+        const maxScore = quiz?.questions?.length || 1;
+        percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
+      }
+      totalPercent += percent;
+    }
+    const avgScore = quizzesTaken > 0 ? Math.round(totalPercent / quizzesTaken) : 0;
+    setClassStats({ quizzesTaken, avgScore });
+
+    // Per-member stats
+    const memberMap: { [email: string]: { quizzesTaken: number; avgScore: number } } = {};
+    for (const member of classData?.members ?? []) {
+      const memberRecords = records.filter(r => r.userId === member);
+      const memberQuizzesTaken = memberRecords.length;
+      let memberTotalPercent = 0;
+      for (const r of memberRecords) {
+        let percent = 0;
+        if (r.quizId) {
+          const quiz = quizzes.find(q => q.id === r.quizId);
+          const maxScore = quiz?.questions?.length || 1;
+          percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
+        }
+        memberTotalPercent += percent;
+      }
+      const memberAvgScore = memberQuizzesTaken > 0 ? Math.round(memberTotalPercent / memberQuizzesTaken) : 0;
+      memberMap[member] = { quizzesTaken: memberQuizzesTaken, avgScore: memberAvgScore };
+    }
+    setMemberStats(memberMap);
   };
 
   const addSubject = async () => {
