@@ -78,9 +78,19 @@ export default function QuizRecordsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-  <div className="sticky top-0 z-40"><NavBar /></div>
+        <div className="sticky top-0 z-40"><NavBar /></div>
         <div className="max-w-3xl mx-auto mt-12">
           <h2 className="text-2xl font-bold mb-4 text-white">📊 Your Quiz Records</h2>
+          <div className="mb-6">
+            <a
+              href="https://chat.deepseek.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold shadow hover:from-cyan-600 hover:to-blue-600 transition-all duration-200"
+            >
+              Recommended AI: chat.deepseek.com
+            </a>
+          </div>
           {loadingRecords ? (
             <div className="text-purple-200">Loading records...</div>
           ) : quizRecords.length === 0 ? (
@@ -135,8 +145,20 @@ export default function QuizRecordsPage() {
                       <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
                         <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
-                          <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
-                          <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
+                          <div className="text-purple-200">
+                            Your Answer: <span className="font-bold text-red-400">
+                              {typeof m.selected === "number" && quizInfoMap[selectedRecord.quizId] && selectedRecord.questions ?
+                                selectedRecord.questions[idx]?.options?.[m.selected] || String.fromCharCode(65 + m.selected)
+                                : (m.selected === "@" ? "No answer" : m.selected)}
+                            </span>
+                          </div>
+                          <div className="text-green-300">
+                            Correct: <span className="font-bold">
+                              {typeof m.correct === "number" && quizInfoMap[selectedRecord.quizId] && selectedRecord.questions ?
+                                selectedRecord.questions[idx]?.options?.[m.correct] || String.fromCharCode(65 + m.correct)
+                                : m.correct}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ))}
