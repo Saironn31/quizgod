@@ -192,41 +192,6 @@ const NavBar: React.FC = () => {
             <span className="text-purple-200 text-sm">
               Welcome back!
             </span>
-            {/* Quick Stats */}
-            <div className="mt-1 text-xs text-teal-200 flex flex-col gap-1">
-              <span className="flex items-center gap-2" title="Total quizzes you've taken">
-                <FaCheckCircle className="text-green-400" aria-label="Quizzes Taken" />
-                Quizzes Taken: <b>{userStats.quizzesTaken}</b>
-              </span>
-              <span className="flex items-center gap-2" title="Your average score across all quizzes">
-                <FaChartBar className="text-blue-300" aria-label="Average Score" />
-                Avg. Score: <b>{userStats.avgScore}</b>
-              </span>
-              <span className="flex items-center gap-2" title="Date of your last quiz attempt">
-                <FaCalendarAlt className="text-yellow-300" aria-label="Last Quiz Date" />
-                Last Quiz: <b>{userStats.lastQuizDate ? userStats.lastQuizDate.toLocaleDateString() : 'N/A'}</b>
-              </span>
-            </div>
-            <a
-              href="/profile"
-              className="mt-2 px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-medium shadow hover:bg-purple-700/80 transition-all text-center"
-            >
-                <div className="flex gap-2 mt-2">
-                  <a
-                    href="/profile"
-                    className="px-3 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg text-xs font-medium shadow hover:bg-purple-700/80 transition-all text-center"
-                  >
-                    Profile
-                  </a>
-                  <button 
-                    onClick={handleLogout} 
-                    className="px-3 py-1 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg text-xs font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all text-center"
-                  >
-                    Logout
-                  </button>
-                </div>
-              Profile
-            </a>
           </div>
           {/* Notifications Icon */}
           <button
