@@ -1,7 +1,7 @@
 ﻿"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getAllUserQuizzes, 
