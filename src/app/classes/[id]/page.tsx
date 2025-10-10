@@ -1,3 +1,28 @@
+// ...existing code...
+
+export default function ClassDetailPage() {
+  // ...existing code...
+  // Scroll to top on tab change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [activeTab]);
+
+  // Scroll to top when closing add subject modal
+  useEffect(() => {
+    if (!showAddSubject && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showAddSubject]);
+
+  // Scroll to top when closing invite modal
+  useEffect(() => {
+    if (!showInviteModal && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [showInviteModal]);
+  // ...existing code...
 "use client";
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -506,7 +531,14 @@ export default function ClassDetailPage() {
         </div>
         {/* Content */}
         {activeTab === 'overview' && (
-          <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
+          <>
+            <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
+            {/* Class-wide chat only in Overview tab */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
+              <ClassChat classId={classData.id} />
+            </div>
+          </>
         )}
         {activeTab === 'subjects' && (
           <SubjectsTab
@@ -531,46 +563,6 @@ export default function ClassDetailPage() {
         {activeTab === 'memberAnalytics' && selectedMember && (
           <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} />
         )}
-        {/* Class Analytics Tab */}
-        <div>
-          <h2 className="text-2xl font-bold mb-6 text-white">📈 Class Analytics</h2>
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-purple-200 mb-2">Class-wide Stats</h3>
-            <ul className="space-y-2">
-              <li>Total Subjects: <span className="font-bold text-green-300">{subjects.length}</span></li>
-              <li>Total Quizzes: <span className="font-bold text-purple-300">{quizzes.length}</span></li>
-              <li>Total Members: <span className="font-bold text-blue-300">{classData?.members?.length ?? 0}</span></li>
-              <li>Quizzes Taken: <span className="font-bold text-yellow-300">{classStats.quizzesTaken}</span></li>
-              <li>Average Score: <span className="font-bold text-green-300">{classStats.avgScore}</span></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-purple-200 mb-2">Your Analytics</h3>
-            <div className="bg-white/20 rounded-lg p-4 mb-4">
-              <p className="text-white">Quizzes Taken: <span className="font-bold text-yellow-300">{memberStats[user.email]?.quizzesTaken ?? '--'}</span></p>
-              <p className="text-white">Average Score: <span className="font-bold text-green-300">{memberStats[user.email]?.avgScore ?? '--'}</span></p>
-            </div>
-          </div>
-          {isPresident && (
-            <div>
-              <h3 className="text-lg font-semibold text-purple-200 mb-2">All Members Analytics</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(classData.members ?? []).map((member: string) => (
-                  <div key={member} className="bg-white/20 rounded-lg p-4">
-                    <h4 className="font-bold text-white mb-2">{member}</h4>
-                    <p className="text-white">Quizzes Taken: <span className="font-bold text-yellow-300">{memberStats[member]?.quizzesTaken ?? '--'}</span></p>
-                    <p className="text-white">Average Score: <span className="font-bold text-green-300">{memberStats[member]?.avgScore ?? '--'}</span></p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Class-wide chat at the bottom of the page */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
-          <ClassChat classId={classData.id} />
-        </div>
       </div>
     </div>
   );
