@@ -1,7 +1,10 @@
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { Bar, Doughnut } from 'react-chartjs-2';
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
+const Bar = dynamic(() => import('react-chartjs-2').then(mod => mod.Bar), { ssr: false });
+const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
 
 const dummyStats = {
   quizzesTaken: 42,
