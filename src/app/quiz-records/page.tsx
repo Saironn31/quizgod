@@ -88,7 +88,7 @@ export default function QuizRecordsPage() {
               rel="noopener noreferrer"
               className="inline-block px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg font-semibold shadow hover:from-cyan-600 hover:to-blue-600 transition-all duration-200"
             >
-              Recommended AI: chat.deepseek.com
+              Recommended AI: DeepSeek
             </a>
           </div>
           {loadingRecords ? (

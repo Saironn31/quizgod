@@ -270,12 +270,20 @@ export default function AIQuizGenerator() {
                   </div>
                 </div>
 
-                {/* Recommended AI Link */}
+                {/* Recommended AI Links */}
                 <div className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">🤖 Recommended AI</h3>
-                  <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
-                    chat.deepseek.com
-                  </a>
+                  <div className="space-y-2">
+                    <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
+                      DeepSeek
+                    </a>
+                    <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-yellow-500 text-white text-center rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium">
+                      Gemini
+                    </a>
+                    <a href="https://chat.openai.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-gray-800 text-white text-center rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium">
+                      ChatGPT
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -403,30 +411,6 @@ export default function AIQuizGenerator() {
                   )}
                 </div>
 
-                {/* Quick Links */}
-                <div className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">🔗 Quick Links</h3>
-                  <div className="space-y-2">
-                    <Link 
-                      href="/create" 
-                      className="block w-full p-2 bg-purple-500 text-white text-center rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium"
-                    >
-                      Manual Quiz Creator
-                    </Link>
-                    <Link 
-                      href="/subjects" 
-                      className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
-                    >
-                      Manage Subjects
-                    </Link>
-                    <Link 
-                      href="/quizzes" 
-                      className="block w-full p-2 bg-green-500 text-white text-center rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-                    >
-                      My Quizzes
-                    </Link>
-                  </div>
-                </div>
               </div>
             </div>
           )}
