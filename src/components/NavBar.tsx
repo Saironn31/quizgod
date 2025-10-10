@@ -162,32 +162,32 @@ const NavBar: React.FC = () => {
 
   // Minimalistic NavBar design
   return (
-    <nav className="bg-gradient-to-r from-[#181824] to-[#3a2a5d] px-4 py-2 flex items-center justify-between rounded-xl shadow-lg border border-white/10 max-w-full overflow-x-auto">
+    <nav className="bg-gradient-to-r from-[#181824] to-[#3a2a5d] px-6 py-3 sm:py-4 flex items-center justify-between rounded-xl shadow-lg border border-white/10 max-w-full overflow-x-auto">
       {/* Logo and Brand */}
-      <div className="flex items-center gap-3 flex-shrink-0">
-        <span className="text-pink-300 text-xl font-bold">🧠 QuizGod</span>
+      <div className="flex items-center gap-4 flex-shrink-0">
+        <span className="text-pink-300 text-2xl sm:text-3xl font-bold">🧠 QuizGod</span>
       </div>
       {/* Navigation Links */}
-      <div className="flex items-center gap-1 flex-wrap">
-        <Link href="/" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Home</Link>
-        <Link href="/create" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Create</Link>
-        <Link href="/ai-quiz" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">AI Quiz</Link>
-        <Link href="/subjects" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Subjects</Link>
-        <Link href="/quizzes" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">My Quizzes</Link>
-        <Link href="/classes" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Classes</Link>
-        <Link href="/quiz-records" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Records</Link>
-        <Link href="/analytics" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Analytics</Link>
-        <Link href="/friends" className="text-white px-2 py-1 rounded hover:bg-white/10 transition text-xs font-medium whitespace-nowrap">Friends</Link>
+      <div className="flex items-center gap-3 flex-wrap">
+        <Link href="/" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Home</Link>
+        <Link href="/create" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Create</Link>
+        <Link href="/ai-quiz" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">AI Quiz</Link>
+        <Link href="/subjects" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Subjects</Link>
+        <Link href="/quizzes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">My Quizzes</Link>
+        <Link href="/classes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Classes</Link>
+        <Link href="/quiz-records" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Records</Link>
+        <Link href="/analytics" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Analytics</Link>
+        <Link href="/friends" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Friends</Link>
       </div>
       {/* Profile & Actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+  <div className="flex items-center gap-3 flex-shrink-0">
         {/* Notification Button (Desktop & Mobile) */}
         <button
-          className="relative px-2 py-1 rounded-xl hover:bg-white/20 transition-all duration-200"
+          className="relative px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200"
           onClick={() => setShowNotifications(!showNotifications)}
           aria-label="Notifications"
         >
-          <svg className="w-5 h-5 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-6 h-6 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
           </svg>
           {notifications.length > 0 && (
@@ -241,8 +241,8 @@ const NavBar: React.FC = () => {
             >Close</button>
           </div>
         )}
-        <span className="text-white text-xs font-semibold hidden sm:inline">{getDisplayName()}</span>
-        <button onClick={handleLogout} className="bg-pink-500 hover:bg-pink-600 text-white px-2 py-1 rounded transition text-xs font-medium">Logout</button>
+        <span className="text-white text-sm font-semibold hidden sm:inline">{getDisplayName()}</span>
+        <button onClick={handleLogout} className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-2 rounded transition text-sm font-medium">Logout</button>
       </div>
       {/* Mobile NavBar: Left-side drawer */}
       {isMenuOpen && (
