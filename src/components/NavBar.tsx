@@ -139,6 +139,45 @@ const NavBar: React.FC = () => {
         <span className="text-white text-sm font-semibold">{getDisplayName()}</span>
         <button onClick={handleLogout} className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-1 rounded transition text-sm font-medium">Logout</button>
       </div>
+      {/* Mobile NavBar: Left-side drawer */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[9998]">
+          <div className="absolute inset-0 bg-black/40" onClick={closeMenu} />
+          <div className="fixed left-0 top-0 h-full w-2/3 max-w-xs bg-gradient-to-br from-[#181824] to-[#3a2a5d] shadow-2xl flex flex-col justify-between z-[9999]">
+            {/* Top: Profile & Back Button */}
+            <div className="flex flex-col gap-4 p-6 border-b border-white/10">
+              <button onClick={closeMenu} className="text-white text-lg font-bold mb-2 flex items-center gap-2"><span>←</span> Back</button>
+              <div className="flex items-center gap-3">
+                {userProfile?.profilePicture ? (
+                  <img src={userProfile.profilePicture} alt="Profile" className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xl">{getDisplayName().charAt(0).toUpperCase()}</div>
+                )}
+                <div className="flex flex-col">
+                  <span className="font-semibold text-white text-base">{getDisplayName()}</span>
+                  <span className="text-purple-200 text-xs">Welcome!</span>
+                </div>
+              </div>
+            </div>
+            {/* Middle: Navigation Links */}
+            <div className="flex flex-col gap-2 px-6 py-4 flex-1 overflow-y-auto">
+              <Link href="/" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Home</Link>
+              <Link href="/create" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Create</Link>
+              <Link href="/ai-quiz" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>AI Quiz</Link>
+              <Link href="/subjects" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Subjects</Link>
+              <Link href="/quizzes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>My Quizzes</Link>
+              <Link href="/classes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Classes</Link>
+              <Link href="/quiz-records" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Records</Link>
+              <Link href="/analytics" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Analytics</Link>
+              <Link href="/friends" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Friends</Link>
+            </div>
+            {/* Bottom: Logout */}
+            <div className="p-6 border-t border-white/10">
+              <button onClick={handleLogout} className="bg-pink-500 hover:bg-pink-600 text-white w-full px-3 py-2 rounded transition text-base font-medium">Logout</button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
