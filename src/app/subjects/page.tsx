@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   createSubject, 
@@ -169,22 +169,31 @@ export default function SubjectsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-
-        <div className="max-w-6xl mx-auto">
-          <div className="max-w-6xl mx-auto">
-            {/* Header only, quick actions removed */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">📚 My Subjects</h1>
-                <p className="text-purple-200 mt-1">Organize your quiz topics and subjects</p>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Subjects</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Manage your subjects and organize quizzes</p>
               </div>
+              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Quizzes
+              </Link>
             </div>
+          </div>
+        </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Your Subjects</h3>
 
             {/* Add Subject Form */}
             <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
@@ -276,6 +285,23 @@ export default function SubjectsPage() {
               </div>
             )}
 
+          </div>
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
+            <div className="space-y-3">
+              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
+              </Link>
+              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">🏫</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
+              </Link>
+              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

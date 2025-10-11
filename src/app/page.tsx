@@ -6,6 +6,7 @@ import SideNav from "@/components/SideNav";
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getDoc, doc } from 'firebase/firestore';
 
 export default function HomePage() {
   const [showAuth, setShowAuth] = useState(false);
@@ -16,10 +17,11 @@ export default function HomePage() {
   const [stats, setStats] = useState({ totalQuizzes: 0, avgScore: 0, streak: 0 });
 
   useEffect(() => {
-    const fetchRecords = async () => {
+    const fetchRecordsAndStreak = async () => {
       if (!user?.uid) return;
       setLoadingRecords(true);
       try {
+        // Fetch quiz records
         const q = query(
           collection(db, 'quizRecords'),
           where('userId', '==', user.uid),
@@ -28,18 +30,54 @@ export default function HomePage() {
         const snap = await getDocs(q);
         const records = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setQuizRecords(records);
-        
+
+        // Fetch loginDates from Firestore
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        let loginDates: string[] = [];
+        if (userSnap.exists()) {
+          loginDates = userSnap.data().loginDates || [];
+        }
+
+        // Calculate login streak
+        let streak = 0;
+        if (loginDates.length > 0) {
+          // Sort dates descending
+          const sorted = loginDates.slice().sort((a, b) => b.localeCompare(a));
+          let current = new Date();
+          for (let i = 0; i < sorted.length; i++) {
+            const dateStr = sorted[i];
+            const date = new Date(dateStr);
+            // Compare only date part
+            if (i === 0) {
+              // First date: must be today
+              const todayStr = current.toISOString().slice(0, 10);
+              if (dateStr !== todayStr) break;
+              streak = 1;
+            } else {
+              // Previous date must be yesterday, etc.
+              current.setDate(current.getDate() - 1);
+              const expectedStr = current.toISOString().slice(0, 10);
+              if (dateStr === expectedStr) {
+                streak++;
+              } else {
+                break;
+              }
+            }
+          }
+        }
+
         // Calculate stats
         const total = records.length;
         const avg = total > 0 ? records.reduce((acc: number, r: any) => acc + (r.score || 0), 0) / total : 0;
-        setStats({ totalQuizzes: total, avgScore: Math.round(avg), streak: 5 });
+        setStats({ totalQuizzes: total, avgScore: Math.round(avg), streak });
       } catch (err) {
-        console.error('Failed to fetch quiz records:', err);
+        console.error('Failed to fetch quiz records or streak:', err);
       } finally {
         setLoadingRecords(false);
       }
     };
-    if (user?.uid) fetchRecords();
+    if (user?.uid) fetchRecordsAndStreak();
   }, [user]);
 
   if (!user) {

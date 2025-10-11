@@ -42,7 +42,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Login function
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    // Record login date in Firestore
+    try {
+      await import('@/lib/firestore').then(mod => mod.recordUserLoginDate(cred.user.uid));
+    } catch (err) {
+      console.error('Failed to record login date:', err);
+    }
   };
 
   // Logout function

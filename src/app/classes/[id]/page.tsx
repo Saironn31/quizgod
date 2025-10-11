@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ScoresButton from '@/components/ScoresButton';
 import { useParams, useRouter } from 'next/navigation';
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import ClassChat from '@/components/ClassChat';
 import ClassAnalyticsTab from './ClassAnalyticsTab';
 import MemberAnalyticsTab from './MemberAnalyticsTab';
@@ -567,30 +567,55 @@ export default function ClassDetailPage() {
     return <div>Class not found.</div>;
   }
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-12">
-          <div className="w-full sm:w-auto">
-            <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+        </div>
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Class Details</span>
+                </h1>
+                <p className="text-slate-300 text-lg">View and manage your class, subjects, and quizzes</p>
+              </div>
+              <Link href="/classes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Classes
+              </Link>
+            </div>
           </div>
-          {isPresident && (
-            <button
-              onClick={async () => {
-                if (!window.confirm('Delete this class and all its quizzes? This cannot be undone.')) return;
-                try {
-                  const res = await import('@/lib/firestore');
-                  await res.deleteClassWithQuizzes(classData.id);
-                  alert('Class deleted.');
-                  window.location.href = '/classes';
-                } catch (error) {
-                  alert('Failed to delete class.');
-                }
-              }}
-              className="w-full sm:w-auto px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex-shrink-0"
-            >
-              Delete Class
-            </button>
-          )}
+        </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Overview</h3>
+            <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
+            {/* Class-wide chat only in Overview tab */}
+            <div className="mt-12">
+              <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
+              <ClassChat classId={classData.id} />
+            </div>
+          </div>
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
+            <div className="space-y-3">
+              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
+              </Link>
+              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
+              </Link>
+              <Link href="/subjects" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📚</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Subjects</span>
+              </Link>
+            </div>
+          </div>
         </div>
         {/* Tabs */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">

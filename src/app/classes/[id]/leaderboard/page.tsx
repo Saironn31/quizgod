@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useParams, useSearchParams } from "next/navigation";
+import SideNav from '@/components/SideNav';
 import Link from "next/link";
 import { getQuizById } from "@/lib/firestore";
 
@@ -334,263 +335,221 @@ export default function LeaderboardPage() {
   const quizSpecificScores = getQuizSpecificScores();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      {/* Navigation */}
-      <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-            🧠 QuizGod
-          </Link>
-          <div className="flex items-center space-x-4">
-            <Link href={`/classes/${classData.id}`} className="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
-              ← Back to Class
-            </Link>
-            <span className="text-gray-700 dark:text-gray-200">Welcome, {user?.displayName || user?.email || "User"}!</span>
-          </div>
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-      </nav>
-
-      {/* Header */}
-      <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-8">
-        <div className="max-w-6xl mx-auto px-6">
-          <h1 className="text-3xl font-bold">🏆 {classData.name} Leaderboard</h1>
-          <p className="text-yellow-100 mt-2">Track performance and compete with classmates!</p>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 border dark:border-gray-700">
-          <div className="flex flex-wrap gap-4 items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Quiz Filter
-                </label>
-                <select
-                  value={selectedQuiz}
-                  onChange={(e) => setSelectedQuiz(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 dropdown-menu"
-                >
-                  <option value="all">All Quizzes</option>
-                  {quizzes.map(({ key, quiz }) => (
-                    <option key={key} value={key}>
-                      {quiz.title}
-                    </option>
-                  ))}
-                </select>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Leaderboard</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Track top performers in your class</p>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Sort By
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 dropdown-menu"
-                >
-                  <option value="score">Average Score</option>
-                  <option value="time">Average Time</option>
-                  <option value="quizzes">Quizzes Completed</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {selectedQuiz === 'all' ? 'overall' : 'quiz-specific'} rankings
+              <Link href="/classes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Classes
+              </Link>
             </div>
           </div>
         </div>
-
-        {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
-          <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
-            <div className="bg-white/10 rounded-xl p-4">
-              <ul className="divide-y divide-purple-300">
-                {quizSpecificScores.map((record) => (
-                  <li
-                    key={`${record.username}-${record.completedAt}`}
-                    className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
-                    onClick={() => setSelectedRecord(record)}
-                  >
-                    <div>
-                      <div className="font-semibold text-white">
-                        User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
-                      </div>
-                      <div className="text-purple-200 text-sm">
-                        Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
-                      </div>
-                      <div className="text-purple-200 text-sm">
-                        Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
-                      </div>
-                    </div>
-                    <div className="text-purple-300">View Details →</div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {/* Member Record Details Modal */}
-            {selectedRecord && (
-              <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
-                <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
-                  <div className="mb-8"><nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit"><span className="font-semibold text-white text-lg">{selectedRecord.username}</span></nav></div>
-                  <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
-                    ✖
-                  </button>
-                  <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
-                  <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
-                  <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
-                  <div className="mb-2 text-purple-100">User ID: <span className="font-bold">{selectedRecord.username}</span></div>
-                  <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
-                  <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
-                  <div className="mb-6">
-                    <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
-                    {selectedRecord.mistakes && selectedRecord.mistakes.length > 0 ? (
-                      <div className="space-y-4">
-                        {selectedRecord.mistakes.map((m: any, idx: number) => (
-                          <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
-                            <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
-                            <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
-                              <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
-                              <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
-                            </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Leaderboard</h3>
+            {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
+              <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
+                <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
+                <div className="bg-white/10 rounded-xl p-4">
+                  <ul className="divide-y divide-purple-300">
+                    {quizSpecificScores.map((record) => (
+                      <li
+                        key={`${record.username}-${record.completedAt}`}
+                        className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
+                        onClick={() => setSelectedRecord(record)}
+                      >
+                        <div>
+                          <div className="font-semibold text-white">
+                            User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-green-400 font-bold">No mistakes! 🎉</div>
-                    )}
-                  </div>
-                  <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
-                    Close
-                  </button>
+                          <div className="text-purple-200 text-sm">
+                            Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
+                          </div>
+                          <div className="text-purple-200 text-sm">
+                            Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
+                          </div>
+                        </div>
+                        <div className="text-purple-300">View Details →</div>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Overall leaderboard */
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                🏆 Overall Class Rankings
-              </h2>
-            </div>
-            
-            {leaderboard.filter(entry => entry.quizzesCompleted > 0).length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🏆</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Quiz Results Yet</h3>
-                <p className="text-gray-500 mb-4">Complete some quizzes to see the leaderboard!</p>
-                <Link
-                  href={`/classes/${classData.id}`}
-                  className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Back to Class
-                </Link>
+                {/* Member Record Details Modal */}
+                {selectedRecord && (
+                  <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
+                    <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
+                      <div className="mb-8"><nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit"><span className="font-semibold text-white text-lg">{selectedRecord.username}</span></nav></div>
+                      <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
+                        ✖
+                      </button>
+                      <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
+                      <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
+                      <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
+                      <div className="mb-2 text-purple-100">User ID: <span className="font-bold">{selectedRecord.username}</span></div>
+                      <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
+                      <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
+                      <div className="mb-6">
+                        <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
+                        {selectedRecord.mistakes && selectedRecord.mistakes.length > 0 ? (
+                          <div className="space-y-4">
+                            {selectedRecord.mistakes.map((m: any, idx: number) => (
+                              <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
+                                <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
+                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
+                                  <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
+                                  <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-green-400 font-bold">No mistakes! 🎉</div>
+                        )}
+                      </div>
+                      <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Score</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Score</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quizzes</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Best Quiz</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {leaderboard
-                      .filter(entry => entry.quizzesCompleted > 0)
-                      .map((entry, index) => (
-                      <tr key={entry.username} className={entry.username === (user?.displayName || user?.email) ? 'bg-blue-50' : ''}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-lg">{getRankIcon(index + 1)}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
-                              {(entry.displayName || entry.username)[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {entry.displayName || entry.username}
-                                {entry.displayName && entry.displayName !== entry.username && (
-                                  <div className="text-xs text-gray-500">@{entry.username}</div>
-                                )}
-                                {entry.username === (user?.displayName || user?.email) && (
-                                  <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
-                                )}
-                                {entry.username === classData.createdBy && (
-                                  <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">👑 President</span>
-                                )}
+              /* Overall leaderboard */
+              <div className="bg-white rounded-lg shadow">
+                <div className="p-6 border-b">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    🏆 Overall Class Rankings
+                  </h2>
+                </div>
+                
+                {leaderboard.filter(entry => entry.quizzesCompleted > 0).length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🏆</div>
+                    <h3 className="text-xl font-semibold text-gray-700 mb-2">No Quiz Results Yet</h3>
+                    <p className="text-gray-500 mb-4">Complete some quizzes to see the leaderboard!</p>
+                    <Link
+                      href={`/classes/${classData.id}`}
+                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Back to Class
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Score</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Score</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quizzes</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Time</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Best Quiz</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {leaderboard
+                          .filter(entry => entry.quizzesCompleted > 0)
+                          .map((entry, index) => (
+                          <tr key={entry.username} className={entry.username === (user?.displayName || user?.email) ? 'bg-blue-50' : ''}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="text-lg">{getRankIcon(index + 1)}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-semibold mr-3">
+                                  {(entry.displayName || entry.username)[0].toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {entry.displayName || entry.username}
+                                    {entry.displayName && entry.displayName !== entry.username && (
+                                      <div className="text-xs text-gray-500">@{entry.username}</div>
+                                    )}
+                                    {entry.username === (user?.displayName || user?.email) && (
+                                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>
+                                    )}
+                                    {entry.username === classData.createdBy && (
+                                      <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">👑 President</span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className="font-semibold">{entry.averageScore}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {entry.totalScore}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                            {entry.quizzesCompleted}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {entry.averageTime > 0 ? formatTime(entry.averageTime) : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {entry.bestQuiz ? (
-                            <div className="text-xs">
-                              <div className="font-medium">{entry.bestQuiz.title}</div>
-                              <div className="text-gray-500">
-                                {entry.bestQuiz.score} pts in {formatTime(entry.bestQuiz.time)}
-                              </div>
-                            </div>
-                          ) : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <span className="font-semibold">{entry.averageScore}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {entry.totalScore}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
+                                {entry.quizzesCompleted}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {entry.averageTime > 0 ? formatTime(entry.averageTime) : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {entry.bestQuiz ? (
+                                <div className="text-xs">
+                                  <div className="font-medium">{entry.bestQuiz.title}</div>
+                                  <div className="text-gray-500">
+                                    {entry.bestQuiz.score} pts in {formatTime(entry.bestQuiz.time)}
+                                  </div>
+                                </div>
+                              ) : '-'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        )}
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {leaderboard.filter(e => e.quizzesCompleted > 0).length}
+            {/* Stats Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {leaderboard.filter(e => e.quizzesCompleted > 0).length}
+                </div>
+                <div className="text-sm text-gray-600">Active Players</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {allScores.length}
+                </div>
+                <div className="text-sm text-gray-600">Total Attempts</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-purple-600">
+                  {quizzes.length}
+                </div>
+                <div className="text-sm text-gray-600">Available Quizzes</div>
+              </div>
+              <div className="bg-white rounded-lg shadow p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {allScores.length > 0 ? Math.round(allScores.reduce((sum, score) => sum + score.percentage, 0) / allScores.length) : 0}%
+                </div>
+                <div className="text-sm text-gray-600">Class Average</div>
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Active Players</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {allScores.length}
-            </div>
-            <div className="text-sm text-gray-600">Total Attempts</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {quizzes.length}
-            </div>
-            <div className="text-sm text-gray-600">Available Quizzes</div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 text-center">
-            <div className="text-2xl font-bold text-yellow-600">
-              {allScores.length > 0 ? Math.round(allScores.reduce((sum, score) => sum + score.percentage, 0) / allScores.length) : 0}%
-            </div>
-            <div className="text-sm text-gray-600">Class Average</div>
           </div>
         </div>
       </div>

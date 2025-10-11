@@ -1,3 +1,26 @@
+/**
+ * Record today's login date for a user (if not already present)
+ */
+import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+
+export const recordUserLoginDate = async (uid: string) => {
+  if (!uid) return;
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  let loginDates: string[] = [];
+  if (userSnap.exists()) {
+    loginDates = userSnap.data().loginDates || [];
+  }
+  if (!loginDates.includes(todayStr)) {
+    await updateDoc(userRef, {
+      loginDates: arrayUnion(todayStr),
+      updatedAt: today
+    });
+  }
+};
 import { collection, doc, getDocs, setDoc, deleteDoc, query, where, addDoc, updateDoc, getDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot, orderBy } from 'firebase/firestore';
 import { db, storage } from '@/lib/firebase';
 /**

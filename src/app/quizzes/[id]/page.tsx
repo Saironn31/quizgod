@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { useAuth } from '@/contexts/AuthContext';
 import { getQuizById, FirebaseQuiz, saveQuizRecord } from '@/lib/firestore';
+import SideNav from '@/components/SideNav';
+import Link from 'next/link';
 
 export default function QuizPlayerPage() {
   const params = useParams();
@@ -417,114 +418,157 @@ export default function QuizPlayerPage() {
   const progress = ((currentQuestionIndex + 1) / quiz.questions.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white">
-      <div className="container mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">{quiz.title}</h1>
-            <p className="text-purple-200">Subject: {quiz.subject}</p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold">⏱️ {formatTime(timeLeft)}</div>
-            <div className="text-sm text-purple-200">Time Remaining</div>
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+        </div>
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Quiz Player</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Take your quiz and track your progress</p>
+              </div>
+              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Quizzes
+              </Link>
+            </div>
           </div>
         </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Quiz</h3>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm mb-2">
-            <span>Question {currentQuestionIndex + 1} of {quiz.questions.length}</span>
-            <span>{Math.round(progress)}% Complete</span>
-          </div>
-          <div className="w-full bg-white/20 rounded-full h-2">
-            <div 
-              className="bg-green-400 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
-
-        {/* Question */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
-            <h2 className="text-2xl font-semibold mb-6">
-              {currentQuestion.question}
-            </h2>
-
-            <div className="space-y-4">
-              {currentQuestion.options.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleAnswerSelect(index)}
-                  className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
-                    selectedAnswers[currentQuestionIndex] === index
-                      ? 'bg-blue-600 border-2 border-blue-400'
-                      : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-4 font-semibold">
-                      {String.fromCharCode(65 + index)}
-                    </span>
-                    <span>{option}</span>
-                  </div>
-                </button>
-              ))}
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">{quiz.title}</h1>
+                <p className="text-purple-200">Subject: {quiz.subject}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold">⏱️ {formatTime(timeLeft)}</div>
+                <div className="text-sm text-purple-200">Time Remaining</div>
+              </div>
             </div>
 
-            {/* Navigation */}
-            <div className="flex justify-between mt-8">
-              <button
-                onClick={handlePrevQuestion}
-                disabled={currentQuestionIndex === 0}
-                className="px-6 py-3 bg-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
-              >
-                ← Previous
-              </button>
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <div className="flex justify-between text-sm mb-2">
+                <span>Question {currentQuestionIndex + 1} of {quiz.questions.length}</span>
+                <span>{Math.round(progress)}% Complete</span>
+              </div>
+              <div className="w-full bg-white/20 rounded-full h-2">
+                <div 
+                  className="bg-green-400 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+            </div>
 
-              <div className="flex gap-4">
-                {currentQuestionIndex === quiz.questions.length - 1 ? (
+            {/* Question */}
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8">
+                <h2 className="text-2xl font-semibold mb-6">
+                  {currentQuestion.question}
+                </h2>
+
+                <div className="space-y-4">
+                  {currentQuestion.options.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleAnswerSelect(index)}
+                      className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
+                        selectedAnswers[currentQuestionIndex] === index
+                          ? 'bg-blue-600 border-2 border-blue-400'
+                          : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center">
+                        <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-4 font-semibold">
+                          {String.fromCharCode(65 + index)}
+                        </span>
+                        <span>{option}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Navigation */}
+                <div className="flex justify-between mt-8">
                   <button
-                    onClick={handleFinishQuiz}
-                    className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                    onClick={handlePrevQuestion}
+                    disabled={currentQuestionIndex === 0}
+                    className="px-6 py-3 bg-gray-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-700 transition-colors"
                   >
-                    🏁 Finish Quiz
+                    ← Previous
                   </button>
-                ) : (
-                  <button
-                    onClick={handleNextQuestion}
-                    disabled={selectedAnswers[currentQuestionIndex] === -1}
-                    className="px-6 py-3 bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
-                  >
-                    Next →
-                  </button>
-                )}
+
+                  <div className="flex gap-4">
+                    {currentQuestionIndex === quiz.questions.length - 1 ? (
+                      <button
+                        onClick={handleFinishQuiz}
+                        className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                      >
+                        🏁 Finish Quiz
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleNextQuestion}
+                        disabled={selectedAnswers[currentQuestionIndex] === -1}
+                        className="px-6 py-3 bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+                      >
+                        Next →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Question Navigator */}
+            <div className="max-w-4xl mx-auto mt-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                <h3 className="text-sm font-semibold mb-3">Quick Navigation:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {quiz.questions.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentQuestionIndex(index)}
+                      className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
+                        index === currentQuestionIndex
+                          ? 'bg-blue-600 border-2 border-blue-400'
+                          : selectedAnswers[index] !== -1
+                          ? 'bg-green-600/50 hover:bg-green-600'
+                          : 'bg-white/20 hover:bg-white/30'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Question Navigator */}
-        <div className="max-w-4xl mx-auto mt-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-            <h3 className="text-sm font-semibold mb-3">Quick Navigation:</h3>
-            <div className="flex flex-wrap gap-2">
-              {quiz.questions.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentQuestionIndex(index)}
-                  className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
-                    index === currentQuestionIndex
-                      ? 'bg-blue-600 border-2 border-blue-400'
-                      : selectedAnswers[index] !== -1
-                      ? 'bg-green-600/50 hover:bg-green-600'
-                      : 'bg-white/20 hover:bg-white/30'
-                  }`}
-                >
-                  {index + 1}
-                </button>
-              ))}
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
+            <div className="space-y-3">
+              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
+              </Link>
+              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">🏫</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
+              </Link>
+              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
+              </Link>
             </div>
           </div>
         </div>

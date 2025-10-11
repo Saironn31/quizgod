@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getUserSubjects, 
@@ -272,221 +272,130 @@ export default function AIQuizGenerator() {
   // Show loading or auth redirect
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex justify-center items-center min-h-[50vh]">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-4">Please log in to access AI Quiz Generator</h1>
-              <Link href="/" className="text-blue-400 hover:underline">
-                Go to Login
-              </Link>
+      <div className="min-h-screen bg-slate-950 relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
+        </div>
+        <div className="relative z-10 text-center px-4 animate-fade-in">
+          <div className="mb-8 inline-block">
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-5xl font-black animate-bounce-soft shadow-glow">
+              Q
             </div>
           </div>
+          <h1 className="text-6xl md:text-8xl font-black mb-6">
+            <span className="gradient-text">AI Quiz Generator</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto">
+            Please log in to access AI Quiz Generator
+          </p>
+          <Link href="/" className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-glow">
+            Go to Login
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex justify-between items-center mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">🧠 QuizGod</div>
-          <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold text-yellow-300 mb-1 drop-shadow">🧠 AI Quiz Generator</h1>
-            <p className="text-lg text-white font-semibold drop-shadow">Use AI to help create quizzes and analyze content</p>
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">AI Quiz Generator</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Create quizzes instantly with AI</p>
+              </div>
+              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Quizzes
+              </Link>
+            </div>
           </div>
-
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-lg text-white font-semibold animate-pulse">Loading...</p>
-            </div>
-          ) : (
-            <div className="grid lg:grid-cols-3 gap-6">
-              
-              {/* AI Prompts Section */}
-              <div className="lg:col-span-2 space-y-4">
-                {/* PDF Quiz Generator */}
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
-                  <h3 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-2">📄 PDF Quiz Generator Prompt</h3>
-                  <p className="text-base text-blue-900 dark:text-blue-200 font-medium">Copy this prompt and paste it to Claude/ChatGPT along with your PDF content</p>
-                  <div className="mt-3 p-3 bg-white dark:bg-gray-900 rounded border text-base text-gray-900 dark:text-gray-100 font-mono leading-relaxed">
-                    Create a quiz based on the following content. Generate 5-10 multiple choice questions with 4 options each. Mark the correct answer with an asterisk (*). Format like this:<br/><br/>
-                    1. What is the main topic?<br/>
-                    A) Option 1<br/>
-                    B) Option 2 *<br/>
-                    C) Option 3<br/>
-                    D) Option 4<br/><br/>
-                    [Insert your PDF text here]
-                  </div>
-                </div>
-
-                {/* Recommended AI Links */}
-                <div className="p-4 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/30 dark:to-slate-800/30 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <h3 className="text-xl font-bold text-blue-700 dark:text-blue-200 mb-3">🤖 Recommended AI</h3>
-                  <div className="space-y-2">
-                    <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-blue-500 text-white text-center rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium">
-                      DeepSeek
-                    </a>
-                    <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-yellow-500 text-white text-center rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium">
-                      Gemini
-                    </a>
-                    <a href="https://chat.openai.com" target="_blank" rel="noopener noreferrer" className="block w-full p-2 bg-gray-800 text-white text-center rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium">
-                      ChatGPT
-                    </a>
-                  </div>
-                </div>
+        </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Generate a Quiz</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Quiz Title</label>
+                <input
+                  type="text"
+                  value={quizTitle}
+                  onChange={(e) => setQuizTitle(e.target.value)}
+                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  placeholder="Enter quiz title..."
+                />
+                <label className="block text-sm font-medium text-gray-300 mb-1 mt-4">Subject</label>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <option value="">Select a subject</option>
+                  {filteredSubjects.map((subject) => (
+                    <option key={subject.id} value={subject.name}>
+                      {subject.source === 'class' ? `${subject.name} (${subject.className})` : subject.name}
+                    </option>
+                  ))}
+                </select>
+                <label className="block text-sm font-medium text-gray-300 mb-1 mt-4">Add to Class (Optional)</label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <option value="">No class (Personal quiz)</option>
+                  {filteredClasses.map((classData) => (
+                    <option key={classData.id} value={classData.id}>
+                      {classData.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={createQuizFromAI}
+                  disabled={!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || creating}
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm mt-6"
+                >
+                  {creating ? "Creating..." : "Create Quiz"}
+                </button>
               </div>
-
-              {/* Management Section */}
-              <div className="space-y-4">
-                
-                {/* Add Subject */}
-                <div className="p-4 bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/30 dark:to-blue-900/30 rounded-lg border border-cyan-200 dark:border-cyan-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📝 Add Subject</h3>
-                    <button
-                      onClick={() => {
-                        setShowSubjectForm((prev) => {
-                          if (!prev && subjectFormRef.current) {
-                            setTimeout(() => {
-                              subjectFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 0);
-                          }
-                          return !prev;
-                        });
-                      }}
-                      className="px-3 py-1 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors duration-200 text-sm font-medium"
-                    >
-                      {showSubjectForm ? "Cancel" : "➕ New"}
-                    </button>
-                  </div>
-                  
-                  {showSubjectForm && (
-                    <div className="space-y-3" ref={subjectFormRef}>
-                      <input
-                        type="text"
-                        value={newSubject}
-                        onChange={(e) => setNewSubject(e.target.value)}
-                        className="w-full p-2 border border-cyan-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm"
-                        placeholder="Enter subject name..."
-                        onKeyPress={(e) => e.key === 'Enter' && addSubject()}
-                      />
-                      <button
-                        onClick={addSubject}
-                        disabled={creating}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 transition-all duration-200 text-sm"
-                      >
-                        {creating ? "Adding..." : "Add Subject"}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Create Quiz */}
-                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg border border-green-200 dark:border-green-700">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">📝 Create Quiz</h3>
-                    <button
-                      onClick={() => {
-                        setShowQuizForm((prev) => {
-                          if (!prev && quizFormRef.current) {
-                            setTimeout(() => {
-                              quizFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 0);
-                          }
-                          return !prev;
-                        });
-                      }}
-                      className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200 text-sm font-medium"
-                    >
-                      {showQuizForm ? "Cancel" : "➕ New Quiz"}
-                    </button>
-                  </div>
-                  
-                  {showQuizForm && (
-                    <div className="grid md:grid-cols-2 gap-4" ref={quizFormRef}>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Quiz Title
-                          </label>
-                          <input
-                            type="text"
-                            value={quizTitle}
-                            onChange={(e) => setQuizTitle(e.target.value)}
-                            className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                            placeholder="Enter quiz title..."
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Subject
-                          </label>
-                          <select
-                            value={selectedSubject}
-                            onChange={(e) => setSelectedSubject(e.target.value)}
-                            className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                          >
-                            <option value="">Select a subject</option>
-                            {filteredSubjects.map((subject) => (
-                              <option key={subject.id} value={subject.name}>
-                                {subject.source === 'class' ? `${subject.name} (${subject.className})` : subject.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Add to Class (Optional)
-                          </label>
-                          <select
-                            value={selectedClass}
-                            onChange={(e) => setSelectedClass(e.target.value)}
-                            className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                          >
-                            <option value="">No class (Personal quiz)</option>
-                            {filteredClasses.map((classData) => (
-                              <option key={classData.id} value={classData.id}>
-                                {classData.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        
-                        <button
-                          onClick={createQuizFromAI}
-                          disabled={!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || creating}
-                          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm"
-                        >
-                          {creating ? "Creating..." : "Create Quiz"}
-                        </button>
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Quiz Questions (Paste from AI)
-                        </label>
-                        <textarea
-                          value={quizQuestions}
-                          onChange={(e) => setQuizQuestions(e.target.value)}
-                          className="w-full h-32 p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                          placeholder="Paste AI-generated questions here..."
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Quiz Questions (Paste from AI)</label>
+                <textarea
+                  value={quizQuestions}
+                  onChange={(e) => setQuizQuestions(e.target.value)}
+                  className="w-full h-32 p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  placeholder="Paste AI-generated questions here..."
+                />
               </div>
             </div>
-          )}
+          </div>
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
+            <div className="space-y-3">
+              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
+              </Link>
+              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">🏫</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
+              </Link>
+              <Link href="/subjects" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📚</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Subjects</span>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>

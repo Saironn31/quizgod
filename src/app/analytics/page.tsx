@@ -4,7 +4,8 @@ import dynamic from 'next/dynamic';
 import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserQuizRecords, getQuizById } from '@/lib/firestore';
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
+import Link from "next/link";
 
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -94,80 +95,81 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">📊 Analytics</div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={async () => {
-                if (!confirm('Clear local analytics data (this will remove local drafts, preferences, and local progress)?')) return;
-                try {
-                  // Remove known local keys
-                  const keysToRemove: string[] = [];
-                  // preferences
-                  keysToRemove.push('quizzes_search', 'quizzes_subjectFilter', 'classes_sortBy', 'leaderboard_sortBy');
-                  // drafts
-                  keysToRemove.push('create_quiz_draft', 'ai_quiz_draft');
-                  // quiz progress keys (prefix)
-                  for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!key) continue;
-                    if (key.startsWith('quiz_progress_')) keysToRemove.push(key);
-                  }
-                  // unique set
-                  const uniq = Array.from(new Set(keysToRemove));
-                  uniq.forEach(k => localStorage.removeItem(k));
-                  alert('Local analytics data cleared.');
-                  // refetch stats by reloading the page data
-                  window.location.reload();
-                } catch (err) {
-                  console.error('Failed to clear local data', err);
-                  alert('Failed to clear data. Check console for details.');
-                }
-              }}
-              className="w-full sm:w-auto px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-            >
-              Clear Data
-            </button>
-            <div className="w-full sm:w-auto">
-              <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+        </div>
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Analytics</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Track your quiz performance and progress</p>
+              </div>
+              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                My Quizzes
+              </Link>
             </div>
           </div>
         </div>
-        <div className="flex flex-col items-center w-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
-            <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
-              <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
-              <div className="w-full h-56 sm:h-96">
-                <Bar data={barData} options={{
-                  maintainAspectRatio: false,
-                  plugins: { legend: { display: false } },
-                  scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
-                }} />
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <h3 className="text-xl font-bold text-white mb-4">Quiz Analytics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
+              <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
+                <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
+                <div className="w-full h-56 sm:h-96">
+                  <Bar data={barData} options={{
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
+                  }} />
+                </div>
+              </div>
+              <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
+                <h2 className="text-xl font-semibold mb-4 text-purple-200">Top Subjects</h2>
+                <div className="w-full h-56 sm:h-96 max-w-sm">
+                  <Doughnut data={doughnutData} options={{
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#fff' } } },
+                  }} />
+                </div>
               </div>
             </div>
-            <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
-              <h2 className="text-xl font-semibold mb-4 text-purple-200">Top Subjects</h2>
-              <div className="w-full h-56 sm:h-96 max-w-sm">
-                <Doughnut data={doughnutData} options={{
-                  maintainAspectRatio: false,
-                  plugins: { legend: { labels: { color: '#fff' } } },
-                }} />
+            <div className="mt-10 bg-white/10 rounded-xl shadow-lg p-6 w-full max-w-2xl flex flex-col items-center">
+              <h2 className="text-xl font-semibold mb-4 text-purple-200">Summary</h2>
+              <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-center">
+                <div className="flex flex-col items-center">
+                  <span className="text-4xl font-bold text-yellow-300">{stats.quizzesTaken}</span>
+                  <span className="text-purple-200">Quizzes Taken</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-4xl font-bold text-green-300">{stats.avgScore}%</span>
+                  <span className="text-purple-200">Average Score</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="mt-10 bg-white/10 rounded-xl shadow-lg p-6 w-full max-w-2xl flex flex-col items-center">
-            <h2 className="text-xl font-semibold mb-4 text-purple-200">Summary</h2>
-            <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-center">
-              <div className="flex flex-col items-center">
-                <span className="text-4xl font-bold text-yellow-300">{stats.quizzesTaken}</span>
-                <span className="text-purple-200">Quizzes Taken</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="text-4xl font-bold text-green-300">{stats.avgScore}%</span>
-                <span className="text-purple-200">Average Score</span>
-              </div>
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
+            <div className="space-y-3">
+              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
+              </Link>
+              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">🏫</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
+              </Link>
+              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
+                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
+              </Link>
             </div>
           </div>
         </div>
