@@ -195,12 +195,17 @@ const FriendsPage: React.FC = () => {
               )}
             </div>
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-              {friends.length === 0 && !loading && (
+              {loading ? (
+                <div className="text-center py-12 col-span-full">
+                  <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-4"></div>
+                  <p className="text-purple-200 text-lg font-medium">Loading friends...</p>
+                </div>
+              ) : friends.length === 0 ? (
                 <div className="text-white/80 text-center py-8 bg-gradient-to-br from-purple-700/30 to-blue-700/30 rounded-xl border border-white/10 shadow-lg">
                   No friends yet.<br />Add friends from your profile menu!
                 </div>
-              )}
-              {friends
+              ) : null}
+              {!loading && friends
                 .filter(friend => {
                   const term = searchTerm.toLowerCase();
                   return (

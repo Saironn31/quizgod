@@ -44,27 +44,27 @@ export default function SideNav() {
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-3 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group relative flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${
+                className={`group relative flex items-center gap-4 px-6 py-4 rounded-xl transition-all duration-300 ${
                   isActive
                     ? 'bg-white/10 shadow-glow'
                     : 'hover:bg-white/5 hover:translate-x-1'
-                } ${collapsed ? 'justify-center' : ''}`}
+                } ${collapsed ? 'justify-center px-4' : ''}`}
               >
                 {/* Icon */}
-                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-10 h-10 text-2xl' : 'w-8 h-8 text-xl'} group-hover:rotate-12`}>
+                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-10 h-10 text-2xl' : 'w-10 h-10 text-2xl'} group-hover:rotate-12`}>
                   {item.icon}
                 </div>
                 
                 {/* Label */}
                 {!collapsed && (
-                  <span className={`font-semibold transition-colors ${
+                  <span className={`font-semibold text-base transition-colors ${
                     isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
                   }`}>
                     {item.label}
@@ -73,7 +73,7 @@ export default function SideNav() {
 
                 {/* Active Indicator */}
                 {isActive && (
-                  <div className={`absolute right-0 w-1 h-8 rounded-l-full bg-gradient-to-b ${item.gradient}`}></div>
+                  <div className={`absolute right-0 w-1 h-10 rounded-l-full bg-gradient-to-b ${item.gradient}`}></div>
                 )}
               </Link>
             );

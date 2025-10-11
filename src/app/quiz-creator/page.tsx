@@ -42,6 +42,7 @@ export default function QuizCreatorPage() {
   const [aiSelectedSubject, setAiSelectedSubject] = useState("");
   const [aiSelectedClass, setAiSelectedClass] = useState("");
   const [creating, setCreating] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const loadData = async () => {
     if (!user?.uid || !user?.email) return;
@@ -154,6 +155,30 @@ export default function QuizCreatorPage() {
     }
     return questions;
   };
+
+  const copyPromptToClipboard = () => {
+    const promptText = `Create a quiz with multiple choice questions on the topic: ${aiSelectedSubject || '[Your Topic]'} with the title: ${quizTitle || '[Your Quiz Title]'}.
+
+Format each question exactly like this:
+1. Question text here?
+A) Option 1
+B) Option 2*
+C) Option 3
+D) Option 4
+
+(Mark the correct answer with an asterisk *)
+
+Please provide 5-10 questions following this exact format.`;
+
+    navigator.clipboard.writeText(promptText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy prompt');
+    });
+  };
+
   const handleAISubmit = async () => {
     if (!quizTitle.trim() || !aiSelectedSubject || !quizQuestions.trim() || !user?.uid) {
       alert("Please fill in all fields");
@@ -214,7 +239,10 @@ export default function QuizCreatorPage() {
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
             <h1 className="text-3xl font-bold mb-6 text-white">Create Quiz (Manual)</h1>
             {loading ? (
-              <div className="text-center py-8"><p className="text-white">Loading...</p></div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-green-500 border-t-transparent mb-4"></div>
+                <p className="text-white text-lg font-medium">Loading...</p>
+              </div>
             ) : (
               <div className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
@@ -278,7 +306,10 @@ export default function QuizCreatorPage() {
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10">
             <h1 className="text-3xl font-bold mb-6 text-white">AI Quiz Generator</h1>
             {loading ? (
-              <div className="text-center py-8"><p className="text-white">Loading...</p></div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-cyan-500 border-t-transparent mb-4"></div>
+                <p className="text-white text-lg font-medium">Loading...</p>
+              </div>
             ) : (
               <div className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-6">
@@ -302,8 +333,24 @@ export default function QuizCreatorPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Quiz Questions *</label>
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-300">Quiz Questions *</label>
+                    <button
+                      onClick={copyPromptToClipboard}
+                      className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1"
+                    >
+                      {copied ? '✓ Copied!' : '📋 Copy Prompt'}
+                    </button>
+                  </div>
                   <textarea className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 font-mono text-sm" rows={15} placeholder={"Paste your AI-generated quiz here...\n\nFormat:\n1. Question text?\nA) Option 1\nB) Option 2*\nC) Option 3\nD) Option 4\n\n(Mark correct answer with *)"} value={quizQuestions} onChange={e => setQuizQuestions(e.target.value)} />
+                  <div className="mt-3 p-3 bg-purple-500/10 rounded-lg border border-purple-400/30">
+                    <p className="text-xs text-purple-200 mb-2">💡 Click "Copy Prompt" above, then paste it into any AI tool:</p>
+                    <div className="flex flex-wrap gap-2">
+                      <a href="https://chat.deepseek.com" target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded text-xs font-medium transition-all">DeepSeek AI</a>
+                      <a href="https://gemini.google.com" target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded text-xs font-medium transition-all">Google Gemini</a>
+                      <a href="https://chat.openai.com" target="_blank" rel="noopener noreferrer" className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded text-xs font-medium transition-all">ChatGPT</a>
+                    </div>
+                  </div>
                 </div>
                 <div className="flex justify-center pt-6">
                   <button onClick={handleAISubmit} disabled={creating} className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-semibold rounded-lg hover:scale-105 transition-all shadow-lg disabled:opacity-50">{creating ? "Creating Quiz..." : "🚀 Create Quiz"}</button>

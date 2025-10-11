@@ -189,8 +189,8 @@ export default function QuizzesPage() {
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-3 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Quizzes</h3>
             {/* Search and Filter */}
             <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
@@ -236,8 +236,8 @@ export default function QuizzesPage() {
             {/* Quizzes List */}
             {loading ? (
               <div className="text-center p-12">
-                <div className="text-4xl mb-4">⏳</div>
-                <p className="text-purple-200">Loading your quizzes...</p>
+                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-4"></div>
+                <p className="text-purple-200 text-lg font-medium">Loading your quizzes...</p>
               </div>
             ) : filteredQuizzes.length === 0 ? (
               <div className="text-center p-12 border-2 border-dashed border-purple-300 dark:border-purple-600 rounded-lg">
@@ -262,7 +262,7 @@ export default function QuizzesPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 {filteredQuizzes.map((quiz) => (
                   <div key={quiz.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 sm:p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group">
                     <div className="flex justify-between items-start mb-4">

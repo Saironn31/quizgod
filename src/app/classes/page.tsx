@@ -191,7 +191,10 @@ export default function ClassesPage() {
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
             {loading ? (
-              <div className="text-center text-slate-300 py-8">Loading classes...</div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-green-500 border-t-transparent mb-4"></div>
+                <p className="text-slate-300 text-lg font-medium">Loading classes...</p>
+              </div>
             ) : classes.length === 0 ? (
               <div className="text-center text-slate-400 py-8 border-2 border-dashed border-slate-700 rounded-2xl">
                 <p className="mb-2">No classes yet.</p>
