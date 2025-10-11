@@ -1,8 +1,8 @@
 /**
  * Record today's login date for a user (if not already present)
  */
-import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { collection, doc, getDocs, setDoc, deleteDoc, query, where, addDoc, updateDoc, getDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot, orderBy } from 'firebase/firestore';
+import { db, storage } from '@/lib/firebase';
 
 export const recordUserLoginDate = async (uid: string) => {
   if (!uid) return;
@@ -21,8 +21,7 @@ export const recordUserLoginDate = async (uid: string) => {
     });
   }
 };
-import { collection, doc, getDocs, setDoc, deleteDoc, query, where, addDoc, updateDoc, getDoc, arrayUnion, arrayRemove, writeBatch, onSnapshot, orderBy } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
+// Duplicate import removed
 /**
  * Get all quiz records for quizzes belonging to a class
  */
