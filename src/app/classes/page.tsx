@@ -190,7 +190,38 @@ export default function ClassesPage() {
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
-            {/* ...existing classes list and management UI... */}
+            {loading ? (
+              <div className="text-center text-slate-300 py-8">Loading classes...</div>
+            ) : classes.length === 0 ? (
+              <div className="text-center text-slate-400 py-8 border-2 border-dashed border-slate-700 rounded-2xl">
+                <p className="mb-2">No classes yet.</p>
+                <p className="text-sm">Create or join a class to get started!</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {classes.map(cls => (
+                  <Link
+                    key={cls.id}
+                    href={`/classes/${cls.id}`}
+                    className="block bg-gradient-to-br from-cyan-900/30 to-violet-900/30 hover:from-cyan-800/50 hover:to-violet-800/50 border border-white/10 rounded-2xl p-6 transition-all duration-200 shadow-lg hover:scale-[1.03]"
+                  >
+                    <div className="flex items-center gap-4 mb-2">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-2xl font-black shadow-glow">
+                        {cls.name?.[0]?.toUpperCase() || 'C'}
+                      </div>
+                      <div>
+                        <h4 className="text-lg font-bold text-white mb-1 truncate">{cls.name}</h4>
+                        <p className="text-xs text-slate-300 truncate">{cls.description || 'No description'}</p>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-xs text-slate-400">{cls.members?.length || 1} member{(cls.members?.length || 1) !== 1 ? 's' : ''}</span>
+                      <span className="text-xs text-slate-500">{cls.isPublic ? 'Public' : 'Private'}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
