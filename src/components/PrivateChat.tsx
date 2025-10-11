@@ -41,7 +41,7 @@ const PrivateChat: React.FC<PrivateChatProps> = ({ friendUid, friendName }) => {
   };
 
   return (
-    <div className="flex flex-col h-96 bg-white/10 rounded-xl border border-white/20 p-4">
+    <div className="flex flex-col h-full bg-white/10 rounded-lg border border-white/20 p-4">
       <div className="flex-1 overflow-y-auto mb-2">
         {messages.map(msg => (
           <div key={msg.id} className={`mb-2 ${msg.senderUid === user?.uid ? 'text-right' : 'text-left'}`}>
@@ -51,7 +51,7 @@ const PrivateChat: React.FC<PrivateChatProps> = ({ friendUid, friendName }) => {
         ))}
         <div ref={chatEndRef} />
       </div>
-      <form onSubmit={handleSend} className="flex gap-2">
+      <form onSubmit={handleSend} className="flex gap-2 shrink-0">
         <input
           type="text"
           value={input}

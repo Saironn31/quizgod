@@ -12,6 +12,7 @@ const ProfilePage: React.FC = () => {
   const [bio, setBio] = useState(userProfile?.bio || '');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   
   // Change password states
   const [currentPassword, setCurrentPassword] = useState('');
@@ -123,37 +124,56 @@ const ProfilePage: React.FC = () => {
           </div>
           
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10">
-            <h2 className="text-2xl font-bold mb-4 text-red-700 dark:text-red-300 text-center">Change Password</h2>
-            <form className="flex flex-col gap-4" onSubmit={handleChangePassword}>
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Current Password</label>
-              <input 
-                type="password" 
-                className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
-                value={currentPassword} 
-                onChange={e => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-              />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">New Password</label>
-              <input 
-                type="password" 
-                className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
-                value={newPassword} 
-                onChange={e => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min. 6 characters)"
-              />
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Confirm New Password</label>
-              <input 
-                type="password" 
-                className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
-                value={confirmPassword} 
-                onChange={e => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-              />
-              <button type="submit" className="mt-4 px-6 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-medium shadow hover:from-red-700 hover:to-pink-700 transition-all" disabled={passwordLoading}>
-                {passwordLoading ? 'Changing Password...' : 'Change Password'}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-red-700 dark:text-red-300">Change Password</h2>
+              <button
+                onClick={() => {
+                  setShowPasswordForm(!showPasswordForm);
+                  if (showPasswordForm) {
+                    // Reset form when closing
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordMessage('');
+                  }
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-all"
+              >
+                {showPasswordForm ? 'Cancel' : 'Change Password'}
               </button>
-              {passwordMessage && <div className={`text-center mt-2 ${passwordMessage.includes('success') ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{passwordMessage}</div>}
-            </form>
+            </div>
+            {showPasswordForm && (
+              <form className="flex flex-col gap-4" onSubmit={handleChangePassword}>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Current Password</label>
+                <input 
+                  type="password" 
+                  className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
+                  value={currentPassword} 
+                  onChange={e => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                />
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">New Password</label>
+                <input 
+                  type="password" 
+                  className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
+                  value={newPassword} 
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min. 6 characters)"
+                />
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Confirm New Password</label>
+                <input 
+                  type="password" 
+                  className="px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-black dark:text-white" 
+                  value={confirmPassword} 
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm new password"
+                />
+                <button type="submit" className="mt-4 px-6 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-medium shadow hover:from-red-700 hover:to-pink-700 transition-all" disabled={passwordLoading}>
+                  {passwordLoading ? 'Changing Password...' : 'Update Password'}
+                </button>
+                {passwordMessage && <div className={`text-center mt-2 ${passwordMessage.includes('success') ? 'text-green-600 dark:text-green-300' : 'text-red-600 dark:text-red-300'}`}>{passwordMessage}</div>}
+              </form>
+            )}
           </div>
         </div>
       </div>

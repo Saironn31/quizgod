@@ -61,9 +61,10 @@ const FriendsPage: React.FC = () => {
   // Fetch sender profiles for friend requests
   useEffect(() => {
     const fetchProfiles = async () => {
-      const uids = friendRequests
-        .filter(req => req.type === 'received')
-        .map(req => req.senderUid);
+      const uids = [
+        ...friendRequests.filter(req => req.type === 'received').map(req => req.senderUid),
+        ...friendRequests.filter(req => req.type === 'sent').map(req => req.receiverUid)
+      ];
       const uniqueUids = Array.from(new Set(uids));
       const profiles: { [uid: string]: any } = {};
       await Promise.all(uniqueUids.map(async uid => {
@@ -238,12 +239,12 @@ const FriendsPage: React.FC = () => {
         </div>
         {/* ChatOverlay for friend chat at bottom right */}
         {chatOverlayFriend && (
-          <div className="fixed bottom-20 right-4 z-50 w-80 max-w-full max-h-[500px] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
-            <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
+          <div className="fixed bottom-24 right-4 z-50 w-80 max-w-full h-[450px] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl shrink-0">
               <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
               <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
             </div>
-            <div className="p-2 overflow-hidden">
+            <div className="flex-1 overflow-hidden">
               <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />
             </div>
           </div>

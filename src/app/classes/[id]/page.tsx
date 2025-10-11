@@ -637,32 +637,6 @@ export default function ClassDetailPage() {
             ))}
           </div>
         </div>
-        {/* Class Overview Section */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
-                <div className="text-3xl mb-2">👥</div>
-                <div className="text-2xl font-bold text-white">{classData.members?.length ?? 0}</div>
-                <div className="text-purple-200">Active Members</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
-                <div className="text-3xl mb-2">📚</div>
-                <div className="text-2xl font-bold text-white">{subjects.length}</div>
-                <div className="text-purple-200">Subjects</div>
-              </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
-                <div className="text-3xl mb-2">📝</div>
-                <div className="text-2xl font-bold text-white">{quizzes.length}</div>
-                <div className="text-purple-200">Shared Quizzes</div>
-              </div>
-            </div>
-          </div>
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            <h2 className="text-xl font-bold mb-4 text-white">💬 Class Chat</h2>
-            <ClassChat classId={classData.id} />
-          </div>
-        </div>
         {/* Content */}
         {activeTab === 'overview' && (
           <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />

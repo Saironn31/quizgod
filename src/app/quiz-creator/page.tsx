@@ -224,7 +224,7 @@ export default function QuizCreatorPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Subject *</label>
-                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" value={subject} onChange={e => setSubject(e.target.value)}>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 [&>option]:bg-slate-800 [&>option]:text-white" value={subject} onChange={e => setSubject(e.target.value)}>
                       <option value="">Select subject</option>
                       {subjects.map(s => (<option key={s.id} value={s.name}>{s.source === 'class' ? `${s.name} (${s.className})` : s.name}</option>))}
                     </select>
@@ -233,7 +233,7 @@ export default function QuizCreatorPage() {
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
-                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 [&>option]:bg-slate-800 [&>option]:text-white" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
                       <option value="">Personal quiz (no class)</option>
                       {classes.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
                     </select>
@@ -288,7 +288,7 @@ export default function QuizCreatorPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">Subject *</label>
-                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" value={aiSelectedSubject} onChange={e => setAiSelectedSubject(e.target.value)}>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 [&>option]:bg-slate-800 [&>option]:text-white" value={aiSelectedSubject} onChange={e => setAiSelectedSubject(e.target.value)}>
                       <option value="">Select subject</option>
                       {subjects.map(s => (<option key={s.id} value={s.name}>{s.source === 'class' ? `${s.name} (${s.className})` : s.name}</option>))}
                     </select>
@@ -296,7 +296,7 @@ export default function QuizCreatorPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
-                  <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" value={aiSelectedClass} onChange={e => setAiSelectedClass(e.target.value)}>
+                  <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 [&>option]:bg-slate-800 [&>option]:text-white" value={aiSelectedClass} onChange={e => setAiSelectedClass(e.target.value)}>
                     <option value="">Personal quiz (no class)</option>
                     {classes.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
                   </select>

@@ -28,6 +28,8 @@ export default function AIQuizGenerator() {
   const [newSubject, setNewSubject] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [copied, setCopied] = useState(false);
   
   // Load saved draft from localStorage on mount
   useEffect(() => {
@@ -186,6 +188,29 @@ export default function AIQuizGenerator() {
     } finally {
       setCreating(false);
     }
+  };
+
+  const copyPromptToClipboard = () => {
+    const promptText = `Create a quiz with multiple choice questions on the topic: ${selectedSubject || '[Your Topic]'} with ${quizTitle || '[Your Quiz Title]'}.
+
+Format each question exactly like this:
+1. Question text here?
+A) Option 1
+B) Option 2*
+C) Option 3
+D) Option 4
+
+(Mark the correct answer with an asterisk *)
+
+Please provide 5-10 questions following this exact format.`;
+
+    navigator.clipboard.writeText(promptText).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy prompt');
+    });
   };
 
   const createQuizFromAI = async () => {
@@ -369,13 +394,22 @@ export default function AIQuizGenerator() {
                 </button>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Quiz Questions (Paste from AI)</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-300">Quiz Questions (Paste from AI)</label>
+                  <button
+                    onClick={copyPromptToClipboard}
+                    className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1"
+                  >
+                    {copied ? '✓ Copied!' : '📋 Copy Prompt'}
+                  </button>
+                </div>
                 <textarea
                   value={quizQuestions}
                   onChange={(e) => setQuizQuestions(e.target.value)}
                   className="w-full h-32 p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                   placeholder="Paste AI-generated questions here..."
                 />
+                <p className="text-xs text-purple-300 mt-2">💡 Click "Copy Prompt" to get an AI prompt template, paste it into ChatGPT or any AI, then paste the generated questions here.</p>
               </div>
             </div>
           </div>
