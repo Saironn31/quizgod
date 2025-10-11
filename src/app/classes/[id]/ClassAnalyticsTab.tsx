@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Chart, ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { getClassQuizRecords } from '@/lib/firestore';
+import { getClassQuizRecords, getUserProfile } from '@/lib/firestore';
 
 Chart.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const Bar = dynamic(() => import('react-chartjs-2').then(mod => mod.Bar), { ssr: false });
-const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnut), { ssr: false });
 
-interface TopSubject {
-  subject: string;
+interface RecentQuiz {
+  userName: string;
+  quizTitle: string;
   score: number;
+  maxScore: number;
+  date: string;
+  percentage: number;
 }
 
 interface ClassAnalyticsStats {
   quizzesTaken: number;
   avgScore: number;
-  topSubjects: TopSubject[];
   scoreHistory: number[];
   memberCount: number;
+  recentQuizzes: RecentQuiz[];
 }
 
 interface ClassAnalyticsTabProps {
@@ -32,9 +35,9 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
   const [stats, setStats] = useState<ClassAnalyticsStats>({ 
     quizzesTaken: 0, 
     avgScore: 0, 
-    topSubjects: [], 
     scoreHistory: [],
-    memberCount: 0
+    memberCount: 0,
+    recentQuizzes: []
   });
 
   useEffect(() => {
@@ -64,23 +67,32 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
         return maxScore > 0 ? Math.round((r.score / maxScore) * 100) : 0;
       });
 
-      // Aggregate top subjects
-      const subjectScores: { [subject: string]: number[] } = {};
-      records.forEach(r => {
-        if (r.subject) {
-          if (!subjectScores[r.subject]) subjectScores[r.subject] = [];
-          const quiz = quizzes.find((q: any) => q.id === r.quizId);
-          const maxScore = quiz?.questions?.length || 1;
-          const percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
-          subjectScores[r.subject].push(percent);
-        }
-      });
-      const topSubjects = Object.entries(subjectScores)
-        .map(([subject, scores]) => ({ subject, score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 3);
+      // Get recent quiz records (last 5)
+      const recentQuizzes: RecentQuiz[] = await Promise.all(
+        records
+          .slice(-5)
+          .reverse()
+          .map(async (r) => {
+            const quiz = quizzes.find((q: any) => q.id === r.quizId);
+            const maxScore = quiz?.questions?.length || 1;
+            const percentage = maxScore > 0 ? Math.round((r.score / maxScore) * 100) : 0;
+            
+            // Fetch user profile to get name/username
+            const userProfile = await getUserProfile(r.userId);
+            const userName = userProfile?.name || userProfile?.username || userProfile?.email || 'Unknown User';
+            
+            return {
+              userName,
+              quizTitle: quiz?.title || 'Unknown Quiz',
+              score: r.score || 0,
+              maxScore: maxScore,
+              date: r.timestamp instanceof Date ? r.timestamp.toLocaleDateString() : 'N/A',
+              percentage
+            };
+          })
+      );
 
-      setStats({ quizzesTaken, avgScore, topSubjects, scoreHistory, memberCount });
+      setStats({ quizzesTaken, avgScore, scoreHistory, memberCount, recentQuizzes });
     }
     fetchStats();
   }, [classData, quizzes]);
@@ -93,22 +105,6 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
         data: stats.scoreHistory,
         backgroundColor: 'rgba(99, 102, 241, 0.7)',
         borderRadius: 8,
-      },
-    ],
-  };
-
-  const doughnutData = {
-    labels: stats.topSubjects.map(s => s.subject),
-    datasets: [
-      {
-        label: 'Top Subjects',
-        data: stats.topSubjects.map(s => s.score),
-        backgroundColor: [
-          'rgba(139, 92, 246, 0.7)',
-          'rgba(34, 197, 94, 0.7)',
-          'rgba(236, 72, 153, 0.7)',
-        ],
-        borderWidth: 2,
       },
     ],
   };
@@ -138,24 +134,44 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white/5 rounded-lg p-4">
             <h3 className="text-lg font-semibold mb-4 text-purple-200 text-center">Recent Performance</h3>
-            <Bar data={barData} options={{
-              plugins: { legend: { display: false } },
-              scales: { 
-                y: { beginAtZero: true, ticks: { color: '#fff' } }, 
-                x: { ticks: { color: '#fff' } } 
-              },
-            }} />
-          </div>
-          
-          <div className="bg-white/5 rounded-lg p-4">
-            <h3 className="text-lg font-semibold mb-4 text-purple-200 text-center">Top Subjects</h3>
-            {stats.topSubjects.length > 0 ? (
-              <Doughnut data={doughnutData} options={{
-                plugins: { legend: { labels: { color: '#fff' } } },
+            {stats.scoreHistory.length > 0 ? (
+              <Bar data={barData} options={{
+                plugins: { legend: { display: false } },
+                scales: { 
+                  y: { beginAtZero: true, ticks: { color: '#fff' } }, 
+                  x: { ticks: { color: '#fff' } } 
+                },
               }} />
             ) : (
               <div className="flex items-center justify-center h-48 text-purple-200">
-                No subject data available
+                No quiz data available
+              </div>
+            )}
+          </div>
+          
+          <div className="bg-white/5 rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-4 text-purple-200 text-center">Recent Class Quiz Taken</h3>
+            {stats.recentQuizzes.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {stats.recentQuizzes.map((quiz, index) => (
+                  <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm truncate">{quiz.quizTitle}</div>
+                        <div className="text-purple-300 text-xs mt-1">👤 {quiz.userName}</div>
+                      </div>
+                      <div className="text-right ml-2">
+                        <div className="text-green-300 font-bold text-sm">{quiz.percentage}%</div>
+                        <div className="text-purple-200 text-xs">{quiz.score}/{quiz.maxScore}</div>
+                      </div>
+                    </div>
+                    <div className="text-purple-400 text-xs">📅 {quiz.date}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-48 text-purple-200">
+                No recent quiz data available
               </div>
             )}
           </div>

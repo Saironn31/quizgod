@@ -1281,6 +1281,21 @@ export const subscribeToSentFriendRequests = (
 };
 
 /**
+ * Get user ID from email
+ */
+export const getUserIdFromEmail = async (email: string): Promise<string | null> => {
+  try {
+    const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+    const usersSnap = await getDocs(usersQuery);
+    if (usersSnap.empty) return null;
+    return usersSnap.docs[0].id;
+  } catch (error) {
+    console.error('Error getting user ID from email:', error);
+    return null;
+  }
+};
+
+/**
  * Add all members of a class as friends for the current user (mutual friendship)
  * @param currentUid - UID of the current user
  * @param classId - ID of the class

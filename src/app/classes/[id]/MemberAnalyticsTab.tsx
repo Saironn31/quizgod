@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js';
-import { getClassMemberQuizRecords } from '@/lib/firestore';
+import { getClassMemberQuizRecords, getUserIdFromEmail } from '@/lib/firestore';
 
 Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -16,7 +16,7 @@ interface MemberAnalyticsStats {
 
 interface MemberAnalyticsTabProps {
   classId: string;
-  memberId: string;
+  memberId: string; // This is actually an email
   quizzes: any[];
   subjects: any[];
   onBack: () => void;
@@ -29,12 +29,24 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
     scoreHistory: [],
     subjectPerformance: []
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       if (!classId || !memberId) return;
-      const records = await getClassMemberQuizRecords(classId, memberId);
-      const quizzesTaken = records.length;
+      
+      setLoading(true);
+      try {
+        // Convert email to userId
+        const userId = await getUserIdFromEmail(memberId);
+        if (!userId) {
+          console.error('Could not find userId for email:', memberId);
+          setLoading(false);
+          return;
+        }
+        
+        const records = await getClassMemberQuizRecords(classId, userId);
+        const quizzesTaken = records.length;
       
       // Calculate scores and history
       let totalPercent = 0;
@@ -69,6 +81,11 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
         .sort((a, b) => b.score - a.score);
 
       setStats({ quizzesTaken, avgScore, scoreHistory, subjectPerformance });
+      } catch (error) {
+        console.error('Error fetching member analytics:', error);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchStats();
   }, [classId, memberId, quizzes]);
@@ -99,8 +116,15 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
         
         <h2 className="text-xl font-semibold mb-6 text-purple-200 text-center">Member Analytics</h2>
         
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-purple-500 border-t-transparent mb-4"></div>
+            <p className="text-purple-200 text-lg font-medium ml-4">Loading analytics...</p>
+          </div>
+        ) : (
+          <>
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="flex flex-col items-center">
             <span className="text-3xl font-bold text-yellow-300">{stats.quizzesTaken}</span>
             <span className="text-purple-200">Quizzes Taken</span>
@@ -150,6 +174,8 @@ export default function MemberAnalyticsTab({ classId, memberId, quizzes, subject
               ))}
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

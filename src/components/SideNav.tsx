@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SideNav() {
-  const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -27,20 +25,15 @@ export default function SideNav() {
   return (
     <>
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-white/10 z-50 transition-all duration-500 ${collapsed ? 'w-20' : 'w-64'} hidden md:flex flex-col`}>
+      <div className="fixed left-0 top-0 h-screen bg-slate-900/95 backdrop-blur-xl border-r border-white/10 z-50 w-64 hidden md:flex flex-col">
         {/* Logo/Brand */}
         <div className="p-6 border-b border-white/10">
-          <button 
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full flex items-center gap-4 group"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center font-black text-white transform group-hover:scale-110 transition-transform">
+          <div className="w-full flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center font-black text-white">
               Q
             </div>
-            {!collapsed && (
-              <span className="text-xl font-black gradient-text">QuizGod</span>
-            )}
-          </button>
+            <span className="text-xl font-black gradient-text">QuizGod</span>
+          </div>
         </div>
 
         {/* Navigation Items */}
@@ -55,21 +48,19 @@ export default function SideNav() {
                   isActive
                     ? 'bg-white/10 shadow-glow'
                     : 'hover:bg-white/5 hover:translate-x-1'
-                } ${collapsed ? 'justify-center px-4' : ''}`}
+                }`}
               >
                 {/* Icon */}
-                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-10 h-10 text-2xl' : 'w-10 h-10 text-2xl'} group-hover:rotate-12`}>
+                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform w-10 h-10 text-2xl group-hover:rotate-12`}>
                   {item.icon}
                 </div>
                 
                 {/* Label */}
-                {!collapsed && (
-                  <span className={`font-semibold text-base transition-colors ${
-                    isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
-                  }`}>
-                    {item.label}
-                  </span>
-                )}
+                <span className={`font-semibold text-base transition-colors ${
+                  isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
+                }`}>
+                  {item.label}
+                </span>
 
                 {/* Active Indicator */}
                 {isActive && (
@@ -92,7 +83,7 @@ export default function SideNav() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-xl">
               ⊗
             </div>
-            {!collapsed && <span className="font-semibold">Logout</span>}
+            <span className="font-semibold">Logout</span>
           </button>
         </div>
       </div>
@@ -121,9 +112,6 @@ export default function SideNav() {
           })}
         </div>
       </div>
-
-      {/* Spacer for content */}
-      <div className={`${collapsed ? 'md:ml-20' : 'md:ml-64'} transition-all duration-500`} />
     </>
   );
 }

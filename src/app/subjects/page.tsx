@@ -191,8 +191,8 @@ export default function SubjectsPage() {
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+        <div className="relative z-10 mb-20">
+          <div className="glass-card rounded-3xl p-6 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Subjects</h3>
 
             {/* Add Subject Form */}
@@ -285,9 +285,6 @@ export default function SubjectsPage() {
               </div>
             )}
 
-          </div>
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            {/* Quick Links removed */}
           </div>
         </div>
       </div>
