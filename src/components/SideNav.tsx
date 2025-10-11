@@ -13,8 +13,7 @@ export default function SideNav() {
   const navItems = [
     { href: '/', label: 'Home', icon: '◈', gradient: 'from-cyan-400 to-blue-500' },
     { href: '/quizzes', label: 'Quizzes', icon: '◉', gradient: 'from-violet-400 to-purple-500' },
-    { href: '/create', label: 'Create', icon: '⊕', gradient: 'from-emerald-400 to-green-500' },
-    { href: '/ai-quiz', label: 'AI Gen', icon: '◬', gradient: 'from-pink-400 to-rose-500' },
+    { href: '/quiz-creator', label: 'Create Quiz', icon: '⊕', gradient: 'from-emerald-400 to-green-500' },
     { href: '/classes', label: 'Classes', icon: '◐', gradient: 'from-orange-400 to-amber-500' },
     { href: '/subjects', label: 'Subjects', icon: '◫', gradient: 'from-indigo-400 to-blue-500' },
     { href: '/analytics', label: 'Stats', icon: '◭', gradient: 'from-teal-400 to-cyan-500' },

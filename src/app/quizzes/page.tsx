@@ -186,9 +186,6 @@ export default function QuizzesPage() {
                 </h1>
                 <p className="text-slate-300 text-lg">View and manage your quizzes</p>
               </div>
-              <Link href="/create" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
-                Create Quiz
-              </Link>
             </div>
           </div>
         </div>

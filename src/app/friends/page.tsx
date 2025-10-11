@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest, removeFriend } from '@/lib/firestore';
+import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRequest, removeFriend, getUserQuizRecords, getQuizById } from '@/lib/firestore';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import PrivateChat from '@/components/PrivateChat';
@@ -20,6 +20,8 @@ const FriendsPage: React.FC = () => {
   const [friendRequests, setFriendRequests] = useState<any[]>([]);
   const [requestProfiles, setRequestProfiles] = useState<{ [uid: string]: any }>({});
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [friendActivity, setFriendActivity] = useState<any[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -72,6 +74,49 @@ const FriendsPage: React.FC = () => {
     };
     if (friendRequests.length > 0) fetchProfiles();
   }, [friendRequests]);
+
+  // Fetch friend activity when profile modal is opened
+  useEffect(() => {
+    const fetchActivity = async () => {
+      if (!selectedFriend?.uid || !showProfileModal) return;
+      setActivityLoading(true);
+      try {
+        const records = await getUserQuizRecords(selectedFriend.uid);
+        const recentRecords = records.slice(0, 5);
+        
+        // Fetch quiz details for each record
+        const activityData = await Promise.all(
+          recentRecords.map(async (record: any) => {
+            if (record.quizId) {
+              const quiz = await getQuizById(record.quizId);
+              return {
+                ...record,
+                quizTitle: (record as any).quizTitle || quiz?.title || 'Untitled Quiz',
+                maxScore: quiz?.questions?.length || 1
+              };
+            }
+            return {
+              ...record,
+              quizTitle: (record as any).quizTitle || 'Untitled Quiz',
+              maxScore: 1
+            };
+          })
+        );
+        
+        setFriendActivity(activityData);
+      } catch (error) {
+        console.error('Error fetching friend activity:', error);
+      } finally {
+        setActivityLoading(false);
+      }
+    };
+    
+    if (showProfileModal && selectedFriend) {
+      fetchActivity();
+    } else {
+      setFriendActivity([]);
+    }
+  }, [selectedFriend, showProfileModal]);
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -207,26 +252,52 @@ const FriendsPage: React.FC = () => {
         {/* Profile modal for selected friend */}
         {showProfileModal && selectedFriend && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400 max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl font-bold mb-2 text-purple-700 dark:text-purple-300 text-center">Friend Profile</h2>
               <div className="mb-4 text-center">
+                <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-4xl font-bold mb-3 shadow-lg">
+                  {selectedFriend.name?.charAt(0).toUpperCase() || selectedFriend.username?.charAt(0).toUpperCase() || selectedFriend.email?.charAt(0).toUpperCase() || '?'}
+                </div>
                 <div className="text-lg font-semibold text-gray-800 dark:text-white">{selectedFriend.name || selectedFriend.username || selectedFriend.email}</div>
                 <div className="text-xs text-purple-600 dark:text-purple-200 mb-2">{selectedFriend.username || selectedFriend.email}</div>
               </div>
               <div className="mb-4">
-                <div className="font-medium text-gray-700 dark:text-gray-200">Bio:</div>
-                <div className="text-gray-600 dark:text-gray-300">{selectedFriend.bio || 'No bio available.'}</div>
+                <div className="font-medium text-gray-700 dark:text-gray-200 mb-2">Bio:</div>
+                <div className="text-gray-600 dark:text-gray-300 text-sm">{selectedFriend.bio || 'No bio available.'}</div>
               </div>
               <div className="mb-4">
-                <div className="font-medium text-gray-700 dark:text-gray-200">Recent Activity:</div>
-                <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
+                <div className="font-medium text-gray-700 dark:text-gray-200 mb-2">Recent Activity:</div>
+                {activityLoading ? (
+                  <div className="text-gray-600 dark:text-gray-300 text-sm">Loading...</div>
+                ) : friendActivity.length > 0 ? (
+                  <div className="space-y-2">
+                    {friendActivity.map((activity, index) => (
+                      <div key={index} className="bg-white/10 rounded-lg p-3 border border-purple-400/20">
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="font-medium text-white text-sm">{activity.quizTitle}</div>
+                          <div className="text-xs font-bold text-cyan-400">{Math.round((activity.score / activity.maxScore) * 100)}%</div>
+                        </div>
+                        <div className="text-xs text-slate-400">
+                          {activity.score}/{activity.maxScore} • {activity.timestamp?.toDate?.() ? new Date(activity.timestamp.toDate()).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-gray-600 dark:text-gray-300 text-sm">No recent activity</div>
+                )}
               </div>
-              <div className="mb-4">
-                <div className="font-medium text-gray-700 dark:text-gray-200">Shared Quizzes:</div>
-                <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
-              </div>
-              <div className="flex justify-center">
-                <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
+              <div className="flex justify-center gap-3">
+                <button 
+                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium shadow hover:from-green-600 hover:to-emerald-600 transition-all" 
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    setChatOverlayFriend(selectedFriend);
+                  }}
+                >
+                  💬 Chat
+                </button>
+                <button className="px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
               </div>
             </div>
           </div>

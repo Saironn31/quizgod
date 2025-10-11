@@ -7,14 +7,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getDoc, doc } from 'firebase/firestore';
+import { getAllUserSubjects, getQuizById } from '@/lib/firestore';
 
 export default function HomePage() {
   const [showAuth, setShowAuth] = useState(false);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [quizRecords, setQuizRecords] = useState<any[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(false);
   const [stats, setStats] = useState({ totalQuizzes: 0, avgScore: 0, streak: 0 });
+  const [userSubjects, setUserSubjects] = useState<any[]>([]);
+  const [recentActivityWithDetails, setRecentActivityWithDetails] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchRecordsAndStreak = async () => {
@@ -71,6 +74,33 @@ export default function HomePage() {
         const total = records.length;
         const avg = total > 0 ? records.reduce((acc: number, r: any) => acc + (r.score || 0), 0) / total : 0;
         setStats({ totalQuizzes: total, avgScore: Math.round(avg), streak });
+
+        // Fetch user's subjects
+        const subjects = await getAllUserSubjects(user.uid, user.email || '');
+        setUserSubjects(subjects.slice(0, 4)); // Limit to 4 subjects
+        
+        // Fetch quiz details for recent activity
+        const recentRecordsWithDetails = await Promise.all(
+          records.slice(0, 3).map(async (record: any) => {
+            let maxScore = 1;
+            let quizTitle = record.quizTitle || 'Quiz';
+            
+            if (record.quizId) {
+              const quiz = await getQuizById(record.quizId);
+              if (quiz) {
+                maxScore = quiz.questions?.length || 1;
+                quizTitle = quiz.title || quizTitle;
+              }
+            }
+            
+            return {
+              ...record,
+              quizTitle,
+              maxScore
+            };
+          })
+        );
+        setRecentActivityWithDetails(recentRecordsWithDetails);
       } catch (err) {
         console.error('Failed to fetch quiz records or streak:', err);
       } finally {
@@ -164,13 +194,10 @@ export default function HomePage() {
                 <h1 className="text-4xl md:text-6xl font-black mb-3">
                   <span className="text-white">Welcome back,</span>
                   <br/>
-                  <span className="gradient-text">{user.email?.split('@')[0]}</span>
+                  <span className="gradient-text">{userProfile?.name || userProfile?.username || user.email?.split('@')[0]}</span>
                 </h1>
                 <p className="text-slate-300 text-lg">Ready to master something new today?</p>
               </div>
-              <Link href="/create" className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
-                Create Quiz 
-              </Link>
             </div>
           </div>
         </div>
@@ -194,47 +221,25 @@ export default function HomePage() {
             <div className="text-xs text-orange-400">On fire!</div>
           </div>
 
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 lg:row-span-2 animate-slide-up" style={{animationDelay: '0.3s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <Link href="/ai-quiz" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform"></div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">AI Generator</span>
-              </Link>
-              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform"></div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
-              </Link>
-              <Link href="/friends" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-fuchsia-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform"></div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Friends</span>
-              </Link>
-              <Link href="/analytics" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform"></div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Analytics</span>
-              </Link>
-            </div>
-          </div>
-
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up" style={{animationDelay: '0.4s'}}>
             <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
             {loadingRecords ? (
               <div className="text-slate-400">Loading...</div>
-            ) : quizRecords.length > 0 ? (
+            ) : recentActivityWithDetails.length > 0 ? (
               <div className="space-y-2">
-                {quizRecords.slice(0, 3).map((record) => (
+                {recentActivityWithDetails.map((record) => (
                   <div key={record.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300">
                     <div>
-                      <div className="font-semibold text-white">{record.quizTitle || 'Quiz'}</div>
+                      <div className="font-semibold text-white">{record.quizTitle}</div>
                       <div className="text-sm text-slate-400">{new Date(record.timestamp?.toDate?.() || Date.now()).toLocaleDateString()}</div>
                     </div>
-                    <div className="text-2xl font-black gradient-text">{record.score}</div>
+                    <div className="text-2xl font-black gradient-text">{record.score}/{record.maxScore}</div>
                   </div>
                 ))}
               </div>
             ) : (
               <div className="text-center py-8 text-slate-400">
-                <div className="text-4xl mb-2"></div>
+                <div className="text-4xl mb-2">📊</div>
                 <div>No quizzes taken yet. Start learning!</div>
               </div>
             )}
@@ -243,22 +248,45 @@ export default function HomePage() {
           <div className="glass-card rounded-3xl p-6 md:col-span-3 lg:col-span-2 animate-slide-up" style={{animationDelay: '0.5s'}}>
             <h3 className="text-xl font-bold text-white mb-4">Explore Subjects</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Mathematics</div>
-              </Link>
-              <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Science</div>
-              </Link>
-              <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">History</div>
-              </Link>
-              <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Languages</div>
-              </Link>
+              {userSubjects.length > 0 ? (
+                userSubjects.map((subject, index) => {
+                  const gradients = [
+                    'from-blue-400 to-indigo-500',
+                    'from-green-400 to-emerald-500',
+                    'from-amber-400 to-orange-500',
+                    'from-purple-400 to-violet-500'
+                  ];
+                  const gradient = gradients[index % gradients.length];
+                  
+                  return (
+                    <Link key={subject.id} href={`/subjects`} className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
+                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform`}>
+                        {subject.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{subject.name}</div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <>
+                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
+                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Mathematics</div>
+                  </Link>
+                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
+                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Science</div>
+                  </Link>
+                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
+                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">History</div>
+                  </Link>
+                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
+                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Languages</div>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

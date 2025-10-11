@@ -15,6 +15,17 @@ const Doughnut = dynamic(() => import('react-chartjs-2').then(mod => mod.Doughnu
 interface TopSubject {
   subject: string;
   score: number;
+  quizCount: number;
+}
+
+interface RecentQuiz {
+  id: string;
+  quizTitle: string;
+  score: number;
+  maxScore: number;
+  percentage: number;
+  timestamp: any;
+  subject?: string;
 }
 
 interface AnalyticsStats {
@@ -22,32 +33,67 @@ interface AnalyticsStats {
   avgScore: number;
   topSubjects: TopSubject[];
   scoreHistory: number[];
+  recentQuizzes: RecentQuiz[];
+  bestScore: number;
+  worstScore: number;
+  totalScore: number;
 }
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
-  const [stats, setStats] = useState<AnalyticsStats>({ quizzesTaken: 0, avgScore: 0, topSubjects: [], scoreHistory: [] });
+  const [stats, setStats] = useState<AnalyticsStats>({ 
+    quizzesTaken: 0, 
+    avgScore: 0, 
+    topSubjects: [], 
+    scoreHistory: [], 
+    recentQuizzes: [],
+    bestScore: 0,
+    worstScore: 0,
+    totalScore: 0
+  });
 
   useEffect(() => {
     async function fetchStats() {
       if (!user?.uid) return;
       const records = await getUserQuizRecords(user.uid);
       const quizzesTaken = records.length;
+      
       // Normalize each score by quiz length (percentage)
       let totalPercent = 0;
+      let totalScore = 0;
+      let bestScore = 0;
+      let worstScore = 100;
+      const recentQuizzes: RecentQuiz[] = [];
+      
       for (const r of records) {
         let percent = 0;
+        let maxScore = 1;
         if (r.quizId) {
           const quiz = await getQuizById(r.quizId);
-          const maxScore = quiz?.questions?.length || 1;
+          maxScore = quiz?.questions?.length || 1;
           percent = maxScore > 0 ? (r.score / maxScore) * 100 : 0;
         }
         totalPercent += percent;
+        totalScore += r.score;
+        
+        if (percent > bestScore) bestScore = percent;
+        if (percent < worstScore) worstScore = percent;
+        
+        recentQuizzes.push({
+          id: r.id || '',
+          quizTitle: (r as any).quizTitle || 'Untitled Quiz',
+          score: r.score,
+          maxScore,
+          percentage: Math.round(percent),
+          timestamp: r.timestamp,
+          subject: r.subject
+        });
       }
+      
       const avgScore = quizzesTaken > 0 ? Math.round(totalPercent / quizzesTaken) : 0;
       const scoreHistory = records.slice(-7).map(r => r.score);
 
-      // Aggregate top subjects
+      // Aggregate top subjects with quiz count
       const subjectScores: { [subject: string]: number[] } = {};
       records.forEach(r => {
         if (r.subject) {
@@ -56,11 +102,24 @@ export default function AnalyticsPage() {
         }
       });
       const topSubjects = Object.entries(subjectScores)
-        .map(([subject, scores]) => ({ subject, score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) }))
+        .map(([subject, scores]) => ({ 
+          subject, 
+          score: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+          quizCount: scores.length
+        }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 3);
 
-      setStats({ quizzesTaken, avgScore, topSubjects, scoreHistory });
+      setStats({ 
+        quizzesTaken, 
+        avgScore, 
+        topSubjects, 
+        scoreHistory, 
+        recentQuizzes: recentQuizzes.slice(0, 5),
+        bestScore: Math.round(bestScore),
+        worstScore: quizzesTaken > 0 ? Math.round(worstScore) : 0,
+        totalScore
+      });
     }
 
     fetchStats();
@@ -120,6 +179,27 @@ export default function AnalyticsPage() {
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Quiz Analytics</h3>
+            
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="glass-card rounded-xl p-4">
+                <div className="text-sm text-slate-400 mb-1">Total Quizzes</div>
+                <div className="text-3xl font-black gradient-text">{stats.quizzesTaken}</div>
+              </div>
+              <div className="glass-card rounded-xl p-4">
+                <div className="text-sm text-slate-400 mb-1">Avg Score</div>
+                <div className="text-3xl font-black gradient-text">{stats.avgScore}%</div>
+              </div>
+              <div className="glass-card rounded-xl p-4">
+                <div className="text-sm text-slate-400 mb-1">Best Score</div>
+                <div className="text-3xl font-black text-emerald-400">{stats.bestScore}%</div>
+              </div>
+              <div className="glass-card rounded-xl p-4">
+                <div className="text-sm text-slate-400 mb-1">Total Points</div>
+                <div className="text-3xl font-black text-cyan-400">{stats.totalScore}</div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
               <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
                 <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
@@ -141,22 +221,57 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             </div>
-            <div className="mt-10 bg-white/10 rounded-xl shadow-lg p-6 w-full max-w-2xl flex flex-col items-center">
-              <h2 className="text-xl font-semibold mb-4 text-purple-200">Summary</h2>
-              <div className="flex flex-col md:flex-row gap-8 w-full justify-center items-center">
-                <div className="flex flex-col items-center">
-                  <span className="text-4xl font-bold text-yellow-300">{stats.quizzesTaken}</span>
-                  <span className="text-purple-200">Quizzes Taken</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-4xl font-bold text-green-300">{stats.avgScore}%</span>
-                  <span className="text-purple-200">Average Score</span>
-                </div>
+            
+            {/* Subject Breakdown */}
+            <div className="mt-8 bg-white/10 rounded-xl shadow-lg p-6">
+              <h2 className="text-xl font-semibold mb-4 text-white">Subject Performance</h2>
+              <div className="space-y-3">
+                {stats.topSubjects.map((subject, index) => (
+                  <div key={subject.subject} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                        #{index + 1}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{subject.subject}</div>
+                        <div className="text-sm text-slate-400">{subject.quizCount} quizzes taken</div>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black gradient-text">{subject.score}%</div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+          
           <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            {/* Quick Links removed */}
+            <h3 className="text-xl font-bold text-white mb-4">Recent Quizzes</h3>
+            <div className="space-y-3">
+              {stats.recentQuizzes.length > 0 ? (
+                stats.recentQuizzes.map((quiz) => (
+                  <div key={quiz.id} className="glass-card rounded-xl p-4">
+                    <div className="font-semibold text-white mb-1">{quiz.quizTitle}</div>
+                    {quiz.subject && (
+                      <div className="text-xs text-slate-400 mb-2">{quiz.subject}</div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-slate-300">
+                        {quiz.score}/{quiz.maxScore}
+                      </div>
+                      <div className="text-lg font-black gradient-text">{quiz.percentage}%</div>
+                    </div>
+                    <div className="text-xs text-slate-500 mt-2">
+                      {quiz.timestamp?.toDate?.() ? new Date(quiz.timestamp.toDate()).toLocaleDateString() : 'N/A'}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-slate-400">
+                  <div className="text-4xl mb-2">📊</div>
+                  <div>No quizzes yet</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

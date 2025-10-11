@@ -181,10 +181,24 @@ export default function LeaderboardPage() {
     if (!classData) return;
     // Fetch all quiz records for class members from Firestore
     try {
+      // Convert member emails to UIDs
+      const memberUids: string[] = [];
+      for (const memberEmail of classData.members) {
+        try {
+          const usersQuery = query(collection(db, 'users'), where('email', '==', memberEmail));
+          const usersSnap = await getDocs(usersQuery);
+          if (!usersSnap.empty) {
+            memberUids.push(usersSnap.docs[0].id);
+          }
+        } catch (err) {
+          console.error(`Failed to get UID for ${memberEmail}:`, err);
+        }
+      }
+
       // Batch queries for >10 members
       const memberChunks = [];
-      for (let i = 0; i < classData.members.length; i += 10) {
-        memberChunks.push(classData.members.slice(i, i + 10));
+      for (let i = 0; i < memberUids.length; i += 10) {
+        memberChunks.push(memberUids.slice(i, i + 10));
       }
       let allMemberScores: QuizScore[] = [];
       for (const chunk of memberChunks) {

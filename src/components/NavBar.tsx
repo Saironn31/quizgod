@@ -221,8 +221,7 @@ const NavBar: React.FC = () => {
       {/* Navigation Links */}
       <div className="flex items-center gap-3 flex-wrap">
         <Link href="/" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Home</Link>
-        <Link href="/create" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Create</Link>
-        <Link href="/ai-quiz" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">AI Quiz</Link>
+        <Link href="/quiz-creator" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Create Quiz</Link>
         <Link href="/subjects" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Subjects</Link>
         <Link href="/quizzes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">My Quizzes</Link>
         <Link href="/classes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-sm font-medium whitespace-nowrap">Classes</Link>
@@ -243,29 +242,8 @@ const NavBar: React.FC = () => {
                 {recentRecords.map(rec => (
                   <li key={rec.id} className="text-xs text-purple-900 dark:text-purple-200 flex flex-col border-b border-purple-100 last:border-b-0 pb-1">
                     <span className="font-semibold">{rec.quizTitle || 'Quiz'}</span>
-                    <span>Subject: {rec.subject || 'N/A'}</span>
-                    <span>Date: {rec.timestamp ? (rec.timestamp instanceof Date ? rec.timestamp.toLocaleString() : new Date(rec.timestamp).toLocaleString()) : 'N/A'}</span>
-                    <span>Score: <span className="font-bold text-green-600 dark:text-green-400">{rec.score}</span></span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-        {/* Recent Activity Panel */}
-        <div className="hidden md:flex flex-col items-end mr-4">
-          <div className="bg-white/10 rounded-xl p-3 shadow border border-purple-300 min-w-[220px]">
-            <h4 className="text-purple-700 dark:text-purple-300 font-bold text-sm mb-2">Recent Activity</h4>
-            {recentRecords.length === 0 ? (
-              <div className="text-purple-400 text-xs">No recent activity.</div>
-            ) : (
-              <ul className="space-y-1">
-                {recentRecords.map(rec => (
-                  <li key={rec.id} className="text-xs text-purple-900 dark:text-purple-200 flex flex-col border-b border-purple-100 last:border-b-0 pb-1">
-                    <span className="font-semibold">{rec.quizTitle || 'Quiz'}</span>
-                    <span>Subject: {rec.subject || 'N/A'}</span>
-                    <span>Date: {rec.timestamp ? new Date(rec.timestamp).toLocaleString() : 'N/A'}</span>
-                    <span>Score: <span className="font-bold text-green-600 dark:text-green-400">{rec.score}</span></span>
+                    <span>{rec.timestamp ? (rec.timestamp instanceof Date ? rec.timestamp.toLocaleDateString() : new Date(rec.timestamp).toLocaleDateString()) : 'N/A'}</span>
+                    <span className="font-bold text-green-600 dark:text-green-400">{rec.score}/{rec.percentage ? Math.round(rec.score / (rec.percentage / 100)) : '?'}</span>
                   </li>
                 ))}
               </ul>
