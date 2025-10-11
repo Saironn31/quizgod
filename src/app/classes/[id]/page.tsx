@@ -10,7 +10,8 @@ import {
   FirebaseSubject,
   FirebaseQuiz,
   getClassQuizRecords,
-  getClassMemberQuizRecords
+  getClassMemberQuizRecords,
+  deleteClassWithQuizzes
 } from '@/lib/firestore';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -560,6 +561,23 @@ export default function ClassDetailPage() {
     }
   };
 
+  const handleDeleteClass = async () => {
+    if (!classData || !isPresident) return;
+    
+    const confirmMessage = `Are you sure you want to delete the class "${classData.name}"?\n\nThis will permanently delete:\n- The class\n- All subjects\n- All quizzes\n- All class data\n\nThis action cannot be undone.`;
+    
+    if (confirm(confirmMessage)) {
+      try {
+        await deleteClassWithQuizzes(classData.id);
+        alert("Class deleted successfully!");
+        router.push('/classes');
+      } catch (error) {
+        console.error('Error deleting class:', error);
+        alert("Failed to delete class. Please try again.");
+      }
+    }
+  };
+
   if (!user || loading) {
     return <div>Loading...</div>;
   }
@@ -583,24 +601,20 @@ export default function ClassDetailPage() {
                 </h1>
                 <p className="text-slate-300 text-lg">View and manage your class, subjects, and quizzes</p>
               </div>
-              <Link href="/classes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
-                My Classes
-              </Link>
+              <div className="flex gap-3">
+                <Link href="/classes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+                  My Classes
+                </Link>
+                {isPresident && (
+                  <button 
+                    onClick={handleDeleteClass}
+                    className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow"
+                  >
+                    🗑️ Delete Class
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
-            <h3 className="text-xl font-bold text-white mb-4">Overview</h3>
-            <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
-            {/* Class-wide chat only in Overview tab */}
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
-              <ClassChat classId={classData.id} />
-            </div>
-          </div>
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            {/* Quick Links removed */}
           </div>
         </div>
         {/* Tabs */}
@@ -623,16 +637,35 @@ export default function ClassDetailPage() {
             ))}
           </div>
         </div>
+        {/* Class Overview Section */}
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-2">👥</div>
+                <div className="text-2xl font-bold text-white">{classData.members?.length ?? 0}</div>
+                <div className="text-purple-200">Active Members</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-2">📚</div>
+                <div className="text-2xl font-bold text-white">{subjects.length}</div>
+                <div className="text-purple-200">Subjects</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
+                <div className="text-3xl mb-2">📝</div>
+                <div className="text-2xl font-bold text-white">{quizzes.length}</div>
+                <div className="text-purple-200">Shared Quizzes</div>
+              </div>
+            </div>
+          </div>
+          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h2 className="text-xl font-bold mb-4 text-white">💬 Class Chat</h2>
+            <ClassChat classId={classData.id} />
+          </div>
+        </div>
         {/* Content */}
         {activeTab === 'overview' && (
-          <>
-            <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
-            {/* Class-wide chat only in Overview tab */}
-            <div className="mt-12">
-              <h2 className="text-2xl font-bold mb-4 text-white">💬 Class Chat</h2>
-              <ClassChat classId={classData.id} />
-            </div>
-          </>
+          <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
         )}
         {activeTab === 'subjects' && (
           <SubjectsTab

@@ -43,16 +43,13 @@ export default function QuizCreatorPage() {
   const [aiSelectedClass, setAiSelectedClass] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Load data (subjects/classes)
-  React.useEffect(() => {
-    if (!user?.uid || !user?.email) {
-      setLoading(false);
-      return;
-    }
-    (async () => {
+  const loadData = async () => {
+    if (!user?.uid || !user?.email) return;
+    
+    try {
       setLoading(true);
-      const allSubjects = await getAllUserSubjects(user.uid, user.email);
-      const userClasses = await getUserClasses(user.email);
+      const allSubjects = await getAllUserSubjects(user.uid, user.email || '');
+      const userClasses = await getUserClasses(user.email || '');
       const extendedSubjects: ExtendedSubject[] = allSubjects.map(subject => {
         if (subject.classId) {
           const parentClass = userClasses.find(c => c.id === subject.classId);
@@ -65,11 +62,41 @@ export default function QuizCreatorPage() {
       setAllClasses(userClasses);
       setSubjects(extendedSubjects);
       setClasses(userClasses);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    } finally {
       setLoading(false);
-    })();
+    }
+  };
+
+  // Load data (subjects/classes)
+  React.useEffect(() => {
+    if (!user?.uid || !user?.email) {
+      setLoading(false);
+      return;
+    }
+    loadData();
   }, [user]);
 
   // Manual mode handlers
+  const addQuestion = () => {
+    setQuestions([...questions, { question: "", options: ["", "", "", ""], correct: 0 }]);
+  };
+
+  const removeQuestion = (index: number) => {
+    if (questions.length <= 1) {
+      alert("You must have at least one question");
+      return;
+    }
+    setQuestions(questions.filter((_, i) => i !== index));
+  };
+
+  const updateQuestion = (index: number, updates: Partial<Question>) => {
+    const newQuestions = [...questions];
+    newQuestions[index] = { ...newQuestions[index], ...updates };
+    setQuestions(newQuestions);
+  };
+
   const handleManualSubmit = async () => {
     if (!user?.uid) { alert("Please log in to create a quiz"); return; }
     if (!title.trim()) { alert("Please enter a quiz title"); return; }
@@ -186,14 +213,103 @@ export default function QuizCreatorPage() {
         {mode === 'manual' ? (
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
             <h1 className="text-3xl font-bold mb-6 text-white">Create Quiz (Manual)</h1>
-            {/* Manual quiz creation form here (title, subject, class, questions, etc.) */}
-            {/* ...existing manual form code from CreatePage... */}
+            {loading ? (
+              <div className="text-center py-8"><p className="text-white">Loading...</p></div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Quiz Title *</label>
+                    <input className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="Enter quiz title..." value={title} onChange={e => setTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Subject *</label>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" value={subject} onChange={e => setSubject(e.target.value)}>
+                      <option value="">Select subject</option>
+                      {subjects.map(s => (<option key={s.id} value={s.name}>{s.source === 'class' ? `${s.name} (${s.className})` : s.name}</option>))}
+                    </select>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" value={selectedClass} onChange={e => setSelectedClass(e.target.value)}>
+                      <option value="">Personal quiz (no class)</option>
+                      {classes.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Description (Optional)</label>
+                    <textarea className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" rows={3} placeholder="Brief description..." value={description} onChange={e => setDescription(e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-xl font-semibold text-white">Questions ({questions.length})</h2>
+                    <button onClick={addQuestion} className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:scale-105 transition-all font-medium">➕ Add Question</button>
+                  </div>
+                  {questions.map((q, i) => (
+                    <div key={i} className="bg-white/5 rounded-lg p-6 border border-white/20">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium text-white">Question {i + 1}</h3>
+                        {questions.length > 1 && (<button onClick={() => removeQuestion(i)} className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm">🗑️ Remove</button>)}
+                      </div>
+                      <div className="space-y-4">
+                        <input className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400" placeholder="Enter your question..." value={q.question} onChange={e => updateQuestion(i, { question: e.target.value })} />
+                        <div className="grid md:grid-cols-2 gap-3">
+                          {q.options.map((option, oi) => (
+                            <div key={oi} className="flex items-center gap-3">
+                              <input type="radio" name={`correct-${i}`} checked={q.correct === oi} onChange={() => updateQuestion(i, { correct: oi })} className="text-green-500" />
+                              <input className="flex-1 p-2 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded focus:outline-none focus:ring-2 focus:ring-green-400" placeholder={`Option ${oi + 1}`} value={option} onChange={e => { const opts = [...q.options]; opts[oi] = e.target.value; updateQuestion(i, { options: opts }); }} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-center pt-6">
+                  <button onClick={handleManualSubmit} disabled={saving} className="px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-lg hover:scale-105 transition-all shadow-lg disabled:opacity-50">{saving ? "Creating Quiz..." : "🚀 Create Quiz"}</button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10">
             <h1 className="text-3xl font-bold mb-6 text-white">AI Quiz Generator</h1>
-            {/* AI quiz generation form here (quizTitle, quizQuestions, subject, class, etc.) */}
-            {/* ...existing AI form code from AIQuizGenerator... */}
+            {loading ? (
+              <div className="text-center py-8"><p className="text-white">Loading...</p></div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Quiz Title *</label>
+                    <input className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" placeholder="Enter quiz title..." value={quizTitle} onChange={e => setQuizTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Subject *</label>
+                    <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" value={aiSelectedSubject} onChange={e => setAiSelectedSubject(e.target.value)}>
+                      <option value="">Select subject</option>
+                      {subjects.map(s => (<option key={s.id} value={s.name}>{s.source === 'class' ? `${s.name} (${s.className})` : s.name}</option>))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
+                  <select className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400" value={aiSelectedClass} onChange={e => setAiSelectedClass(e.target.value)}>
+                    <option value="">Personal quiz (no class)</option>
+                    {classes.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Quiz Questions *</label>
+                  <textarea className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 font-mono text-sm" rows={15} placeholder={"Paste your AI-generated quiz here...\n\nFormat:\n1. Question text?\nA) Option 1\nB) Option 2*\nC) Option 3\nD) Option 4\n\n(Mark correct answer with *)"} value={quizQuestions} onChange={e => setQuizQuestions(e.target.value)} />
+                </div>
+                <div className="flex justify-center pt-6">
+                  <button onClick={handleAISubmit} disabled={creating} className="px-8 py-3 bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-semibold rounded-lg hover:scale-105 transition-all shadow-lg disabled:opacity-50">{creating ? "Creating Quiz..." : "🚀 Create Quiz"}</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

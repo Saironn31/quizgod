@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function SideNav() {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -54,10 +55,10 @@ export default function SideNav() {
                   isActive
                     ? 'bg-white/10 shadow-glow'
                     : 'hover:bg-white/5 hover:translate-x-1'
-                }`}
+                } ${collapsed ? 'justify-center' : ''}`}
               >
                 {/* Icon */}
-                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-12 h-12 text-3xl' : 'w-8 h-8 text-xl'} group-hover:rotate-12`}>
+                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-10 h-10 text-2xl' : 'w-8 h-8 text-xl'} group-hover:rotate-12`}>
                   {item.icon}
                 </div>
                 
@@ -82,7 +83,10 @@ export default function SideNav() {
         {/* User Section */}
         <div className="p-4 border-t border-white/10">
           <button
-            onClick={() => logout()}
+            onClick={async () => {
+              await logout();
+              router.push('/');
+            }}
             className="w-full flex items-center gap-4 px-4 py-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-all duration-300 group"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-xl">

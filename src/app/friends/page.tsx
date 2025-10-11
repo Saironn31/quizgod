@@ -158,11 +158,11 @@ const FriendsPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-white mb-2">Friend Requests</h2>
               {requestsLoading && friendRequests.length === 0 ? (
                 <p className="text-purple-200">Loading requests...</p>
-              ) : friendRequests.length === 0 ? (
+              ) : friendRequests.filter(r => r.status === 'pending').length === 0 ? (
                 <p className="text-purple-400">No pending requests</p>
               ) : (
                 <div className="flex flex-col gap-3 items-center">
-                  {friendRequests.map(req => (
+                  {friendRequests.filter(r => r.status === 'pending').map(req => (
                     <div key={req.id} className="bg-white/10 rounded-lg border border-purple-400/30 p-4 w-full max-w-md flex flex-col items-center">
                       <div className="text-white font-medium mb-1">
                         {req.type === 'received' ? (
@@ -182,9 +182,8 @@ const FriendsPage: React.FC = () => {
                           </>
                         )}
                       </div>
-                      <div className="text-purple-200 text-xs mb-2">Status: {req.status}</div>
-                      {req.type === 'received' && req.status === 'pending' && (
-                        <div className="flex gap-2">
+                      {req.type === 'received' && (
+                        <div className="flex gap-2 mt-2">
                           <button className="px-3 py-1 bg-green-600 text-white rounded" onClick={async () => { await acceptFriendRequest(req.id); window.location.reload(); }}>Accept</button>
                           <button className="px-3 py-1 bg-red-600 text-white rounded" onClick={async () => { await declineFriendRequest(req.id); window.location.reload(); }}>Decline</button>
                         </div>
@@ -239,12 +238,12 @@ const FriendsPage: React.FC = () => {
         </div>
         {/* ChatOverlay for friend chat at bottom right */}
         {chatOverlayFriend && (
-          <div className="fixed bottom-4 right-4 z-50 w-80 max-w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
+          <div className="fixed bottom-20 right-4 z-50 w-80 max-w-full max-h-[500px] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
             <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
               <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
               <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
             </div>
-            <div className="p-2">
+            <div className="p-2 overflow-hidden">
               <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />
             </div>
           </div>
