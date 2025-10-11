@@ -264,10 +264,10 @@ export default function SubjectsPage() {
                     <div className="flex gap-2 mt-2">
                       <span className="text-xs text-gray-400">Created by {subject.creatorName ?? subject.creatorUsername ?? subject.userId}</span>
                       <Link 
-                        href={subject.source === 'class' && subject.classId ? `/create?subject=${encodeURIComponent(subject.name)}&classId=${encodeURIComponent(subject.classId)}` : `/create?subject=${encodeURIComponent(subject.name)}`}
-                        className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
+                        href={`/quizzes?subject=${encodeURIComponent(subject.name)}`}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-center rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-sm font-medium"
                       >
-                        ➕ Create Quiz
+                        📝 View Quizzes
                       </Link>
                       {subject.source === 'personal' && (
                         <button 

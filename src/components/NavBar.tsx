@@ -363,7 +363,7 @@ const NavBar: React.FC = () => {
             >Close</button>
           </div>
         )}
-        <span className="text-white text-sm font-semibold hidden sm:inline">{getDisplayName()}</span>
+        <span className="text-white text-sm font-semibold hidden sm:inline min-w-[120px] max-w-[200px] truncate">{getDisplayName()}</span>
         <button onClick={handleLogout} className="bg-pink-500 hover:bg-pink-600 text-white px-3 py-2 rounded transition text-sm font-medium">Logout</button>
       </div>
       {/* Mobile NavBar: Left-side drawer */}

@@ -617,6 +617,29 @@ export default function ClassDetailPage() {
             </div>
           </div>
         </div>
+        {/* Invite Code Section */}
+        {isPresident && classData.joinCode && (
+          <div className="relative z-10 mb-6">
+            <div className="glass-card rounded-xl p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-400/30 flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-2xl">🔑</div>
+                <div>
+                  <p className="text-sm text-purple-200">Class Invite Code</p>
+                  <p className="text-xl font-bold text-white tracking-wider">{classData.joinCode}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(classData.joinCode || '');
+                  alert('Invite code copied to clipboard!');
+                }}
+                className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-all font-medium text-sm"
+              >
+                📋 Copy Code
+              </button>
+            </div>
+          </div>
+        )}
         {/* Tabs */}
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 mb-6">
           <div className="flex space-x-4 flex-wrap gap-2">

@@ -245,9 +245,14 @@ const FriendsPage: React.FC = () => {
         {/* ChatOverlay for friend chat at bottom right */}
         {chatOverlayFriend && (
           <div className="fixed bottom-24 right-4 z-50 w-80 max-w-full h-[450px] bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col overflow-hidden">
-            <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl shrink-0">
-              <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
-              <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
+            <div className="flex items-center gap-3 px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-sm font-bold shadow-lg shrink-0">
+                {(chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email || '?').charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs font-medium flex-1 truncate">
+                {(chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email || '').substring(0, 4).toUpperCase()}
+              </span>
+              <button className="text-lg shrink-0" onClick={() => setChatOverlayFriend(null)}>✖</button>
             </div>
             <div className="flex-1 overflow-hidden">
               <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />

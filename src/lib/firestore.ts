@@ -257,6 +257,34 @@ export const sendFriendRequest = async (currentUid: string, identifier: string):
     }
   }
   if (!friendUid || friendUid === currentUid) throw new Error('User not found or cannot add yourself');
+  
+  // Check if they're already friends
+  const friendshipsQuery = query(
+    collection(db, 'friendships'),
+    where('users', 'array-contains', currentUid)
+  );
+  const friendshipsSnap = await getDocs(friendshipsQuery);
+  const existingFriendship = friendshipsSnap.docs.find(doc => {
+    const users = doc.data().users;
+    return users.includes(friendUid);
+  });
+  
+  if (existingFriendship) {
+    throw new Error('You are already friends with this user');
+  }
+  
+  // Check if there's already a pending request
+  const pendingRequestQuery = query(
+    collection(db, 'friendRequests'),
+    where('senderUid', '==', currentUid),
+    where('receiverUid', '==', friendUid),
+    where('status', '==', 'pending')
+  );
+  const pendingRequestSnap = await getDocs(pendingRequestQuery);
+  if (!pendingRequestSnap.empty) {
+    throw new Error('Friend request already sent');
+  }
+  
   // Create friend request document in friendRequests collection
   const friendRequestsRef = collection(db, 'friendRequests');
   await addDoc(friendRequestsRef, {
