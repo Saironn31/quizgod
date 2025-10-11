@@ -114,12 +114,16 @@ export default function HomePage() {
             </button>
             <button
               className="px-8 py-4 rounded-2xl glass-card text-white font-bold text-lg hover:scale-105 transition-all duration-300"
+              onClick={() => {
+                const el = document.getElementById('features-section');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             >
               Explore Features
             </button>
           </div>
 
-          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto" id="features-section">
             <div className="glass-card rounded-2xl p-6 animate-slide-up">
               <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold mb-4 mx-auto"></div>
               <h3 className="text-xl font-bold text-white mb-2">Smart AI</h3>

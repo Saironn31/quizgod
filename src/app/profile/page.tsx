@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateUserProfile } from '@/lib/firestore';
 
@@ -31,14 +31,27 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">👤 Profile</div>
-          <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-        <div className="max-w-2xl mx-auto">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 w-full shadow-2xl border border-purple-400">
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+            <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Profile</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Manage your account details</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10 max-w-2xl mx-auto">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-white/10 to-purple-900/10 border-2 border-white/10">
             <h2 className="text-2xl font-bold mb-4 text-purple-700 dark:text-purple-300 text-center">Edit Profile</h2>
             <form className="flex flex-col gap-4" onSubmit={handleSave}>
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200">Name</label>

@@ -5,7 +5,7 @@ import { getUserProfile, getFriendRequests, acceptFriendRequest, declineFriendRe
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import PrivateChat from '@/components/PrivateChat';
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 import FriendRequestForm from '@/components/AddFriendForm';
 
 const FriendsPage: React.FC = () => {
@@ -74,14 +74,27 @@ const FriendsPage: React.FC = () => {
   }, [friendRequests]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 text-white">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-8 sm:mb-12">
-          <div className="text-xl sm:text-2xl font-bold text-white">👥 Friends</div>
-          <NavBar />
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                  <span className="text-white">Friends</span>
+                </h1>
+                <p className="text-slate-300 text-lg">Connect and chat with your friends</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <div className="flex justify-center mb-4">
               <input
                 type="text"
@@ -136,13 +149,7 @@ const FriendsPage: React.FC = () => {
                 </div>
               )}
             </div>
-          </div>
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-purple-200">Loading friends...</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
               {friends.length === 0 && !loading && (
                 <div className="text-white/80 text-center py-8 bg-gradient-to-br from-purple-700/30 to-blue-700/30 rounded-xl border border-white/10 shadow-lg">
                   No friends yet.<br />Add friends from your profile menu!
@@ -183,48 +190,47 @@ const FriendsPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          )}
-          {/* Remove inline chat modal, use ChatOverlay instead */}
-      {/* ChatOverlay for friend chat at bottom right */}
-      {chatOverlayFriend && (
-        <div className="fixed bottom-4 right-4 z-50 w-80 max-w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
-          <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
-            <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
-            <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
-          </div>
-          <div className="p-2">
-            <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />
           </div>
         </div>
-      )}
-
-          {showProfileModal && selectedFriend && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
-                <h2 className="text-2xl font-bold mb-2 text-purple-700 dark:text-purple-300 text-center">Friend Profile</h2>
-                <div className="mb-4 text-center">
-                  <div className="text-lg font-semibold text-gray-800 dark:text-white">{selectedFriend.name || selectedFriend.username || selectedFriend.email}</div>
-                  <div className="text-xs text-purple-600 dark:text-purple-200 mb-2">{selectedFriend.username || selectedFriend.email}</div>
-                </div>
-                <div className="mb-4">
-                  <div className="font-medium text-gray-700 dark:text-gray-200">Bio:</div>
-                  <div className="text-gray-600 dark:text-gray-300">{selectedFriend.bio || 'No bio available.'}</div>
-                </div>
-                <div className="mb-4">
-                  <div className="font-medium text-gray-700 dark:text-gray-200">Recent Activity:</div>
-                  <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
-                </div>
-                <div className="mb-4">
-                  <div className="font-medium text-gray-700 dark:text-gray-200">Shared Quizzes:</div>
-                  <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
-                </div>
-                <div className="flex justify-center">
-                  <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
-                </div>
+        {/* ChatOverlay for friend chat at bottom right */}
+        {chatOverlayFriend && (
+          <div className="fixed bottom-4 right-4 z-50 w-80 max-w-full bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-purple-400 flex flex-col">
+            <div className="flex justify-between items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
+              <span className="font-bold">Chat with {chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email}</span>
+              <button className="text-lg" onClick={() => setChatOverlayFriend(null)}>✖</button>
+            </div>
+            <div className="p-2">
+              <PrivateChat friendUid={chatOverlayFriend.uid} friendName={chatOverlayFriend.name || chatOverlayFriend.username || chatOverlayFriend.email} />
+            </div>
+          </div>
+        )}
+        {/* Profile modal for selected friend */}
+        {showProfileModal && selectedFriend && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-md w-full shadow-2xl border border-purple-400">
+              <h2 className="text-2xl font-bold mb-2 text-purple-700 dark:text-purple-300 text-center">Friend Profile</h2>
+              <div className="mb-4 text-center">
+                <div className="text-lg font-semibold text-gray-800 dark:text-white">{selectedFriend.name || selectedFriend.username || selectedFriend.email}</div>
+                <div className="text-xs text-purple-600 dark:text-purple-200 mb-2">{selectedFriend.username || selectedFriend.email}</div>
+              </div>
+              <div className="mb-4">
+                <div className="font-medium text-gray-700 dark:text-gray-200">Bio:</div>
+                <div className="text-gray-600 dark:text-gray-300">{selectedFriend.bio || 'No bio available.'}</div>
+              </div>
+              <div className="mb-4">
+                <div className="font-medium text-gray-700 dark:text-gray-200">Recent Activity:</div>
+                <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
+              </div>
+              <div className="mb-4">
+                <div className="font-medium text-gray-700 dark:text-gray-200">Shared Quizzes:</div>
+                <div className="text-gray-600 dark:text-gray-300">(Coming soon)</div>
+              </div>
+              <div className="flex justify-center">
+                <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" onClick={() => setShowProfileModal(false)}>Close</button>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

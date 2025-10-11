@@ -156,21 +156,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
-            <div className="space-y-3">
-              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
-              </Link>
-              <Link href="/classes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">🏫</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Classes</span>
-              </Link>
-              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
-              </Link>
-            </div>
+            {/* Quick Links removed */}
           </div>
         </div>
       </div>

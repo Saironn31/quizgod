@@ -184,33 +184,13 @@ export default function ClassesPage() {
                 </h1>
                 <p className="text-slate-300 text-lg">Manage and join your classes</p>
               </div>
-              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
-                My Quizzes
-              </Link>
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
             {/* ...existing classes list and management UI... */}
-          </div>
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Quick Links</h3>
-            <div className="space-y-3">
-              <Link href="/quizzes" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📝</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">My Quizzes</span>
-              </Link>
-              <Link href="/create" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">➕</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Create Quiz</span>
-              </Link>
-              <Link href="/subjects" className="flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition-transform">📚</div>
-                <span className="font-semibold text-slate-200 group-hover:text-white transition-colors">Subjects</span>
-              </Link>
-            </div>
           </div>
         </div>
       </div>
