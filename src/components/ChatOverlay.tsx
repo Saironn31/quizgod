@@ -14,6 +14,7 @@ const ChatOverlay: React.FC = () => {
   const [chatMode, setChatMode] = useState<'private' | 'class'>('private');
   const [classId, setClassId] = useState<string | null>(null);
   const [className, setClassName] = useState<string>('');
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
 
   // Fetch friends and last messages when overlay opens
   React.useEffect(() => {
@@ -48,7 +49,14 @@ const ChatOverlay: React.FC = () => {
       setLastMessages(lastMsgs);
     };
     fetchFriends();
-  }, [open, user?.uid, userProfile?.friends]);
+    // Fetch classes
+    const fetchClasses = async () => {
+      const res = await import('@/lib/firestore');
+      const userClasses = await res.getUserClasses(user.email || user.uid);
+      setClasses(userClasses.map(c => ({ id: c.id, name: c.name })));
+    };
+    fetchClasses();
+  }, [open, user?.uid, userProfile?.friends, user?.email]);
 
   // Overlay UI: show chat mode selector, friends list, or class chat
   return (
@@ -111,15 +119,35 @@ const ChatOverlay: React.FC = () => {
               </div>
             </div>
           )}
-          {chatMode === 'class' && classId && (
+          {chatMode === 'class' && (
             <div className="flex flex-col h-96">
-              <div className="flex items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
-                <span className="font-bold flex-1">Class Chat: {className}</span>
-                <button className="text-lg ml-2" onClick={() => setOpen(false)} aria-label="Close chat">✖</button>
-              </div>
-              <div className="p-2 flex-1">
-                {classId && <ClassChat classId={classId} />}
-              </div>
+              {!classId ? (
+                <div className="p-4">
+                  <h4 className="font-bold text-purple-700 mb-2">Select a Class</h4>
+                  {classes.length === 0 ? (
+                    <div className="text-purple-400">No classes found.</div>
+                  ) : (
+                    <ul className="space-y-2">
+                      {classes.map(c => (
+                        <li key={c.id} className="bg-purple-100 dark:bg-purple-900 rounded px-3 py-2 cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-800" onClick={() => { setClassId(c.id); setClassName(c.name); }}>
+                          <span className="font-semibold text-purple-800 dark:text-purple-200">{c.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center px-4 py-2 border-b border-purple-300 bg-purple-700 text-white rounded-t-xl">
+                    <button className="text-lg mr-2" onClick={() => setClassId(null)} aria-label="Back to classes">←</button>
+                    <span className="font-bold flex-1">Class Chat: {className}</span>
+                    <button className="text-lg ml-2" onClick={() => setOpen(false)} aria-label="Close chat">✖</button>
+                  </div>
+                  <div className="p-2 flex-1">
+                    <ClassChat classId={classId} />
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

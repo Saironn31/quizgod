@@ -58,7 +58,7 @@ export default function SideNav() {
                 }`}
               >
                 {/* Icon */}
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold text-xl transform group-hover:rotate-12 transition-transform`}>
+                <div className={`rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold transition-transform ${collapsed ? 'w-12 h-12 text-3xl' : 'w-8 h-8 text-xl'} group-hover:rotate-12`}>
                   {item.icon}
                 </div>
                 

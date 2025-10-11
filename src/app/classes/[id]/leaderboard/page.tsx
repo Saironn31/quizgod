@@ -360,32 +360,36 @@ export default function LeaderboardPage() {
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Leaderboard</h3>
-            {selectedQuiz !== 'all' && quizSpecificScores.length > 0 ? (
+            {selectedQuiz !== 'all' ? (
               <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
                 <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
                 <div className="bg-white/10 rounded-xl p-4">
-                  <ul className="divide-y divide-purple-300">
-                    {quizSpecificScores.map((record) => (
-                      <li
-                        key={`${record.username}-${record.completedAt}`}
-                        className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
-                        onClick={() => setSelectedRecord(record)}
-                      >
-                        <div>
-                          <div className="font-semibold text-white">
-                            User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
+                  {quizSpecificScores.length === 0 ? (
+                    <div className="text-purple-200 text-center py-8">No records yet for this quiz. Be the first to complete it!</div>
+                  ) : (
+                    <ul className="divide-y divide-purple-300">
+                      {quizSpecificScores.map((record) => (
+                        <li
+                          key={`${record.username}-${record.completedAt}`}
+                          className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
+                          onClick={() => setSelectedRecord(record)}
+                        >
+                          <div>
+                            <div className="font-semibold text-white">
+                              User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
+                            </div>
+                            <div className="text-purple-200 text-sm">
+                              Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
+                            </div>
+                            <div className="text-purple-200 text-sm">
+                              Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
+                            </div>
                           </div>
-                          <div className="text-purple-200 text-sm">
-                            Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
-                          </div>
-                          <div className="text-purple-200 text-sm">
-                            Percentage: {record.percentage}% | Time: {formatTime(record.completionTime)}
-                          </div>
-                        </div>
-                        <div className="text-purple-300">View Details →</div>
-                      </li>
-                    ))}
-                  </ul>
+                          <div className="text-purple-300">View Details →</div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
                 {/* Member Record Details Modal */}
                 {selectedRecord && (
@@ -440,9 +444,19 @@ export default function LeaderboardPage() {
                     <div className="text-6xl mb-4">🏆</div>
                     <h3 className="text-xl font-semibold text-gray-700 mb-2">No Quiz Results Yet</h3>
                     <p className="text-gray-500 mb-4">Complete some quizzes to see the leaderboard!</p>
+                    <div className="mt-8">
+                      <h4 className="text-lg font-bold text-gray-400 mb-2">Class Members</h4>
+                      <ul className="flex flex-wrap gap-4 justify-center">
+                        {classData?.members.map(member => (
+                          <li key={member} className="bg-gray-800 text-white px-4 py-2 rounded-full shadow">
+                            {userProfiles[member]?.name || member}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                     <Link
                       href={`/classes/${classData.id}`}
-                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors mt-6"
                     >
                       Back to Class
                     </Link>

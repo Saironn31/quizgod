@@ -171,9 +171,17 @@ export default function QuizCreatorPage() {
     <div className="min-h-screen bg-slate-950">
       <SideNav />
       <div className="md:ml-64 min-h-screen p-4 md:p-8">
-        <div className="mb-8 flex gap-4">
-          <button onClick={() => setMode('manual')} className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-glow ${mode === 'manual' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}>Manual</button>
-          <button onClick={() => setMode('ai')} className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-glow ${mode === 'ai' ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}>AI Generator</button>
+        <div className="relative z-10 mb-8">
+          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-4xl md:text-6xl font-black mb-3 text-white">Quiz Creator</h1>
+              <p className="text-slate-300 text-lg">Create quizzes manually or with AI</p>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => setMode('manual')} className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-glow ${mode === 'manual' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}>Manual</button>
+              <button onClick={() => setMode('ai')} className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-glow ${mode === 'ai' ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white' : 'bg-white/10 text-slate-200 hover:bg-white/20'}`}>AI Generator</button>
+            </div>
+          </div>
         </div>
         {mode === 'manual' ? (
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">

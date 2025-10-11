@@ -326,9 +326,9 @@ export default function QuizzesPage() {
                         </button>
                       )}
                       <button 
-                        onClick={() => handleDelete(quiz.id, quiz.title)} 
+                        onClick={() => handleDelete(quiz.id, quiz.title)}
                         disabled={deleting === quiz.id}
-                        className="w-full sm:px-4 sm:py-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium disabled:opacity-50"
+                        className="sm:w-auto w-full px-2 py-1 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-md hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-sm text-xs font-medium disabled:opacity-50"
                         title="Delete quiz"
                       >
                         {deleting === quiz.id ? "⏳" : "🗑️"}

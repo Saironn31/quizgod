@@ -14,8 +14,13 @@ interface Notification {
 }
 
 const NavBar: React.FC = () => {
+  // Remove duplicate declaration
+
+  // Removed misplaced effect. Only one effect exists after user declaration.
   // All hooks and handlers inside function
   const { user, userProfile, logout, refreshUserProfile } = useAuth();
+  const [recentRecords, setRecentRecords] = useState<any[]>([]);
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const router = useRouter();
@@ -102,6 +107,38 @@ const NavBar: React.FC = () => {
   // Removed profile picture upload handler
 
   // Handler to close mobile menu
+  // Place recent activity effect after all hooks and user declaration
+  useEffect(() => {
+    const fetchRecentRecords = async () => {
+      if (!user?.uid) return;
+      const records = await getUserQuizRecords(user.uid);
+      // Sort by timestamp descending
+      const sorted = records.sort((a, b) => {
+        const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+        const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+        return bTime - aTime;
+      }).slice(0, 5);
+      // Fetch quiz details for each record
+      const withDetails = await Promise.all(sorted.map(async (rec) => {
+        let quizTitle = '';
+        let subject = rec.subject || '';
+        if (rec.quizId) {
+          const quiz = await import('@/lib/firestore').then(mod => mod.getQuizById(rec.quizId));
+          if (quiz) {
+            quizTitle = quiz.title || '';
+            subject = subject || quiz.subject || '';
+          }
+        }
+        return {
+          ...rec,
+          quizTitle,
+          subject,
+        };
+      }));
+      setRecentRecords(withDetails);
+    };
+    fetchRecentRecords();
+  }, [user?.uid]);
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
@@ -195,6 +232,46 @@ const NavBar: React.FC = () => {
       </div>
       {/* Profile & Actions */}
   <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Recent Activity Panel */}
+        <div className="hidden md:flex flex-col items-end mr-4">
+          <div className="bg-white/10 rounded-xl p-3 shadow border border-purple-300 min-w-[220px]">
+            <h4 className="text-purple-700 dark:text-purple-300 font-bold text-sm mb-2">Recent Activity</h4>
+            {recentRecords.length === 0 ? (
+              <div className="text-purple-400 text-xs">No recent activity.</div>
+            ) : (
+              <ul className="space-y-1">
+                {recentRecords.map(rec => (
+                  <li key={rec.id} className="text-xs text-purple-900 dark:text-purple-200 flex flex-col border-b border-purple-100 last:border-b-0 pb-1">
+                    <span className="font-semibold">{rec.quizTitle || 'Quiz'}</span>
+                    <span>Subject: {rec.subject || 'N/A'}</span>
+                    <span>Date: {rec.timestamp ? (rec.timestamp instanceof Date ? rec.timestamp.toLocaleString() : new Date(rec.timestamp).toLocaleString()) : 'N/A'}</span>
+                    <span>Score: <span className="font-bold text-green-600 dark:text-green-400">{rec.score}</span></span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+        {/* Recent Activity Panel */}
+        <div className="hidden md:flex flex-col items-end mr-4">
+          <div className="bg-white/10 rounded-xl p-3 shadow border border-purple-300 min-w-[220px]">
+            <h4 className="text-purple-700 dark:text-purple-300 font-bold text-sm mb-2">Recent Activity</h4>
+            {recentRecords.length === 0 ? (
+              <div className="text-purple-400 text-xs">No recent activity.</div>
+            ) : (
+              <ul className="space-y-1">
+                {recentRecords.map(rec => (
+                  <li key={rec.id} className="text-xs text-purple-900 dark:text-purple-200 flex flex-col border-b border-purple-100 last:border-b-0 pb-1">
+                    <span className="font-semibold">{rec.quizTitle || 'Quiz'}</span>
+                    <span>Subject: {rec.subject || 'N/A'}</span>
+                    <span>Date: {rec.timestamp ? new Date(rec.timestamp).toLocaleString() : 'N/A'}</span>
+                    <span>Score: <span className="font-bold text-green-600 dark:text-green-400">{rec.score}</span></span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
         {/* Notification Button (Desktop & Mobile) */}
         <button
           className="relative px-3 py-2 rounded-xl hover:bg-white/20 transition-all duration-200"
@@ -257,6 +334,7 @@ const NavBar: React.FC = () => {
                                 try {
                                   await acceptFriendRequest(reqId);
                                   // remove notification and refresh pending count
+                                  setNotifications(prev => prev.filter(notif => notif.id !== n.id));
                                   dismissNotification(n.id);
                                   if (user?.uid) {
                                     const requests = await getFriendRequests(user.uid);
@@ -275,6 +353,7 @@ const NavBar: React.FC = () => {
                                 const reqId = n.id.replace('friend_', '');
                                 try {
                                   await declineFriendRequest(reqId);
+                                  setNotifications(prev => prev.filter(notif => notif.id !== n.id));
                                   dismissNotification(n.id);
                                   if (user?.uid) {
                                     const requests = await getFriendRequests(user.uid);
