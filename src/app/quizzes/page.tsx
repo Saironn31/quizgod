@@ -189,8 +189,8 @@ export default function QuizzesPage() {
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-3 animate-slide-up">
+        <div className="relative z-10 mb-20">
+          <div className="glass-card rounded-3xl p-6 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Quizzes</h3>
             {/* Search and Filter */}
             <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">

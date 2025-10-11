@@ -187,6 +187,46 @@ export default function ClassesPage() {
             </div>
           </div>
         </div>
+        {/* Join Class Section */}
+        <div className="relative z-10 mb-6">
+          <div className="glass-card rounded-xl p-6 bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-400/30">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🔑</div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Join Class with Code</h3>
+                  <p className="text-sm text-purple-200">Enter a class invite code to join</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowJoinForm(!showJoinForm)}
+                className="px-5 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-all font-medium"
+              >
+                {showJoinForm ? '✕ Cancel' : '➕ Join Class'}
+              </button>
+            </div>
+            {showJoinForm && (
+              <div className="mt-4 pt-4 border-t border-blue-400/20">
+                <div className="flex gap-3 flex-wrap">
+                  <input
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="Enter invite code (e.g., ABC123)"
+                    className="flex-1 min-w-[200px] px-4 py-2 bg-white/10 border border-blue-400/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  />
+                  <button
+                    onClick={handleJoinClass}
+                    disabled={joining || !joinCode.trim()}
+                    className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {joining ? '⏳ Joining...' : '🚀 Join Class'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>
