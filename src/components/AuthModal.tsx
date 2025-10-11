@@ -61,14 +61,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      {/* Glassy, glowing, bento-style background */}
+      {/* Stronger overlay and blur for visibility */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px] pointer-events-auto transition-all duration-300" />
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full filter blur-3xl animate-float" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1s'}} />
         <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}} />
       </div>
       <div className="relative z-10 w-full max-w-md">
-        <div className="glass-card rounded-3xl p-8 md:p-10 bg-gradient-to-br from-cyan-400/30 via-violet-500/20 to-pink-500/20 border-2 border-white/10 shadow-glow animate-fade-in">
+        <div className="glass-card rounded-3xl p-8 md:p-10 bg-gradient-to-br from-cyan-400/40 via-violet-500/30 to-pink-500/30 border-2 border-white/20 shadow-glow animate-fade-in">
           {/* Geometric/glowing icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-4xl font-black shadow-glow animate-bounce-soft">
@@ -111,41 +112,41 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && (
               <div>
-                <label htmlFor="auth-name" className="block text-base font-semibold text-white mb-2">Name</label>
+                <label htmlFor="auth-name" className="block text-base font-semibold text-white drop-shadow mb-2">Name</label>
                 <input
                   id="auth-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
+                  className="w-full px-4 py-3 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
                   placeholder="Full name"
                   aria-invalid={!!fieldErrors.name}
                 />
-                {fieldErrors.name && <p className="mt-1 text-xs text-pink-300">{fieldErrors.name}</p>}
+                {fieldErrors.name && <p className="mt-1 text-xs text-pink-200 drop-shadow">{fieldErrors.name}</p>}
               </div>
             )}
             <div>
-              <label htmlFor="auth-email" className="block text-base font-semibold text-white mb-2">Email</label>
+              <label htmlFor="auth-email" className="block text-base font-semibold text-white drop-shadow mb-2">Email</label>
               <input
                 id="auth-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
+                className="w-full px-4 py-3 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
                 placeholder="you@domain.com"
                 aria-invalid={!!fieldErrors.email}
               />
-              {fieldErrors.email && <p className="mt-1 text-xs text-pink-300">{fieldErrors.email}</p>}
+              {fieldErrors.email && <p className="mt-1 text-xs text-pink-200 drop-shadow">{fieldErrors.email}</p>}
             </div>
             <div>
-              <label htmlFor="auth-password" className="block text-base font-semibold text-white mb-2">Password</label>
+              <label htmlFor="auth-password" className="block text-base font-semibold text-white drop-shadow mb-2">Password</label>
               <div className="relative">
                 <input
                   id="auth-password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-12 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
+                  className="w-full px-4 py-3 pr-12 text-base rounded-xl bg-white/20 dark:bg-gray-800/40 text-white placeholder-white/80 focus:outline-none focus:ring-2 focus:ring-cyan-400 border-none shadow-inner"
                   placeholder="Password"
                   aria-invalid={!!fieldErrors.password}
                 />
@@ -158,10 +159,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   {showPassword ? 'Hide' : 'Show'}
                 </button>
               </div>
-              {fieldErrors.password && <p className="mt-1 text-xs text-pink-300">{fieldErrors.password}</p>}
+              {fieldErrors.password && <p className="mt-1 text-xs text-pink-200 drop-shadow">{fieldErrors.password}</p>}
             </div>
             {error && (
-              <div className="text-pink-300 text-sm bg-pink-900/20 p-3 rounded-xl border border-pink-400/30">
+              <div className="text-pink-200 drop-shadow text-sm bg-pink-900/30 p-3 rounded-xl border border-pink-400/40">
                 {error}
               </div>
             )}
@@ -173,19 +174,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Create account')}
             </button>
           </form>
-          <div className="mt-6 text-center text-base text-slate-200">
-            {isLogin ? (
-              <>
-                <span>Don't have an account?</span>{' '}
-                <button onClick={() => setActiveTab('signup')} className="text-cyan-300 font-bold hover:underline">Create one</button>
-              </>
-            ) : (
-              <>
-                <span>Already have an account?</span>{' '}
-                <button onClick={() => setActiveTab('login')} className="text-cyan-300 font-bold hover:underline">Log in</button>
-              </>
-            )}
-          </div>
+          {/* Removed account switch links for a cleaner modal */}
         </div>
       </div>
     </div>

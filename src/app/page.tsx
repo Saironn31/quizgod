@@ -98,7 +98,7 @@ export default function HomePage() {
           </div>
           
           <h1 className="text-6xl md:text-8xl font-black mb-6">
-            <span className="gradient-text">QuizMaster</span>
+            <span className="gradient-text">QuizGod</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto">

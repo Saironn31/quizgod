@@ -38,7 +38,7 @@ export default function SideNav() {
               Q
             </div>
             {!collapsed && (
-              <span className="text-xl font-black gradient-text">QuizMaster</span>
+              <span className="text-xl font-black gradient-text">QuizGod</span>
             )}
           </button>
         </div>
