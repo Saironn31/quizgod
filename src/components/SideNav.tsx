@@ -88,65 +88,61 @@ export default function SideNav() {
         </div>
       </div>
 
-      {/* Mobile Bottom Nav */}
+      {/* Mobile Bottom Nav - Desktop-style vertical layout */}
       <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-50 md:hidden pb-safe">
-        <div className="grid grid-cols-5 gap-1 p-2">
-          {navItems.slice(0, 5).map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex flex-col items-center gap-1 p-2"
-              >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold ${
-                  isActive ? 'scale-110 shadow-glow' : 'scale-90 opacity-70'
-                } transition-all duration-300`}>
-                  {item.icon}
-                </div>
-                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-400'} truncate max-w-full`}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+        {/* Logo/Brand on mobile */}
+        <div className="px-4 pt-3 pb-2 border-b border-white/10 flex items-center justify-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-violet-500 flex items-center justify-center font-black text-white text-sm">
+            Q
+          </div>
+          <span className="text-lg font-black gradient-text">QuizGod</span>
         </div>
-        {/* Second row for remaining items */}
-        <div className="grid grid-cols-4 gap-1 px-2 pb-2">
-          {navItems.slice(5).map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex flex-col items-center gap-1 p-2"
-              >
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold ${
-                  isActive ? 'scale-110 shadow-glow' : 'scale-90 opacity-70'
-                } transition-all duration-300`}>
-                  {item.icon}
-                </div>
-                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-400'} truncate max-w-full`}>
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
-          {/* Logout button on mobile */}
-          <button
-            onClick={async () => {
-              await logout();
-              router.push('/');
-            }}
-            className="flex flex-col items-center gap-1 p-2"
-          >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold scale-90 opacity-70 hover:scale-110 hover:opacity-100 transition-all duration-300">
-              ⊗
-            </div>
-            <span className="text-xs font-medium text-slate-400 truncate max-w-full">
-              Logout
-            </span>
-          </button>
+
+        {/* Scrollable Navigation */}
+        <div className="overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-2 p-3 min-w-max">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex flex-col items-center gap-2 px-4 py-2 rounded-xl min-w-[80px] transition-all duration-300 ${
+                    isActive
+                      ? 'bg-white/10 shadow-glow'
+                      : 'hover:bg-white/5'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold text-xl transition-transform ${
+                    isActive ? '' : 'scale-90'
+                  }`}>
+                    {item.icon}
+                  </div>
+                  <span className={`text-xs font-semibold text-center ${
+                    isActive ? 'text-white' : 'text-slate-300'
+                  }`}>
+                    {item.label}
+                  </span>
+                </Link>
+              );
+            })}
+            
+            {/* Logout button */}
+            <button
+              onClick={async () => {
+                await logout();
+                router.push('/');
+              }}
+              className="flex flex-col items-center gap-2 px-4 py-2 rounded-xl min-w-[80px] bg-red-500/10 hover:bg-red-500/20 transition-all duration-300"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-xl scale-90">
+                ⊗
+              </div>
+              <span className="text-xs font-semibold text-red-400 text-center">
+                Logout
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </>

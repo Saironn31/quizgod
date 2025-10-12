@@ -62,7 +62,7 @@ const ChatOverlay: React.FC = () => {
   return (
     <>
       {open && (
-        <div className="fixed bottom-4 right-4 md:right-4 md:bottom-4 bottom-24 left-4 md:left-auto z-50 md:w-96 w-auto bg-slate-900 rounded-2xl shadow-2xl border border-purple-500/30 flex flex-col overflow-hidden max-h-[80vh] md:max-h-[600px]">
+        <div className="fixed bottom-4 right-4 md:right-4 md:bottom-4 bottom-28 left-4 md:left-auto z-50 md:w-96 w-auto bg-slate-900 rounded-2xl shadow-2xl border border-purple-500/30 flex flex-col overflow-hidden max-h-[80vh] md:max-h-[600px]">
           {/* Unified Header */}
           <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white shrink-0">
             {/* Back button - only show when viewing specific friend or class */}
