@@ -89,8 +89,8 @@ export default function SideNav() {
       </div>
 
       {/* Mobile Bottom Nav */}
-      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-50 md:hidden">
-        <div className="flex justify-around items-center p-2">
+      <div className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-xl border-t border-white/10 z-50 md:hidden pb-safe">
+        <div className="grid grid-cols-5 gap-1 p-2">
           {navItems.slice(0, 5).map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -104,12 +104,49 @@ export default function SideNav() {
                 } transition-all duration-300`}>
                   {item.icon}
                 </div>
-                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-400'} truncate max-w-full`}>
                   {item.label}
                 </span>
               </Link>
             );
           })}
+        </div>
+        {/* Second row for remaining items */}
+        <div className="grid grid-cols-4 gap-1 px-2 pb-2">
+          {navItems.slice(5).map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex flex-col items-center gap-1 p-2"
+              >
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.gradient} flex items-center justify-center text-white font-bold ${
+                  isActive ? 'scale-110 shadow-glow' : 'scale-90 opacity-70'
+                } transition-all duration-300`}>
+                  {item.icon}
+                </div>
+                <span className={`text-xs font-medium ${isActive ? 'text-white' : 'text-slate-400'} truncate max-w-full`}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          })}
+          {/* Logout button on mobile */}
+          <button
+            onClick={async () => {
+              await logout();
+              router.push('/');
+            }}
+            className="flex flex-col items-center gap-1 p-2"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold scale-90 opacity-70 hover:scale-110 hover:opacity-100 transition-all duration-300">
+              ⊗
+            </div>
+            <span className="text-xs font-medium text-slate-400 truncate max-w-full">
+              Logout
+            </span>
+          </button>
         </div>
       </div>
     </>

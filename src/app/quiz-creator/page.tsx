@@ -222,7 +222,7 @@ Please provide 5-10 questions following this exact format.`;
   return (
     <div className="min-h-screen bg-slate-950">
       <SideNav />
-      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+      <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
         <div className="relative z-10 mb-8">
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10 flex items-center justify-between flex-wrap gap-4">
             <div>

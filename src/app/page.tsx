@@ -154,28 +154,28 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-950">
       <SideNav />
       
-      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+      <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
 
-        <div className="relative z-10 mb-8">
-          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10">
+        <div className="relative z-10 mb-6 md:mb-8">
+          <div className="glass-card rounded-3xl p-6 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                <h1 className="text-3xl md:text-6xl font-black mb-3">
                   <span className="text-white">Welcome back,</span>
                   <br/>
                   <span className="gradient-text">{userProfile?.name || userProfile?.username || user.email?.split('@')[0]}</span>
                 </h1>
-                <p className="text-slate-300 text-lg">Ready to master something new today?</p>
+                <p className="text-slate-300 text-base md:text-lg">Ready to master something new today?</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-20 md:mb-0">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-0">
           <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up">
             <div className="text-sm text-slate-400 mb-2">Total Quizzes</div>
             <div className="text-4xl font-black gradient-text mb-2">{stats.totalQuizzes}</div>

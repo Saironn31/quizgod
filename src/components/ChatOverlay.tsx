@@ -62,13 +62,13 @@ const ChatOverlay: React.FC = () => {
   return (
     <>
       {open && (
-        <div className="fixed bottom-4 right-4 z-50 w-96 max-w-full bg-slate-900 rounded-2xl shadow-2xl border border-purple-500/30 flex flex-col overflow-hidden">
+        <div className="fixed bottom-4 right-4 md:right-4 md:bottom-4 bottom-24 left-4 md:left-auto z-50 md:w-96 w-auto bg-slate-900 rounded-2xl shadow-2xl border border-purple-500/30 flex flex-col overflow-hidden max-h-[80vh] md:max-h-[600px]">
           {/* Unified Header */}
-          <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white shrink-0">
             {/* Back button - only show when viewing specific friend or class */}
             {(friend || classId) && (
               <button 
-                className="text-xl hover:scale-110 transition-transform" 
+                className="text-xl hover:scale-110 transition-transform shrink-0" 
                 onClick={() => {
                   if (friend) setFriend(null);
                   if (classId) setClassId(null);
@@ -80,7 +80,7 @@ const ChatOverlay: React.FC = () => {
             )}
             
             {/* Title */}
-            <span className="font-bold text-lg flex-1 text-center">
+            <span className="font-bold text-base md:text-lg flex-1 text-center truncate px-2">
               {friend 
                 ? (friend.name || friend.username || friend.email).substring(0, 15) + ((friend.name || friend.username || friend.email).length > 15 ? '...' : '')
                 : classId 
@@ -90,7 +90,7 @@ const ChatOverlay: React.FC = () => {
             
             {/* Close button */}
             <button 
-              className="text-xl hover:scale-110 transition-transform" 
+              className="text-xl hover:scale-110 transition-transform shrink-0" 
               onClick={() => setOpen(false)}
               aria-label="Close"
             >
@@ -202,11 +202,11 @@ const ChatOverlay: React.FC = () => {
       )}
       {!open && (
         <button 
-          className="fixed bottom-4 right-4 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform font-semibold flex items-center gap-2" 
+          className="fixed bottom-24 right-4 md:bottom-4 md:right-4 z-50 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 md:px-6 py-3 rounded-full shadow-2xl hover:scale-105 transition-transform font-semibold flex items-center gap-2" 
           onClick={() => setOpen(true)}
         >
           <span className="text-xl">💬</span>
-          <span>Chat</span>
+          <span className="hidden md:inline">Chat</span>
         </button>
       )}
     </>

@@ -122,7 +122,7 @@ const FriendsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950">
       <SideNav />
-      <div className="md:ml-64 min-h-screen p-4 md:p-8">
+      <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
