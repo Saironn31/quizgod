@@ -188,35 +188,35 @@ export default function ClassesPage() {
             
             {/* Join Class Section - Integrated */}
             <div className="mt-6 pt-6 border-t border-white/20">
-              <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl">🔑</div>
+                  <div className="text-2xl md:text-3xl">🔑</div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Join Class with Code</h3>
-                    <p className="text-sm text-emerald-200">Enter a class invite code to join</p>
+                    <h3 className="text-base md:text-lg font-bold text-white">Join Class with Code</h3>
+                    <p className="text-xs md:text-sm text-emerald-200">Enter a class invite code to join</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowJoinForm(!showJoinForm)}
-                  className="px-5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all font-medium"
+                  className="px-4 md:px-5 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all font-medium text-sm md:text-base whitespace-nowrap w-full sm:w-auto"
                 >
                   {showJoinForm ? '✕ Cancel' : '📥 Join from Code'}
                 </button>
               </div>
               {showJoinForm && (
                 <div className="mt-4">
-                  <div className="flex gap-3 flex-wrap">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="text"
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="Enter invite code (e.g., ABC123)"
-                      className="flex-1 min-w-[200px] px-4 py-2 bg-white/10 border border-emerald-400/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                      className="flex-1 min-w-0 px-4 py-2 bg-white/10 border border-emerald-400/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm md:text-base"
                     />
                     <button
                       onClick={handleJoinClass}
                       disabled={joining || !joinCode.trim()}
-                      className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 md:px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base whitespace-nowrap w-full sm:w-auto"
                     >
                       {joining ? '⏳ Joining...' : '🚀 Join Class'}
                     </button>
@@ -240,25 +240,25 @@ export default function ClassesPage() {
                 <p className="text-sm">Create or join a class to get started!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 {classes.map(cls => (
                   <Link
                     key={cls.id}
                     href={`/classes/${cls.id}`}
-                    className="block bg-gradient-to-br from-cyan-900/30 to-violet-900/30 hover:from-cyan-800/50 hover:to-violet-800/50 border border-white/10 rounded-2xl p-6 transition-all duration-200 shadow-lg hover:scale-[1.03]"
+                    className="block bg-gradient-to-br from-cyan-900/30 to-violet-900/30 hover:from-cyan-800/50 hover:to-violet-800/50 border border-white/10 rounded-2xl p-4 md:p-6 transition-all duration-200 shadow-lg hover:scale-[1.02]"
                   >
-                    <div className="flex items-center gap-4 mb-2">
-                      <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-2xl font-black shadow-glow">
+                    <div className="flex items-center gap-3 md:gap-4 mb-2">
+                      <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-xl md:text-2xl font-black shadow-glow shrink-0">
                         {cls.name?.[0]?.toUpperCase() || 'C'}
                       </div>
-                      <div>
-                        <h4 className="text-lg font-bold text-white mb-1 truncate">{cls.name}</h4>
-                        <p className="text-xs text-slate-300 truncate">{cls.description || 'No description'}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-base md:text-lg font-bold text-white mb-1 truncate">{cls.name}</h4>
+                        <p className="text-xs md:text-sm text-slate-300 truncate">{cls.description || 'No description'}</p>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center mt-2">
-                      <span className="text-xs text-slate-400">{cls.members?.length || 1} member{(cls.members?.length || 1) !== 1 ? 's' : ''}</span>
-                      <span className="text-xs text-slate-500">{cls.isPublic ? 'Public' : 'Private'}</span>
+                    <div className="flex justify-between items-center mt-2 text-xs md:text-sm">
+                      <span className="text-slate-400">{cls.members?.length || 1} member{(cls.members?.length || 1) !== 1 ? 's' : ''}</span>
+                      <span className="text-slate-500">{cls.isPublic ? 'Public' : 'Private'}</span>
                     </div>
                   </Link>
                 ))}

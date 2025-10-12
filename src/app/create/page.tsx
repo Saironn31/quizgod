@@ -318,35 +318,35 @@ export default function CreatePage() {
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-        <div className="relative z-10 mb-8">
-          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
-            <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="relative z-10 mb-6 md:mb-8">
+          <div className="glass-card rounded-3xl p-4 md:p-8 lg:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                <h1 className="text-3xl md:text-4xl lg:text-6xl font-black mb-2 md:mb-3">
                   <span className="text-white">Create Quiz</span>
                 </h1>
-                <p className="text-slate-300 text-lg">Build a new quiz for yourself or your class</p>
+                <p className="text-slate-300 text-sm md:text-base lg:text-lg">Build a new quiz for yourself or your class</p>
               </div>
-              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+              <Link href="/quizzes" className="px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow w-full sm:w-auto text-center">
                 My Quizzes
               </Link>
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
-            <h3 className="text-xl font-bold text-white mb-4">Quiz Builder</h3>
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-20">
+          <div className="glass-card rounded-3xl p-4 md:p-6 lg:col-span-2 animate-slide-up">
+            <h3 className="text-lg md:text-xl font-bold text-white mb-4">Quiz Builder</h3>
 
             {/* Draft indicator */}
             {(title || subject || description || questions.some(q => q.question || q.options.some(o => o))) && (
-              <div className="mb-6 p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex justify-between items-center">
+              <div className="mb-4 md:mb-6 p-2 md:p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-blue-300">💾</span>
-                  <span className="text-sm text-blue-200">Draft auto-saved</span>
+                  <span className="text-xs md:text-sm text-blue-200">Draft auto-saved</span>
                 </div>
                 <button
                   onClick={handleClearDraft}
-                  className="text-xs px-3 py-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors"
+                  className="text-xs px-3 py-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors w-full sm:w-auto"
                 >
                   Clear Draft
                 </button>
@@ -358,22 +358,22 @@ export default function CreatePage() {
                 <p className="text-purple-200">Loading...</p>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {/* Quiz Details */}
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quiz Title *</label>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quiz Title *</label>
                     <input 
-                      className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
+                      className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       placeholder="Enter quiz title..." 
                       value={title} 
                       onChange={e => setTitle(e.target.value)}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject *</label>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject *</label>
                     <select 
-                      className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
+                      className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       value={subject} 
                       onChange={e => handleSubjectChange(e.target.value)}
                     >
@@ -387,11 +387,11 @@ export default function CreatePage() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add to Class (Optional)</label>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Add to Class (Optional)</label>
                     <select 
-                      className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
+                      className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       value={selectedClass} 
                       onChange={e => handleClassChange(e.target.value)}
                     >
@@ -404,9 +404,9 @@ export default function CreatePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Optional)</label>
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description (Optional)</label>
                     <textarea 
-                      className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
+                      className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400" 
                       rows={3} 
                       placeholder="Brief description of your quiz..." 
                       value={description} 
@@ -416,51 +416,51 @@ export default function CreatePage() {
                 </div>
 
                 {/* Questions */}
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-white">Questions ({questions.length})</h2>
+                <div className="space-y-4 md:space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h2 className="text-lg md:text-xl font-semibold text-white">Questions ({questions.length})</h2>
                     <button 
                       onClick={addQuestion}
-                      className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:scale-105 font-medium"
+                      className="px-4 py-2 text-sm md:text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all shadow-lg hover:scale-105 font-medium w-full sm:w-auto"
                     >
                       ➕ Add Question
                     </button>
                   </div>
 
                   {questions.map((q, i) => (
-                    <div key={i} className="bg-white/5 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-                      <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-lg font-medium text-white">Question {i + 1}</h3>
+                    <div key={i} className="bg-white/5 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20">
+                      <div className="flex justify-between items-center mb-3 md:mb-4">
+                        <h3 className="text-base md:text-lg font-medium text-white">Question {i + 1}</h3>
                         {questions.length > 1 && (
                           <button 
                             onClick={() => removeQuestion(i)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm"
+                            className="px-2 md:px-3 py-1 text-xs md:text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                           >
                             🗑️ Remove
                           </button>
                         )}
                       </div>
                       
-                      <div className="space-y-4">
+                      <div className="space-y-3 md:space-y-4">
                         <input 
-                          className="w-full p-3 border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                          className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
                           placeholder="Enter your question..." 
                           value={q.question} 
                           onChange={e => updateQuestion(i, { question: e.target.value })}
                         />
                         
-                        <div className="grid md:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                           {q.options.map((option, oi) => (
-                            <div key={oi} className="flex items-center gap-3">
+                            <div key={oi} className="flex items-center gap-2 md:gap-3">
                               <input 
                                 type="radio" 
                                 name={`correct-${i}`} 
                                 checked={q.correct === oi} 
                                 onChange={() => updateQuestion(i, { correct: oi })}
-                                className="text-purple-500 focus:ring-purple-400"
+                                className="text-purple-500 focus:ring-purple-400 shrink-0"
                               />
                               <input 
-                                className="flex-1 p-2 border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                className="flex-1 min-w-0 p-2 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-400" 
                                 placeholder={`Option ${oi + 1}`} 
                                 value={option} 
                                 onChange={e => { 
@@ -478,11 +478,11 @@ export default function CreatePage() {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex justify-center pt-6">
+                <div className="flex justify-center pt-4 md:pt-6">
                   <button 
                     onClick={handleSubmit}
                     disabled={saving}
-                    className="px-8 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto px-6 md:px-8 py-2.5 md:py-3 text-sm md:text-base bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {saving ? "Creating Quiz..." : "🚀 Create Quiz"}
                   </button>

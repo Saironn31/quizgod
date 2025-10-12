@@ -175,52 +175,52 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-0">
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up">
-            <div className="text-sm text-slate-400 mb-2">Total Quizzes</div>
-            <div className="text-4xl font-black gradient-text mb-2">{stats.totalQuizzes}</div>
-            <div className="text-xs text-emerald-400"> Keep going!</div>
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-0">
+          <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up">
+            <div className="text-xs md:text-sm text-slate-400 mb-2">Total Quizzes</div>
+            <div className="text-3xl md:text-4xl font-black gradient-text mb-2">{stats.totalQuizzes}</div>
+            <div className="text-xs text-emerald-400">✓ Keep going!</div>
           </div>
 
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            <div className="text-sm text-slate-400 mb-2">Avg Score</div>
-            <div className="text-4xl font-black gradient-text mb-2">{stats.avgScore}%</div>
-            <div className="text-xs text-cyan-400"> Improving</div>
+          <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <div className="text-xs md:text-sm text-slate-400 mb-2">Avg Score</div>
+            <div className="text-3xl md:text-4xl font-black gradient-text mb-2">{stats.avgScore}%</div>
+            <div className="text-xs text-cyan-400">↗ Improving</div>
           </div>
 
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.2s'}}>
-            <div className="text-sm text-slate-400 mb-2">Current Streak</div>
-            <div className="text-4xl font-black gradient-text mb-2">{stats.streak} </div>
-            <div className="text-xs text-orange-400">On fire!</div>
+          <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up" style={{animationDelay: '0.2s'}}>
+            <div className="text-xs md:text-sm text-slate-400 mb-2">Current Streak</div>
+            <div className="text-3xl md:text-4xl font-black gradient-text mb-2">{stats.streak}</div>
+            <div className="text-xs text-orange-400">🔥 On fire!</div>
           </div>
 
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up" style={{animationDelay: '0.4s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
+          <div className="glass-card rounded-3xl p-4 md:p-6 sm:col-span-2 lg:col-span-3 xl:col-span-1 xl:row-span-2 animate-slide-up" style={{animationDelay: '0.3s'}}>
+            <h3 className="text-lg md:text-xl font-bold text-white mb-4">Recent Activity</h3>
             {loadingRecords ? (
               <div className="text-slate-400">Loading...</div>
             ) : recentActivityWithDetails.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {recentActivityWithDetails.map((record) => (
-                  <div key={record.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300">
-                    <div>
-                      <div className="font-semibold text-white">{record.quizTitle}</div>
-                      <div className="text-sm text-slate-400">{new Date(record.timestamp?.toDate?.() || Date.now()).toLocaleDateString()}</div>
+                  <div key={record.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold text-white text-sm md:text-base truncate">{record.quizTitle}</div>
+                      <div className="text-xs md:text-sm text-slate-400">{new Date(record.timestamp?.toDate?.() || Date.now()).toLocaleDateString()}</div>
                     </div>
-                    <div className="text-2xl font-black gradient-text">{record.score}/{record.maxScore}</div>
+                    <div className="text-xl md:text-2xl font-black gradient-text whitespace-nowrap">{record.score}/{record.maxScore}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-slate-400">
-                <div className="text-4xl mb-2">📊</div>
-                <div>No quizzes taken yet. Start learning!</div>
+              <div className="text-center py-6 md:py-8 text-slate-400">
+                <div className="text-3xl md:text-4xl mb-2">📊</div>
+                <div className="text-sm md:text-base">No quizzes taken yet. Start learning!</div>
               </div>
             )}
           </div>
 
-          <div className="glass-card rounded-3xl p-6 md:col-span-3 lg:col-span-2 animate-slide-up" style={{animationDelay: '0.5s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Explore Subjects</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="glass-card rounded-3xl p-4 md:p-6 sm:col-span-2 lg:col-span-3 animate-slide-up" style={{animationDelay: '0.4s'}}>
+            <h3 className="text-lg md:text-xl font-bold text-white mb-4">Explore Subjects</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
               {userSubjects.length > 0 ? (
                 userSubjects.map((subject, index) => {
                   const gradients = [
@@ -232,31 +232,31 @@ export default function HomePage() {
                   const gradient = gradients[index % gradients.length];
                   
                   return (
-                    <Link key={subject.id} href={`/subjects`} className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform`}>
+                    <Link key={subject.id} href={`/subjects`} className="glass-card rounded-xl p-3 md:p-4 hover:scale-105 transition-all duration-300 group text-center">
+                      <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg md:text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform`}>
                         {subject.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">{subject.name}</div>
+                      <div className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors truncate">{subject.name}</div>
                     </Link>
                   );
                 })
               ) : (
                 <>
-                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Mathematics</div>
+                  <Link href="/subjects" className="glass-card rounded-xl p-3 md:p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-lg md:text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform">M</div>
+                    <div className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Mathematics</div>
                   </Link>
-                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Science</div>
+                  <Link href="/subjects" className="glass-card rounded-xl p-3 md:p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-lg md:text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform">S</div>
+                    <div className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Science</div>
                   </Link>
-                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">History</div>
+                  <Link href="/subjects" className="glass-card rounded-xl p-3 md:p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-lg md:text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform">H</div>
+                    <div className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">History</div>
                   </Link>
-                  <Link href="/subjects" className="glass-card rounded-xl p-4 hover:scale-105 transition-all duration-300 group text-center">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-bold text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform"></div>
-                    <div className="text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Languages</div>
+                  <Link href="/subjects" className="glass-card rounded-xl p-3 md:p-4 hover:scale-105 transition-all duration-300 group text-center">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-white font-bold text-lg md:text-xl mx-auto mb-2 group-hover:rotate-12 transition-transform">L</div>
+                    <div className="text-xs md:text-sm font-semibold text-slate-200 group-hover:text-white transition-colors">Languages</div>
                   </Link>
                 </>
               )}

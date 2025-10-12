@@ -193,24 +193,24 @@ export default function QuizzesPage() {
           <div className="glass-card rounded-3xl p-6 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Quizzes</h3>
             {/* Search and Filter */}
-            <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mb-6 md:mb-8 p-4 md:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Quizzes</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Quizzes</label>
                   <input
                     type="text"
                     placeholder="Search by title or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Subject</label>
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Subject</label>
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full p-3 border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
                   >
                     <option value="">All Subjects</option>
                     {subjects.map(subject => (
@@ -222,14 +222,14 @@ export default function QuizzesPage() {
             </div>
 
             {/* Quiz Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-8">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4 text-center">
-                <div className="text-2xl sm:text-3xl font-bold">{quizzes.length}</div>
-                <div className="text-sm sm:text-base opacity-90">Total Quizzes</div>
+            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-3 md:p-4 text-center">
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold">{quizzes.length}</div>
+                <div className="text-xs md:text-base opacity-90">Total Quizzes</div>
               </div>
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4 text-center">
-                <div className="text-2xl sm:text-3xl font-bold">{subjects.length}</div>
-                <div className="text-sm sm:text-base opacity-90">Subjects</div>
+              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-3 md:p-4 text-center">
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold">{subjects.length}</div>
+                <div className="text-xs md:text-base opacity-90">Subjects</div>
               </div>
             </div>
 
@@ -262,19 +262,19 @@ export default function QuizzesPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                 {filteredQuizzes.map((quiz) => (
-                  <div key={quiz.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 sm:p-6 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2">
+                  <div key={quiz.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 md:p-5 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group flex flex-col">
+                    <div className="flex justify-between items-start mb-3 md:mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 break-words">
                           {quiz.title}
                         </h3>
-                        <div className="flex items-center gap-2 mt-2 text-sm text-gray-600 dark:text-gray-400 flex-wrap">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 whitespace-nowrap">
+                        <div className="flex items-center gap-2 mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-400 flex-wrap">
+                          <span className="inline-flex items-center px-2 py-0.5 md:py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 whitespace-nowrap">
                             📚 {quiz.subject}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                          <span className={`inline-flex items-center px-2 py-0.5 md:py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                             quiz.source === 'class' 
                               ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' 
                               : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
@@ -286,26 +286,26 @@ export default function QuizzesPage() {
                     </div>
                     
                     {quiz.description && (
-                      <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
+                      <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm mb-3 md:mb-4 line-clamp-2">
                         {quiz.description}
                       </p>
                     )}
                     
-                    <div className="space-y-2 mb-4 text-sm text-gray-600 dark:text-gray-400">
+                    <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4 text-xs md:text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center">
-                        <span className="w-5 h-5 mr-2">❓</span>
+                        <span className="w-4 h-4 md:w-5 md:h-5 mr-2">❓</span>
                         <span>{quiz.questions.length} question{quiz.questions.length !== 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex items-center">
-                        <span className="w-5 h-5 mr-2">📅</span>
-                        <span>Created {formatDate(quiz.createdAt)}</span>
+                        <span className="w-4 h-4 md:w-5 md:h-5 mr-2">📅</span>
+                        <span className="truncate">Created {formatDate(quiz.createdAt)}</span>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-auto">
                       <Link 
                         href={`/quizzes/${quiz.id}`} 
-                        className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-sm font-medium"
+                        className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium"
                       >
                         🎮 Play
                       </Link>
@@ -316,7 +316,7 @@ export default function QuizzesPage() {
                             navigator.clipboard.writeText(url);
                             alert('Quiz link copied to clipboard!');
                           }}
-                          className="px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-sm font-medium"
+                          className="px-2.5 md:px-3 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium shrink-0"
                           title="Share quiz link"
                         >
                           🔗
@@ -325,7 +325,7 @@ export default function QuizzesPage() {
                       <button 
                         onClick={() => handleDelete(quiz.id, quiz.title)}
                         disabled={deleting === quiz.id}
-                        className="px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-sm font-medium disabled:opacity-50"
+                        className="px-2.5 md:px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium disabled:opacity-50 shrink-0"
                         title="Delete quiz"
                       >
                         {deleting === quiz.id ? "⏳" : "🗑️"}
