@@ -4,7 +4,6 @@ import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  getUserSubjects, 
   getAllUserSubjects,
   FirebaseSubject, 
   createSubject,
@@ -28,40 +27,83 @@ export default function AIQuizGenerator() {
   const [newSubject, setNewSubject] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
-  const [showPrompt, setShowPrompt] = useState(false);
-  const [copied, setCopied] = useState(false);
   
-  // Load saved draft from localStorage on mount
+  // Form states
+  const [quizTitle, setQuizTitle] = useState("");
+  const [topic, setTopic] = useState("");
+  const [numQuestions, setNumQuestions] = useState(5);
+  const [difficulty, setDifficulty] = useState("medium");
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfText, setPdfText] = useState("");
+  const [generatedQuestions, setGeneratedQuestions] = useState("");
+  
+  // UI states
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showSubjectForm, setShowSubjectForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Load saved draft
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
     try {
-      const savedData = localStorage.getItem('ai_quiz_draft');
+      const savedData = localStorage.getItem('ai_quiz_draft_v2');
       if (savedData) {
         const draft = JSON.parse(savedData);
-        const isRecent = draft.timestamp && (Date.now() - draft.timestamp) < 7 * 24 * 60 * 60 * 1000; // 7 days
+        const isRecent = draft.timestamp && (Date.now() - draft.timestamp) < 7 * 24 * 60 * 60 * 1000;
         
         if (isRecent) {
           setQuizTitle(draft.quizTitle || "");
-          setQuizQuestions(draft.quizQuestions || "");
+          setTopic(draft.topic || "");
+          setNumQuestions(draft.numQuestions || 5);
+          setDifficulty(draft.difficulty || "medium");
+          setCustomPrompt(draft.customPrompt || "");
           setSelectedSubject(draft.selectedSubject || "");
           setSelectedClass(draft.selectedClass || "");
-          if (draft.showQuizForm) {
-            setShowQuizForm(true);
-          }
+          setGeneratedQuestions(draft.generatedQuestions || "");
+          setPdfText(draft.pdfText || "");
         } else {
-          localStorage.removeItem('ai_quiz_draft');
+          localStorage.removeItem('ai_quiz_draft_v2');
         }
       }
     } catch (error) {
       console.error('Failed to load draft:', error);
-      localStorage.removeItem('ai_quiz_draft');
+      localStorage.removeItem('ai_quiz_draft_v2');
     }
   }, []);
   
+  // Auto-save draft
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const isEmpty = !quizTitle && !topic && !customPrompt && !selectedSubject && !selectedClass && !generatedQuestions;
+    if (isEmpty) return;
+    
+    const draft = {
+      quizTitle,
+      topic,
+      numQuestions,
+      difficulty,
+      customPrompt,
+      selectedSubject,
+      selectedClass,
+      generatedQuestions,
+      pdfText,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('ai_quiz_draft_v2', JSON.stringify(draft));
+  }, [quizTitle, topic, numQuestions, difficulty, customPrompt, selectedSubject, selectedClass, generatedQuestions, pdfText]);
+  
   // Dynamic filtering logic
   useEffect(() => {
-    // Filter subjects based on selected class
     if (selectedClass) {
       setFilteredSubjects(subjects.filter(s => !s.classId || s.classId === selectedClass));
     } else {
@@ -70,7 +112,6 @@ export default function AIQuizGenerator() {
   }, [selectedClass, subjects]);
 
   useEffect(() => {
-    // Filter classes based on selected subject
     if (selectedSubject) {
       const subjectObj = subjects.find(s => s.name === selectedSubject);
       if (subjectObj?.classId) {
@@ -82,34 +123,6 @@ export default function AIQuizGenerator() {
       setFilteredClasses(classes);
     }
   }, [selectedSubject, classes, subjects]);
-  const [quizTitle, setQuizTitle] = useState("");
-  const [quizQuestions, setQuizQuestions] = useState("");
-  const [showSubjectForm, setShowSubjectForm] = useState(false);
-  const [showQuizForm, setShowQuizForm] = useState(false);
-  const subjectFormRef = useRef<HTMLDivElement>(null);
-  const quizFormRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-
-  // Auto-save draft to localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    // Don't save if form is completely empty
-    const isEmpty = !quizTitle && !quizQuestions && !selectedSubject && !selectedClass && !showQuizForm;
-    if (isEmpty) return;
-    
-    const draft = {
-      quizTitle,
-      quizQuestions,
-      selectedSubject,
-      selectedClass,
-      showQuizForm,
-      timestamp: Date.now()
-    };
-    
-    localStorage.setItem('ai_quiz_draft', JSON.stringify(draft));
-  }, [quizTitle, quizQuestions, selectedSubject, selectedClass, showQuizForm]);
 
   useEffect(() => {
     if (!user?.uid || !user?.email) {
@@ -124,14 +137,9 @@ export default function AIQuizGenerator() {
     
     try {
       setLoading(true);
-      
-      // Load all subjects (personal + class subjects)
       const allSubjects = await getAllUserSubjects(user.uid, user.email);
-      
-      // Load user classes
       const userClasses = await getUserClasses(user.email);
       
-      // Mark subjects with their source and class name
       const extendedSubjects: ExtendedSubject[] = allSubjects.map(subject => {
         if (subject.classId) {
           const parentClass = userClasses.find(c => c.id === subject.classId);
@@ -149,7 +157,9 @@ export default function AIQuizGenerator() {
       });
       
       setSubjects(extendedSubjects);
+      setFilteredSubjects(extendedSubjects);
       setClasses(userClasses);
+      setFilteredClasses(userClasses);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -163,7 +173,6 @@ export default function AIQuizGenerator() {
       return;
     }
 
-    // Check if subject already exists
     const subjectExists = subjects.some(subject => 
       subject.name.toLowerCase() === newSubject.toLowerCase()
     );
@@ -174,11 +183,8 @@ export default function AIQuizGenerator() {
 
     try {
       setCreating(true);
-      const subjectId = await createSubject(newSubject.trim(), user.uid);
-      
-      // Reload subjects to show the new one
+      await createSubject(newSubject.trim(), user.uid);
       await loadData();
-      
       setNewSubject("");
       setShowSubjectForm(false);
       alert("Subject created successfully!");
@@ -190,50 +196,166 @@ export default function AIQuizGenerator() {
     }
   };
 
-  const copyPromptToClipboard = () => {
-    const promptText = `Create a quiz with multiple choice questions on the topic: ${selectedSubject || '[Your Topic]'} with ${quizTitle || '[Your Quiz Title]'}.
+  const handlePDFUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-Format each question exactly like this:
+    if (file.type !== 'application/pdf') {
+      alert('Please upload a PDF file');
+      return;
+    }
+
+    setPdfFile(file);
+    setIsExtracting(true);
+    setError("");
+
+    try {
+      // Use PDF.js to extract text
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+      }
+
+      setPdfText(fullText);
+      setTopic(fullText.slice(0, 200) + '...');
+    } catch (error) {
+      console.error('Error extracting PDF:', error);
+      setError('Failed to extract text from PDF. Please try again.');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const generateWithGemini = async () => {
+    if (!quizTitle.trim() || !selectedSubject) {
+      alert("Please fill in quiz title and select a subject");
+      return;
+    }
+
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+      alert("Please configure your Gemini API key in .env.local file.\n\nGet your free API key from: https://makersuite.google.com/app/apikey");
+      return;
+    }
+
+    setIsGenerating(true);
+    setError("");
+
+    try {
+      const basePrompt = customPrompt || `Create ${numQuestions} multiple choice quiz questions about ${topic || selectedSubject}.
+Difficulty level: ${difficulty}.
+${pdfText ? `\n\nBased on this content:\n${pdfText.slice(0, 10000)}` : ''}
+
+Format each question EXACTLY like this:
 1. Question text here?
 A) Option 1
 B) Option 2*
 C) Option 3
 D) Option 4
 
-(Mark the correct answer with an asterisk *)
+Mark the correct answer with an asterisk (*).
+Provide exactly ${numQuestions} questions.`;
 
-Please provide 5-10 questions following this exact format.`;
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: basePrompt
+              }]
+            }]
+          })
+        }
+      );
 
-    navigator.clipboard.writeText(promptText).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch(err => {
-      console.error('Failed to copy:', err);
-      alert('Failed to copy prompt');
-    });
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!generatedText) {
+        throw new Error('No content generated');
+      }
+
+      setGeneratedQuestions(generatedText);
+    } catch (error) {
+      console.error('Error generating with Gemini:', error);
+      setError(error instanceof Error ? error.message : 'Failed to generate questions. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
-  const createQuizFromAI = async () => {
-    if (!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || !user?.uid) {
-      alert("Please fill in all fields");
+  const parseQuizQuestions = (text: string) => {
+    const questions = [];
+    const questionBlocks = text.split(/\d+\.\s+/).filter(block => block.trim());
+
+    for (const block of questionBlocks) {
+      const lines = block.trim().split('\n').filter(line => line.trim());
+      if (lines.length < 5) continue;
+
+      const questionText = lines[0].replace(/\?$/, '').trim();
+      const options = [];
+      let correctIndex = 0;
+
+      for (let i = 1; i < lines.length && options.length < 4; i++) {
+        const line = lines[i].trim();
+        const match = line.match(/^[A-D][\)\.]?\s*(.+?)(\*)?$/i);
+        if (match) {
+          options.push(match[1].trim().replace(/\*$/, ''));
+          if (match[2] || line.includes('*')) {
+            correctIndex = options.length - 1;
+          }
+        }
+      }
+
+      if (questionText && options.length === 4) {
+        questions.push({
+          question: questionText,
+          options,
+          correct: correctIndex
+        });
+      }
+    }
+
+    return questions;
+  };
+
+  const createQuizFromGenerated = async () => {
+    if (!quizTitle.trim() || !selectedSubject || !generatedQuestions.trim() || !user?.uid) {
+      alert("Please fill in all required fields and generate questions first");
       return;
     }
 
     try {
       setCreating(true);
       
-      // Find the selected subject
       const selectedSubjectObj = subjects.find(s => s.name === selectedSubject);
       
       const quizData: Omit<FirebaseQuiz, 'id' | 'createdAt' | 'updatedAt'> = {
         title: quizTitle.trim(),
         subject: selectedSubject,
-        questions: parseQuizQuestions(quizQuestions),
+        questions: parseQuizQuestions(generatedQuestions),
         userId: user.uid,
         isPersonal: !selectedClass || selectedClass === ""
       };
       
-      // Only add optional fields if they have values
       if (selectedClass) {
         quizData.classId = selectedClass;
       }
@@ -241,19 +363,26 @@ Please provide 5-10 questions following this exact format.`;
         quizData.subjectId = selectedSubjectObj.id;
       }
 
+      if (quizData.questions.length === 0) {
+        alert("No valid questions found. Please check the format.");
+        return;
+      }
+
       await createQuiz(quizData);
 
-      // Clear saved draft
-      localStorage.removeItem('ai_quiz_draft');
+      localStorage.removeItem('ai_quiz_draft_v2');
 
-      // Reset form
       setQuizTitle("");
-      setQuizQuestions("");
+      setTopic("");
+      setCustomPrompt("");
+      setGeneratedQuestions("");
+      setPdfText("");
+      setPdfFile(null);
       setSelectedSubject("");
       setSelectedClass("");
-      setShowQuizForm(false);
-      
-      alert(`Quiz created successfully!${selectedClass ? ' Added to selected class.' : ''}`);
+
+      alert(`Quiz created successfully with ${quizData.questions.length} questions!`);
+      window.location.href = "/quizzes";
     } catch (error) {
       console.error('Error creating quiz:', error);
       alert("Failed to create quiz. Please try again.");
@@ -262,53 +391,26 @@ Please provide 5-10 questions following this exact format.`;
     }
   };
 
-  const parseQuizQuestions = (text: string) => {
-    const questions = [];
-    const questionBlocks = text.split(/\n\s*\n/).filter(block => block.trim());
-    
-    for (const block of questionBlocks) {
-      const lines = block.split('\n').map(line => line.trim()).filter(line => line);
-      if (lines.length < 5) continue; // Need at least question + 4 options
-      
-      const question = lines[0].replace(/^\d+\.\s*/, ''); // Remove numbering
-      const options = [];
-      let correctIndex = 0;
-      
-      for (let i = 1; i < Math.min(5, lines.length); i++) {
-        let option = lines[i].replace(/^[A-Da-d][\)\.]\s*/, ''); // Remove A) B) etc.
-        
-        // Check if this option is marked as correct (with *)
-        if (option.includes('*') || lines[i].includes('*')) {
-          option = option.replace(/\*/g, '').trim();
-          correctIndex = i - 1;
-        }
-        
-        options.push(option);
-      }
-      
-      if (options.length === 4) {
-        questions.push({ question, options, correct: correctIndex });
-      }
-    }
-    
-    return questions;
+  const handleClearDraft = () => {
+    localStorage.removeItem('ai_quiz_draft_v2');
+    setQuizTitle("");
+    setTopic("");
+    setCustomPrompt("");
+    setGeneratedQuestions("");
+    setPdfText("");
+    setPdfFile(null);
+    setNumQuestions(5);
+    setDifficulty("medium");
   };
 
-  // Show loading or auth redirect
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-950 relative overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
         </div>
         <div className="relative z-10 text-center px-4 animate-fade-in">
-          <div className="mb-8 inline-block">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-5xl font-black animate-bounce-soft shadow-glow">
-              Q
-            </div>
-          </div>
           <h1 className="text-6xl md:text-8xl font-black mb-6">
             <span className="gradient-text">AI Quiz Generator</span>
           </h1>
@@ -331,52 +433,172 @@ Please provide 5-10 questions following this exact format.`;
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
-        <div className="relative z-10 mb-8">
-          <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
-            <div className="flex items-center justify-between flex-wrap gap-4">
+
+        {/* Header */}
+        <div className="relative z-10 mb-6 md:mb-8">
+          <div className="glass-card rounded-3xl p-4 md:p-8 lg:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <h1 className="text-4xl md:text-6xl font-black mb-3">
+                <h1 className="text-3xl md:text-4xl lg:text-6xl font-black mb-2 md:mb-3">
                   <span className="text-white">AI Quiz Generator</span>
                 </h1>
-                <p className="text-slate-300 text-lg">Create quizzes instantly with AI</p>
+                <p className="text-slate-300 text-sm md:text-base lg:text-lg">Powered by Google Gemini - Upload PDF or enter topic</p>
               </div>
-              <Link href="/quizzes" className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow">
+              <Link href="/quizzes" className="px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow w-full sm:w-auto text-center">
                 My Quizzes
               </Link>
             </div>
           </div>
         </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
-            <h3 className="text-xl font-bold text-white mb-4">Generate a Quiz</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Quiz Title</label>
-                <input
-                  type="text"
-                  value={quizTitle}
-                  onChange={(e) => setQuizTitle(e.target.value)}
-                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  placeholder="Enter quiz title..."
-                />
-                <label className="block text-sm font-medium text-gray-300 mb-1 mt-4">Subject</label>
-                <select
-                  value={selectedSubject}
-                  onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+
+        {/* Main Content */}
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-20">
+          {/* Left Panel - Configuration */}
+          <div className="glass-card rounded-3xl p-4 md:p-6 lg:col-span-2 animate-slide-up">
+            <h3 className="text-lg md:text-xl font-bold text-white mb-4">Configure Your Quiz</h3>
+
+            {/* Draft indicator */}
+            {(quizTitle || topic || generatedQuestions) && (
+              <div className="mb-4 p-2 md:p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-300">💾</span>
+                  <span className="text-xs md:text-sm text-blue-200">Draft auto-saved</span>
+                </div>
+                <button
+                  onClick={handleClearDraft}
+                  className="text-xs px-3 py-1 bg-red-500/20 text-red-300 rounded hover:bg-red-500/30 transition-colors w-full sm:w-auto"
                 >
-                  <option value="">Select a subject</option>
-                  {filteredSubjects.map((subject) => (
-                    <option key={subject.id} value={subject.name}>
-                      {subject.source === 'class' ? `${subject.name} (${subject.className})` : subject.name}
-                    </option>
-                  ))}
-                </select>
-                <label className="block text-sm font-medium text-gray-300 mb-1 mt-4">Add to Class (Optional)</label>
+                  Clear Draft
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-4 md:space-y-6">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Quiz Title *</label>
+                  <input
+                    type="text"
+                    value={quizTitle}
+                    onChange={(e) => setQuizTitle(e.target.value)}
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Enter quiz title..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Subject *</label>
+                  <select
+                    value={selectedSubject}
+                    onChange={(e) => setSelectedSubject(e.target.value)}
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">Select a subject</option>
+                    {filteredSubjects.map((subject) => (
+                      <option key={subject.id} value={subject.name}>
+                        {subject.source === 'class' ? `${subject.name} (${subject.className})` : subject.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* PDF Upload */}
+              <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-xl p-4 md:p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-2xl">📄</span>
+                  <div>
+                    <h4 className="text-base md:text-lg font-bold text-white">Upload PDF (Optional)</h4>
+                    <p className="text-xs md:text-sm text-slate-300">Generate questions from your study material</p>
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePDFUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isExtracting}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
+                >
+                  {isExtracting ? "📖 Extracting text..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload PDF File"}
+                </button>
+                {pdfText && (
+                  <div className="mt-3 p-3 bg-white/5 rounded-lg">
+                    <p className="text-xs text-slate-300">
+                      ✓ Extracted {pdfText.length} characters from PDF
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Topic/Content */}
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Topic or Content {!pdfFile && '*'}</label>
+                <textarea
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  className="w-full h-24 p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter topic or paste content here..."
+                  disabled={!!pdfFile}
+                />
+              </div>
+
+              {/* Generation Options */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Number of Questions</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={numQuestions}
+                    onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Difficulty</label>
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Advanced Options */}
+              <div>
+                <button
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="text-sm md:text-base text-purple-400 hover:text-purple-300 font-medium mb-2"
+                >
+                  {showAdvanced ? '▼' : '▶'} Advanced: Custom Prompt
+                </button>
+                {showAdvanced && (
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="w-full h-32 p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Enter your custom prompt here to override default settings..."
+                  />
+                )}
+              </div>
+
+              {/* Class Selection */}
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">No class (Personal quiz)</option>
                   {filteredClasses.map((classData) => (
@@ -385,36 +607,102 @@ Please provide 5-10 questions following this exact format.`;
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={createQuizFromAI}
-                  disabled={!quizTitle.trim() || !selectedSubject || !quizQuestions.trim() || creating}
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-2 px-4 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-sm mt-6"
-                >
-                  {creating ? "Creating..." : "Create Quiz"}
-                </button>
               </div>
-              <div>
-                <div className="flex justify-between items-center mb-1">
-                  <label className="block text-sm font-medium text-gray-300">Quiz Questions (Paste from AI)</label>
-                  <button
-                    onClick={copyPromptToClipboard}
-                    className="px-3 py-1 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1"
-                  >
-                    {copied ? '✓ Copied!' : '📋 Copy Prompt'}
-                  </button>
+
+              {/* Error Display */}
+              {error && (
+                <div className="p-3 bg-red-500/20 border border-red-400/30 rounded-lg">
+                  <p className="text-sm text-red-200">⚠️ {error}</p>
                 </div>
-                <textarea
-                  value={quizQuestions}
-                  onChange={(e) => setQuizQuestions(e.target.value)}
-                  className="w-full h-32 p-2 border border-green-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  placeholder="Paste AI-generated questions here..."
-                />
-                <p className="text-xs text-purple-300 mt-2">💡 Click "Copy Prompt" to get an AI prompt template, paste it into ChatGPT or any AI, then paste the generated questions here.</p>
-              </div>
+              )}
+
+              {/* Generate Button */}
+              <button
+                onClick={generateWithGemini}
+                disabled={!quizTitle.trim() || !selectedSubject || (!topic && !pdfText) || isGenerating}
+                className="w-full px-6 py-3 md:py-4 text-sm md:text-base bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-glow disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isGenerating ? "🤖 Generating with Gemini..." : "✨ Generate Questions with AI"}
+              </button>
             </div>
           </div>
-          <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            {/* Quick Links removed */}
+
+          {/* Right Panel - Generated Questions */}
+          <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <h3 className="text-lg md:text-xl font-bold text-white mb-4">Generated Questions</h3>
+            
+            {generatedQuestions ? (
+              <>
+                <div className="bg-white/5 backdrop-blur-sm rounded-lg p-3 md:p-4 border border-white/10 mb-4 max-h-[500px] overflow-y-auto">
+                  <pre className="text-xs md:text-sm text-slate-300 whitespace-pre-wrap font-mono">
+                    {generatedQuestions}
+                  </pre>
+                </div>
+                <button
+                  onClick={createQuizFromGenerated}
+                  disabled={creating}
+                  className="w-full px-6 py-3 text-sm md:text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-300 shadow-glow disabled:opacity-50"
+                >
+                  {creating ? "Creating Quiz..." : "🚀 Create Quiz"}
+                </button>
+              </>
+            ) : (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🤖</div>
+                <p className="text-slate-400 text-sm md:text-base">Fill in the form and click "Generate Questions" to see AI-generated quiz questions here</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Google Gemini Info Section */}
+        <div className="relative z-10 mb-20">
+          <div className="glass-card rounded-3xl p-4 md:p-6 lg:p-8 animate-slide-up bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-2 border-white/10">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl md:text-3xl font-black shadow-glow">
+                G
+              </div>
+              <div>
+                <h2 className="text-2xl md:text-3xl font-black text-white mb-1">Powered by Google Gemini</h2>
+                <p className="text-slate-300 text-sm md:text-base">Advanced AI that understands context and creates high-quality quizzes</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <span className="text-3xl mb-3 block">📄</span>
+                <h3 className="text-base md:text-lg font-bold text-white mb-2">PDF Support</h3>
+                <p className="text-xs md:text-sm text-slate-300">
+                  Upload your study materials and generate questions directly from PDFs
+                </p>
+              </div>
+
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <span className="text-3xl mb-3 block">⚙️</span>
+                <h3 className="text-base md:text-lg font-bold text-white mb-2">Customizable</h3>
+                <p className="text-xs md:text-sm text-slate-300">
+                  Control number of questions, difficulty, and even write custom prompts
+                </p>
+              </div>
+
+              <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 border border-white/10">
+                <span className="text-3xl mb-3 block">⚡</span>
+                <h3 className="text-base md:text-lg font-bold text-white mb-2">Fast & Free</h3>
+                <p className="text-xs md:text-sm text-slate-300">
+                  Generate unlimited quizzes with Google's free Gemini API tier
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-500/10 border border-blue-400/30 rounded-lg">
+              <p className="text-xs md:text-sm text-blue-200 text-center">
+                <span className="font-semibold">🔑 Setup Required:</span> Get your free API key from{' '}
+                <a href="https://makersuite.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-300">
+                  Google AI Studio
+                </a>
+                {' '}and add it to your .env.local file
+              </p>
+            </div>
           </div>
         </div>
       </div>
