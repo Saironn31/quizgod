@@ -469,45 +469,157 @@ export default function LeaderboardPage() {
                 </div>
                 {/* Member Record Details Modal */}
                 {selectedRecord && (
-                  <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
-                    <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
-                      <div className="mb-8">
-                        <nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit">
-                          <span className="font-semibold text-white text-lg">
-                            {userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}
-                          </span>
-                        </nav>
+                  <div className="fixed inset-0 bg-slate-950 z-50 overflow-auto">
+                    <SideNav />
+                    <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
+                      {/* Background effects */}
+                      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+                        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/5 rounded-full filter blur-3xl animate-float"></div>
+                        <div className="absolute bottom-20 left-20 w-96 h-96 bg-blue-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
                       </div>
-                      <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
-                        ✖
-                      </button>
-                      <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
-                      <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
-                      <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
-                      <div className="mb-2 text-purple-100">User: <span className="font-bold">{userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}</span></div>
-                      <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
-                      <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
-                      <div className="mb-6">
-                        <div className="font-semibold mb-2 text-purple-300">Mistakes:</div>
+                      
+                      {/* Header */}
+                      <div className="relative z-10 mb-8">
+                        <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+                          <div className="flex items-center justify-between flex-wrap gap-4">
+                            <div>
+                              <h1 className="text-4xl md:text-6xl font-black mb-3">
+                                <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                                  {userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}
+                                </span>
+                              </h1>
+                              <p className="text-slate-300 text-lg">Quiz Record Details</p>
+                            </div>
+                            <button 
+                              onClick={() => setSelectedRecord(null)}
+                              className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow"
+                            >
+                              ✖ Close
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Stats Cards - Bento Box Layout */}
+                      <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div className="glass-card rounded-xl p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-400/30 hover:scale-105 transition-all animate-slide-up">
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xl">
+                              🎯
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-300">Score</h3>
+                          </div>
+                          <p className="text-3xl md:text-4xl font-black text-white mb-1">{selectedRecord.score}</p>
+                          <p className="text-xs text-slate-400">Points earned</p>
+                        </div>
+                        
+                        <div className="glass-card rounded-xl p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.1s'}}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-xl">
+                              📊
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-300">Percentage</h3>
+                          </div>
+                          <p className="text-3xl md:text-4xl font-black text-white mb-1">{selectedRecord.percentage}%</p>
+                          <p className="text-xs text-slate-400">Accuracy rate</p>
+                        </div>
+                        
+                        <div className="glass-card rounded-xl p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.2s'}}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                              ⏱️
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-300">Time</h3>
+                          </div>
+                          <p className="text-3xl md:text-4xl font-black text-white mb-1">{formatTime(selectedRecord.completionTime)}</p>
+                          <p className="text-xs text-slate-400">Duration</p>
+                        </div>
+                        
+                        <div className="glass-card rounded-xl p-6 bg-gradient-to-br from-orange-500/10 to-red-500/10 border border-orange-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.3s'}}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-xl">
+                              ❌
+                            </div>
+                            <h3 className="text-sm font-semibold text-slate-300">Mistakes</h3>
+                          </div>
+                          <p className="text-3xl md:text-4xl font-black text-white mb-1">{selectedRecord.mistakes?.length || 0}</p>
+                          <p className="text-xs text-slate-400">Wrong answers</p>
+                        </div>
+                      </div>
+                      
+                      {/* Quiz Info */}
+                      <div className="relative z-10 glass-card rounded-3xl p-6 md:p-8 mb-8 animate-slide-up" style={{animationDelay: '0.4s'}}>
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-2xl">
+                            📝
+                          </div>
+                          <h2 className="text-2xl md:text-3xl font-bold text-white">Quiz Information</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                            <p className="text-slate-400 text-sm mb-1">Quiz Title</p>
+                            <p className="text-white font-semibold text-lg">{quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</p>
+                          </div>
+                          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                            <p className="text-slate-400 text-sm mb-1">Subject</p>
+                            <p className="text-white font-semibold text-lg">{quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</p>
+                          </div>
+                          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                            <p className="text-slate-400 text-sm mb-1">Completed On</p>
+                            <p className="text-white font-semibold text-lg">{new Date(selectedRecord.completedAt).toLocaleString()}</p>
+                          </div>
+                          <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                            <p className="text-slate-400 text-sm mb-1">Student</p>
+                            <p className="text-white font-semibold text-lg">{userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Mistakes Section */}
+                      <div className="relative z-10 glass-card rounded-3xl p-6 md:p-8 animate-slide-up" style={{animationDelay: '0.5s'}}>
+                        <div className="flex items-center gap-3 mb-6">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-2xl">
+                            📋
+                          </div>
+                          <h2 className="text-2xl md:text-3xl font-bold text-white">Detailed Review</h2>
+                        </div>
                         {selectedRecord.mistakes && selectedRecord.mistakes.length > 0 ? (
                           <div className="space-y-4">
                             {selectedRecord.mistakes.map((m: any, idx: number) => (
-                              <div key={idx} className="bg-white/10 rounded-lg p-4 border border-purple-800">
-                                <div className="font-semibold text-white mb-2">Q{idx + 1}: {m.question}</div>
-                                <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
-                                  <div className="text-purple-200">Your Answer: <span className="font-bold text-red-400">{typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}</span></div>
-                                  <div className="text-green-300">Correct: <span className="font-bold">{typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}</span></div>
+                              <div key={idx} className="glass-card rounded-xl p-6 bg-gradient-to-br from-red-500/5 to-orange-500/5 border border-red-400/20 hover:border-red-400/40 transition-all">
+                                <div className="flex items-start gap-3 mb-4">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+                                    {idx + 1}
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-white font-semibold text-lg mb-3">{m.question}</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                      <div className="bg-red-500/10 rounded-lg p-3 border border-red-400/30">
+                                        <p className="text-red-300 text-xs mb-1 font-semibold">YOUR ANSWER</p>
+                                        <p className="text-white font-bold">
+                                          {typeof m.selected === "number" ? String.fromCharCode(65 + m.selected) : (m.selected === "@" ? "No answer" : m.selected)}
+                                        </p>
+                                      </div>
+                                      <div className="bg-green-500/10 rounded-lg p-3 border border-green-400/30">
+                                        <p className="text-green-300 text-xs mb-1 font-semibold">CORRECT ANSWER</p>
+                                        <p className="text-white font-bold">
+                                          {typeof m.correct === "number" ? String.fromCharCode(65 + m.correct) : m.correct}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </div>
                         ) : (
-                          <div className="text-green-400 font-bold">No mistakes! 🎉</div>
+                          <div className="glass-card rounded-xl p-12 text-center bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30">
+                            <div className="text-6xl mb-4">🎉</div>
+                            <p className="text-2xl font-bold text-green-400 mb-2">Perfect Score!</p>
+                            <p className="text-slate-300">No mistakes were made on this quiz.</p>
+                          </div>
                         )}
                       </div>
-                      <button className="mt-2 px-6 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-bold shadow hover:bg-purple-700/80 transition-all text-lg" onClick={() => setSelectedRecord(null)}>
-                        Close
-                      </button>
                     </div>
                   </div>
                 )}
