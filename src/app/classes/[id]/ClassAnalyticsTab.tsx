@@ -67,11 +67,15 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
         return maxScore > 0 ? Math.round((r.score / maxScore) * 100) : 0;
       });
 
-      // Get recent quiz records (last 5)
+      // Get recent quiz records (last 5, most recent first)
       const recentQuizzes: RecentQuiz[] = await Promise.all(
         records
-          .slice(-5)
-          .reverse()
+          .sort((a, b) => {
+            const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : (a.timestamp?.seconds ? a.timestamp.seconds * 1000 : 0);
+            const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : (b.timestamp?.seconds ? b.timestamp.seconds * 1000 : 0);
+            return timeB - timeA; // Most recent first
+          })
+          .slice(0, 5)
           .map(async (r) => {
             const quiz = quizzes.find((q: any) => q.id === r.quizId);
             const maxScore = quiz?.questions?.length || 1;

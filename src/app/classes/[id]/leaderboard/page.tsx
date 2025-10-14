@@ -377,12 +377,44 @@ export default function LeaderboardPage() {
             {selectedQuiz !== 'all' ? (
               <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-xl shadow-xl p-6">
                 <h2 className="text-2xl font-bold mb-6 text-white">📝 {quizzes.find(q => q.key === selectedQuiz)?.quiz.title} - Member Records</h2>
+                
+                {/* Stats Overview - Moved to top */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-white/10 rounded-lg p-4 text-center border border-white/20">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {quizSpecificScores.length}
+                    </div>
+                    <div className="text-sm text-purple-200">Total Attempts</div>
+                  </div>
+                  <div className="bg-white/10 rounded-lg p-4 text-center border border-white/20">
+                    <div className="text-2xl font-bold text-green-400">
+                      {quizSpecificScores.length > 0 ? Math.round(quizSpecificScores.reduce((sum, score) => sum + score.percentage, 0) / quizSpecificScores.length) : 0}%
+                    </div>
+                    <div className="text-sm text-purple-200">Average Score</div>
+                  </div>
+                  <div className="bg-white/10 rounded-lg p-4 text-center border border-white/20">
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {quizSpecificScores.length > 0 ? Math.max(...quizSpecificScores.map(s => s.percentage)) : 0}%
+                    </div>
+                    <div className="text-sm text-purple-200">Highest Score</div>
+                  </div>
+                  <div className="bg-white/10 rounded-lg p-4 text-center border border-white/20">
+                    <div className="text-2xl font-bold text-cyan-400">
+                      {quizSpecificScores.length > 0 ? formatTime(Math.min(...quizSpecificScores.map(s => s.completionTime))) : '-'}
+                    </div>
+                    <div className="text-sm text-purple-200">Fastest Time</div>
+                  </div>
+                </div>
+                
                 <div className="bg-white/10 rounded-xl p-4">
                   {quizSpecificScores.length === 0 ? (
                     <div className="text-purple-200 text-center py-8">No records yet for this quiz. Be the first to complete it!</div>
                   ) : (
                     <ul className="divide-y divide-purple-300">
-                      {quizSpecificScores.map((record) => (
+                      {quizSpecificScores.map((record) => {
+                        const profile = userProfiles[record.username];
+                        const displayName = profile?.name || profile?.username || record.username;
+                        return (
                         <li
                           key={`${record.username}-${record.completedAt}`}
                           className="py-3 flex justify-between items-center cursor-pointer hover:bg-purple-900/20 rounded-lg px-2"
@@ -390,7 +422,7 @@ export default function LeaderboardPage() {
                         >
                           <div>
                             <div className="font-semibold text-white">
-                              User: {record.username}{record.username === (user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
+                              User: {displayName}{record.username === (user?.uid || user?.displayName || user?.email) && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">You</span>}
                             </div>
                             <div className="text-purple-200 text-sm">
                               Score: {record.score} | {new Date(record.completedAt).toLocaleString()}
@@ -401,7 +433,8 @@ export default function LeaderboardPage() {
                           </div>
                           <div className="text-purple-300">View Details →</div>
                         </li>
-                      ))}
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -451,6 +484,34 @@ export default function LeaderboardPage() {
                   <h2 className="text-xl font-bold text-gray-800">
                     🏆 Overall Class Rankings
                   </h2>
+                </div>
+                
+                {/* Stats Overview - Moved to top */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 border-b bg-gray-50">
+                  <div className="bg-white rounded-lg shadow p-4 text-center border border-blue-200">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {leaderboard.filter(e => e.quizzesCompleted > 0).length}
+                    </div>
+                    <div className="text-sm text-gray-600">Active Players</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center border border-green-200">
+                    <div className="text-2xl font-bold text-green-600">
+                      {allScores.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Attempts</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center border border-purple-200">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {quizzes.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Available Quizzes</div>
+                  </div>
+                  <div className="bg-white rounded-lg shadow p-4 text-center border border-yellow-200">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {allScores.length > 0 ? Math.round(allScores.reduce((sum, score) => sum + score.percentage, 0) / allScores.length) : 0}%
+                    </div>
+                    <div className="text-sm text-gray-600">Class Average</div>
+                  </div>
                 </div>
                 
                 {leaderboard.filter(entry => entry.quizzesCompleted > 0).length === 0 ? (
@@ -550,34 +611,6 @@ export default function LeaderboardPage() {
                 )}
               </div>
             )}
-
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {leaderboard.filter(e => e.quizzesCompleted > 0).length}
-                </div>
-                <div className="text-sm text-gray-600">Active Players</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {allScores.length}
-                </div>
-                <div className="text-sm text-gray-600">Total Attempts</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {quizzes.length}
-                </div>
-                <div className="text-sm text-gray-600">Available Quizzes</div>
-              </div>
-              <div className="bg-white rounded-lg shadow p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {allScores.length > 0 ? Math.round(allScores.reduce((sum, score) => sum + score.percentage, 0) / allScores.length) : 0}%
-                </div>
-                <div className="text-sm text-gray-600">Class Average</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
