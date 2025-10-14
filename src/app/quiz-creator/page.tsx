@@ -224,20 +224,66 @@ export default function CreatePage() {
 
     try {
       const pdfjsLib = await import('pdfjs-dist');
+      const Tesseract = await import('tesseract.js');
+      
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
       const arrayBuffer = await file.arrayBuffer();
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       
-      let fullText = '';
+      let extractedText = '';
+      let ocrText = '';
+      
+      // Extract embedded text using PDF.js
+      console.log(`Extracting text from ${pdf.numPages} pages...`);
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n';
+        extractedText += pageText + '\n\n';
       }
-
-      setPdfText(fullText);
+      
+      console.log(`Extracted ${extractedText.length} characters from embedded text`);
+      
+      // Always run OCR on all pages for additional text capture
+      console.log('Running OCR on all pages...');
+      for (let i = 1; i <= pdf.numPages; i++) {
+        try {
+          const page = await pdf.getPage(i);
+          const viewport = page.getViewport({ scale: 2.0 });
+          
+          // Create canvas to render PDF page
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          
+          if (context) {
+            await page.render({ canvasContext: context, viewport }).promise;
+            
+            // Run OCR on the rendered page
+            const { data } = await Tesseract.recognize(canvas, 'eng', {
+              logger: (m: any) => {
+                if (m.status === 'recognizing text') {
+                  console.log(`OCR Page ${i}: ${Math.round(m.progress * 100)}%`);
+                }
+              }
+            });
+            
+            ocrText += data.text + '\n\n';
+          }
+        } catch (ocrError) {
+          console.error(`OCR failed for page ${i}:`, ocrError);
+        }
+      }
+      
+      console.log(`OCR extracted ${ocrText.length} characters`);
+      
+      // Combine both texts
+      const combinedText = extractedText + '\n\n--- OCR Text ---\n\n' + ocrText;
+      setPdfText(combinedText);
+      
+      console.log(`Total text: ${combinedText.length} characters`);
     } catch (error) {
       console.error('Error extracting PDF:', error);
       setError('Failed to extract text from PDF. Please try again.');
@@ -766,12 +812,12 @@ Provide exactly ${numQuestions} questions.`;
                         disabled={isExtracting}
                         className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
                       >
-                        {isExtracting ? "📖 Extracting text..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload PDF File"}
+                        {isExtracting ? "📖 Extracting text + Running OCR..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload PDF File"}
                       </button>
                       {pdfText && (
                         <div className="mt-3 p-3 bg-white/5 rounded-lg">
                           <p className="text-xs text-slate-300">
-                            ✓ Extracted {pdfText.length} characters from PDF
+                            ✓ Extracted {pdfText.length} characters (text + OCR)
                           </p>
                         </div>
                       )}
