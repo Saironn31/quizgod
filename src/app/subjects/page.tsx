@@ -193,7 +193,23 @@ export default function SubjectsPage() {
         </div>
         <div className="relative z-10 mb-20">
           <div className="glass-card rounded-3xl p-6 animate-slide-up">
-            <h3 className="text-xl font-bold text-white mb-4">Your Subjects</h3>
+            <h3 className="text-xl font-bold text-white mb-6">Your Subjects</h3>
+
+            {/* Stats - Bento Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-blue-200 mb-1 font-medium">Total Subjects</div>
+                <div className="text-3xl font-black text-blue-300">{subjects.length}</div>
+              </div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-purple-200 mb-1 font-medium">Personal</div>
+                <div className="text-3xl font-black text-purple-300">{subjects.filter(s => s.source === 'personal').length}</div>
+              </div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-green-200 mb-1 font-medium">From Classes</div>
+                <div className="text-3xl font-black text-green-300">{subjects.filter(s => s.source === 'class').length}</div>
+              </div>
+            </div>
 
             {/* Add Subject Form */}
             <div className="mb-6 sm:mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700">

@@ -221,15 +221,24 @@ export default function QuizzesPage() {
               </div>
             </div>
 
-            {/* Quiz Stats */}
-            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-3 md:p-4 text-center">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold">{quizzes.length}</div>
-                <div className="text-xs md:text-base opacity-90">Total Quizzes</div>
+            {/* Quiz Stats - Bento Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-blue-200 mb-1 font-medium">Total Quizzes</div>
+                <div className="text-2xl md:text-3xl font-black text-blue-300">{quizzes.length}</div>
+                <div className="text-xs text-blue-300/60 mt-1">Created</div>
               </div>
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-3 md:p-4 text-center">
-                <div className="text-xl sm:text-2xl md:text-3xl font-bold">{subjects.length}</div>
-                <div className="text-xs md:text-base opacity-90">Subjects</div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-green-200 mb-1 font-medium">Subjects</div>
+                <div className="text-2xl md:text-3xl font-black text-green-300">{subjects.length}</div>
+                <div className="text-xs text-green-300/60 mt-1">Topics</div>
+              </div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all">
+                <div className="text-xs text-purple-200 mb-1 font-medium">Questions</div>
+                <div className="text-2xl md:text-3xl font-black text-purple-300">
+                  {quizzes.reduce((total, q) => total + q.questions.length, 0)}
+                </div>
+                <div className="text-xs text-purple-300/60 mt-1">Total</div>
               </div>
             </div>
 

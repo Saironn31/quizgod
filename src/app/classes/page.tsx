@@ -226,6 +226,27 @@ export default function ClassesPage() {
             </div>
           </div>
         </div>
+        
+        {/* Stats - Bento Grid */}
+        <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all animate-slide-up">
+            <div className="text-xs text-blue-200 mb-1 font-medium">Total Classes</div>
+            <div className="text-3xl font-black text-blue-300">{classes.length}</div>
+          </div>
+          <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.1s'}}>
+            <div className="text-xs text-purple-200 mb-1 font-medium">As President</div>
+            <div className="text-3xl font-black text-purple-300">{classes.filter(c => getUserRole(c) === 'president').length}</div>
+          </div>
+          <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.2s'}}>
+            <div className="text-xs text-green-200 mb-1 font-medium">As Member</div>
+            <div className="text-3xl font-black text-green-300">{classes.filter(c => getUserRole(c) === 'member').length}</div>
+          </div>
+          <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-400/30 hover:scale-105 transition-all animate-slide-up" style={{animationDelay: '0.3s'}}>
+            <div className="text-xs text-cyan-200 mb-1 font-medium">Total Members</div>
+            <div className="text-3xl font-black text-cyan-300">{classes.reduce((sum, c) => sum + (c.members?.length || 0), 0)}</div>
+          </div>
+        </div>
+        
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-xl font-bold text-white mb-4">Your Classes</h3>

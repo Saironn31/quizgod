@@ -324,90 +324,126 @@ export default function QuizPlayerPage() {
     const passed = percentage >= 70;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-3xl mx-4 text-center">
-          <h1 className="text-3xl font-bold mb-6">Quiz Complete! 🎉</h1>
-          <div className="space-y-4">
-            <div className={`text-6xl ${passed ? 'text-green-400' : 'text-yellow-400'}`}>
-              {passed ? '🏆' : '📚'}
-            </div>
-            <h2 className="text-2xl font-semibold">{quiz.title}</h2>
-            <div className="bg-white/20 rounded-lg p-6">
-              <div className="text-4xl font-bold mb-2">
-                {score}/{quiz.questions.length}
+      <div className="min-h-screen bg-slate-950">
+        <SideNav />
+        <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+          </div>
+          
+          {/* Header Card */}
+          <div className="relative z-10 mb-8">
+            <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10 text-center animate-slide-up">
+              <div className={`text-6xl md:text-7xl mb-4 ${passed ? 'text-green-400' : 'text-yellow-400'}`}>
+                {passed ? '🏆' : '📚'}
               </div>
-              <div className="text-xl mb-2">{percentage}%</div>
-              <div className={`text-lg font-semibold ${passed ? 'text-green-400' : 'text-yellow-400'}`}>
-                {passed ? '🎉 Great Job!' : '📖 Keep Learning!'}
+              <h1 className="text-3xl md:text-5xl font-black mb-3">
+                <span className="text-white">Quiz Complete!</span>
+              </h1>
+              <h2 className="text-xl md:text-2xl text-slate-300 font-semibold">{quiz.title}</h2>
+            </div>
+          </div>
+
+          {/* Bento Grid Stats */}
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all duration-300 animate-slide-up">
+              <div className="text-sm text-blue-200 mb-2 font-medium">Your Score</div>
+              <div className="text-4xl font-black text-blue-300 mb-1">{score}/{quiz.questions.length}</div>
+              <div className="text-xs text-blue-300/60">Questions</div>
+            </div>
+            
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all duration-300 animate-slide-up" style={{animationDelay: '0.1s'}}>
+              <div className="text-sm text-purple-200 mb-2 font-medium">Percentage</div>
+              <div className="text-4xl font-black text-purple-300 mb-1">{percentage}%</div>
+              <div className={`text-xs font-semibold ${passed ? 'text-green-400' : 'text-yellow-400'}`}>
+                {passed ? '✓ Passed' : '! Review'}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="bg-green-500/20 rounded-lg p-3">
-                <div className="text-green-400 font-semibold">✅ Correct</div>
-                <div className="text-2xl">{score}</div>
-              </div>
-              <div className="bg-red-500/20 rounded-lg p-3">
-                <div className="text-red-400 font-semibold">❌ Incorrect</div>
-                <div className="text-2xl">{quiz.questions.length - score}</div>
-              </div>
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all duration-300 animate-slide-up" style={{animationDelay: '0.2s'}}>
+              <div className="text-sm text-green-200 mb-2 font-medium">✅ Correct</div>
+              <div className="text-4xl font-black text-green-300 mb-1">{score}</div>
+              <div className="text-xs text-green-300/60">Answers</div>
             </div>
+            
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-red-500/10 to-red-600/10 border border-red-400/30 hover:scale-105 transition-all duration-300 animate-slide-up" style={{animationDelay: '0.3s'}}>
+              <div className="text-sm text-red-200 mb-2 font-medium">❌ Incorrect</div>
+              <div className="text-4xl font-black text-red-300 mb-1">{quiz.questions.length - score}</div>
+              <div className="text-xs text-red-300/60">Answers</div>
+            </div>
+          </div>
 
-            {/* Detailed Results */}
-            <div className="mt-8 text-left">
-              <h3 className="text-xl font-bold mb-4 text-center">Question Review</h3>
-              <div className="space-y-6">
-                {quiz.questions.map((question, idx) => {
-                  const correctIdx = question.correct;
-                  const userIdx = selectedAnswers[idx];
-                  const correctText = question.options[correctIdx];
-                  const userText = userIdx !== -1 ? question.options[userIdx] : "No answer";
-                  const isCorrect = userIdx === correctIdx;
-                  return (
-                    <div key={idx} className={`rounded-lg p-4 border ${isCorrect ? 'border-green-400 bg-green-900/20' : 'border-red-400 bg-red-900/20'}`}>
-                      <div className="font-semibold mb-2">Q{idx + 1}: {question.question}</div>
-                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-6">
-                        <div>
-                          <span className="font-bold text-green-400">Correct Answer:</span> <span className="font-mono">{correctText}</span>
-                        </div>
-                        <div>
-                          <span className="font-bold text-blue-400">Your Answer:</span> <span className="font-mono">{userText}</span>
-                        </div>
-                        <div>
-                          {isCorrect ? (
-                            <span className="inline-block px-2 py-1 rounded bg-green-500 text-white text-xs font-bold">Correct</span>
-                          ) : (
-                            <span className="inline-block px-2 py-1 rounded bg-red-500 text-white text-xs font-bold">Incorrect</span>
-                          )}
-                        </div>
+          {/* Detailed Results - Bento Card */}
+          <div className="relative z-10 glass-card rounded-3xl p-6 animate-slide-up mb-8" style={{animationDelay: '0.4s'}}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl">
+                📋
+              </div>
+              <h3 className="text-xl md:text-2xl font-bold text-white">Question Review</h3>
+            </div>
+            <div className="space-y-4">
+              {quiz.questions.map((question, idx) => {
+                const correctIdx = question.correct;
+                const userIdx = selectedAnswers[idx];
+                const correctText = question.options[correctIdx];
+                const userText = userIdx !== -1 ? question.options[userIdx] : "No answer";
+                const isCorrect = userIdx === correctIdx;
+                return (
+                  <div key={idx} className={`rounded-xl p-4 md:p-5 border transition-all hover:scale-[1.01] ${
+                    isCorrect 
+                      ? 'border-green-400/30 bg-gradient-to-br from-green-500/10 to-green-600/10' 
+                      : 'border-red-400/30 bg-gradient-to-br from-red-500/10 to-red-600/10'
+                  }`}>
+                    <div className="font-semibold text-white mb-3 text-sm md:text-base">Q{idx + 1}: {question.question}</div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-green-400 text-xs md:text-sm shrink-0">✓ Correct:</span> 
+                        <span className="text-slate-200 text-xs md:text-sm">{correctText}</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="font-bold text-blue-400 text-xs md:text-sm shrink-0">→ Your Answer:</span> 
+                        <span className={`text-xs md:text-sm ${isCorrect ? 'text-green-300' : 'text-red-300'}`}>{userText}</span>
+                      </div>
+                      <div>
+                        {isCorrect ? (
+                          <span className="inline-block px-3 py-1 rounded-lg bg-green-500/20 border border-green-400/30 text-green-300 text-xs font-bold">
+                            ✓ Correct
+                          </span>
+                        ) : (
+                          <span className="inline-block px-3 py-1 rounded-lg bg-red-500/20 border border-red-400/30 text-red-300 text-xs font-bold">
+                            ✗ Incorrect
+                          </span>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
+          </div>
 
-            <div className="flex gap-4 justify-center mt-8">
-              <Link 
-                href="/quizzes" 
-                className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                📚 Back to Quizzes
-              </Link>
-              <button
-                onClick={() => {
-                  setCurrentQuestionIndex(0);
-                  setSelectedAnswers(new Array(quiz.questions.length).fill(-1));
-                  setShowResults(false);
-                  setScore(0);
-                  setTimeLeft(quiz.questions.length * 60);
-                  setQuizStarted(true);
-                }}
-                className="px-6 py-3 bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                🔄 Retake Quiz
-              </button>
-            </div>
+          {/* Action Buttons */}
+          <div className="relative z-10 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link 
+              href="/quizzes" 
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold hover:scale-105 transition-all text-center"
+            >
+              📚 Back to Quizzes
+            </Link>
+            <button
+              onClick={() => {
+                setCurrentQuestionIndex(0);
+                setSelectedAnswers(new Array(quiz.questions.length).fill(-1));
+                setShowResults(false);
+                setScore(0);
+                setTimeLeft(quiz.questions.length * 60);
+                setQuizStarted(true);
+              }}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:scale-105 transition-all"
+            >
+              🔄 Retake Quiz
+            </button>
           </div>
         </div>
       </div>
