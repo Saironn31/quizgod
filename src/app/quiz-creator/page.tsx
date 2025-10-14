@@ -44,7 +44,6 @@ export default function CreatePage() {
   
   // AI mode fields
   const [numQuestions, setNumQuestions] = useState(5);
-  const [customPrompt, setCustomPrompt] = useState("");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState("");
   const [generatedQuestions, setGeneratedQuestions] = useState("");
@@ -72,7 +71,6 @@ export default function CreatePage() {
           setDescription(draft.description || "");
           setQuestions(draft.questions || [{ question: "", options: ["", "", "", ""], correct: 0 }]);
           setNumQuestions(draft.numQuestions || 5);
-          setCustomPrompt(draft.customPrompt || "");
           setGeneratedQuestions(draft.generatedQuestions || "");
           setPdfText(draft.pdfText || "");
         } else {
@@ -90,7 +88,7 @@ export default function CreatePage() {
     if (typeof window === 'undefined') return;
     
     const isEmpty = !title && !subject && !selectedClass && !description && 
-                    !customPrompt && !generatedQuestions &&
+                    !generatedQuestions &&
                     questions.length === 1 && !questions[0].question && 
                     questions[0].options.every(opt => !opt);
     
@@ -104,14 +102,13 @@ export default function CreatePage() {
       description,
       questions,
       numQuestions,
-      customPrompt,
       generatedQuestions,
       pdfText,
       timestamp: Date.now()
     };
     
     localStorage.setItem('create_quiz_draft_v3', JSON.stringify(draft));
-  }, [mode, title, subject, selectedClass, description, questions, numQuestions, customPrompt, generatedQuestions, pdfText]);
+  }, [mode, title, subject, selectedClass, description, questions, numQuestions, generatedQuestions, pdfText]);
 
   // Dynamic filtering
   useEffect(() => {
@@ -255,8 +252,8 @@ export default function CreatePage() {
       return;
     }
 
-    if (!pdfText && !customPrompt) {
-      alert("Please upload a PDF or enter a custom prompt");
+    if (!pdfText) {
+      alert("Please upload a PDF file");
       return;
     }
 
@@ -273,10 +270,11 @@ export default function CreatePage() {
       console.log('Starting Gemini API request...');
       console.log('API Key exists:', !!apiKey);
       console.log('PDF Text length:', pdfText?.length || 0);
-      console.log('Custom Prompt length:', customPrompt?.length || 0);
       
-      const basePrompt = customPrompt || `Create ${numQuestions} multiple choice quiz questions about ${subject}.
-${pdfText ? `\n\nBased on this content:\n${pdfText.slice(0, 10000)}` : ''}
+      const basePrompt = `Create ${numQuestions} multiple choice quiz questions about ${subject}.
+
+Based on this content:
+${pdfText.slice(0, 10000)}
 
 Format each question EXACTLY like this:
 1. Question text here?
@@ -476,7 +474,6 @@ Provide exactly ${numQuestions} questions.`;
 
       setTitle("");
       setSubject("");
-      setCustomPrompt("");
       setGeneratedQuestions("");
       setPdfText("");
       setPdfFile(null);
@@ -501,7 +498,6 @@ Provide exactly ${numQuestions} questions.`;
       setDescription("");
       setQuestions([{ question: "", options: ["", "", "", ""], correct: 0 }]);
       setNumQuestions(5);
-      setCustomPrompt("");
       setGeneratedQuestions("");
       setPdfText("");
       setPdfFile(null);
@@ -590,7 +586,7 @@ Provide exactly ${numQuestions} questions.`;
             </h3>
 
             {/* Draft indicator */}
-            {(title || subject || description || customPrompt || generatedQuestions || questions.some(q => q.question || q.options.some(o => o))) && (
+            {(title || subject || description || generatedQuestions || questions.some(q => q.question || q.options.some(o => o))) && (
               <div className="mb-4 md:mb-6 p-2 md:p-3 bg-blue-500/20 border border-blue-400/30 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-blue-300">💾</span>
@@ -794,21 +790,10 @@ Provide exactly ${numQuestions} questions.`;
                       />
                     </div>
 
-                    {/* Custom Prompt */}
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Custom Prompt (Optional)</label>
-                      <textarea
-                        value={customPrompt}
-                        onChange={(e) => setCustomPrompt(e.target.value)}
-                        className="w-full h-32 p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Enter custom instructions for question generation..."
-                      />
-                    </div>
-
                     {/* Generate Button */}
                     <button
                       onClick={generateWithGemini}
-                      disabled={isGenerating || (!pdfText && !customPrompt)}
+                      disabled={isGenerating || !pdfText}
                       className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                     >
                       {isGenerating ? "🤖 Generating..." : "✨ Generate Questions"}
