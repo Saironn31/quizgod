@@ -158,9 +158,21 @@ const FriendsPage: React.FC = () => {
             <div className="mt-4 md:mt-6">
               <h2 className="text-base md:text-lg font-semibold text-white mb-3 md:mb-4">Friend Requests</h2>
               {requestsLoading && friendRequests.length === 0 ? (
-                <p className="text-purple-200">Loading requests...</p>
+                <div className="flex items-center justify-center p-8 bg-white/5 rounded-xl border border-white/10">
+                  <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-purple-500 border-t-transparent mb-3"></div>
+                    <p className="text-purple-200 text-sm">Loading requests...</p>
+                  </div>
+                </div>
               ) : friendRequests.filter(r => r.status === 'pending').length === 0 ? (
-                <p className="text-purple-400">No pending requests</p>
+                <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-xl border border-slate-600/30 p-8 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+                    <span className="text-3xl">📭</span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">All Caught Up!</h3>
+                  <p className="text-slate-300 text-sm">No pending friend requests at the moment</p>
+                  <p className="text-slate-400 text-xs mt-2">Send requests using the form above</p>
+                </div>
               ) : (
                 <div className="flex flex-col gap-2 md:gap-3 items-center">
                   {friendRequests.filter(r => r.status === 'pending').map(req => (

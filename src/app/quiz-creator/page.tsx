@@ -49,6 +49,8 @@ export default function CreatePage() {
   const [generatedQuestions, setGeneratedQuestions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [useOCR, setUseOCR] = useState(false);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const [error, setError] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -800,79 +802,143 @@ Provide exactly ${numQuestions} questions.`;
                 {/* AI Mode */}
                 {mode === 'ai' && (
                   <div className="space-y-4 md:space-y-6">
-                    {/* PDF Upload */}
-                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-xl p-4 md:p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl">📄</span>
-                        <div>
-                          <h4 className="text-base md:text-lg font-bold text-white">Upload PDF</h4>
-                          <p className="text-xs md:text-sm text-slate-300">Generate questions from your study material</p>
+                    {/* Bento Grid Layout */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* PDF Upload - Large Card */}
+                      <div className="md:col-span-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 animate-slide-up">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-2xl shrink-0">
+                            📄
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="text-lg md:text-xl font-bold text-white mb-1">Upload Study Material</h4>
+                            <p className="text-sm text-slate-300">Upload your PDF and let AI generate quiz questions automatically</p>
+                          </div>
                         </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf"
+                          onChange={handlePDFUpload}
+                          className="hidden"
+                        />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isExtracting}
+                          className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-bold disabled:opacity-50 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                        >
+                          {isExtracting ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                              Extracting text + Running OCR...
+                            </span>
+                          ) : pdfFile ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="text-green-300">✓</span>
+                              {pdfFile.name}
+                            </span>
+                          ) : (
+                            "📤 Choose PDF File"
+                          )}
+                        </button>
+                        {pdfText && (
+                          <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-white">✓ Text Extracted Successfully</p>
+                                <p className="text-xs text-slate-400 mt-1">{pdfText.length.toLocaleString()} characters ready for AI processing</p>
+                              </div>
+                              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-xl">
+                                ✓
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf"
-                        onChange={handlePDFUpload}
-                        className="hidden"
-                      />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isExtracting}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
-                      >
-                        {isExtracting ? "📖 Extracting text + Running OCR..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload PDF File"}
-                      </button>
-                      {pdfText && (
-                        <div className="mt-3 p-3 bg-white/5 rounded-lg">
-                          <p className="text-xs text-slate-300">
-                            ✓ Extracted {pdfText.length} characters (text + OCR)
-                          </p>
+
+                      {/* Number of Questions - Small Card */}
+                      <div className="glass-card rounded-2xl p-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                            🔢
+                          </div>
+                          <label className="text-base font-bold text-white">Questions</label>
                         </div>
-                      )}
-                    </div>
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={numQuestions}
+                          onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
+                          className="w-full p-3 text-lg font-bold border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
+                        />
+                        <p className="text-xs text-slate-400 mt-2 text-center">AI will generate this many questions</p>
+                      </div>
 
-                    {/* Number of Questions */}
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Number of Questions</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={numQuestions}
-                        onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
-                        className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
+                      {/* Generate Button - Small Card */}
+                      <div className="glass-card rounded-2xl p-6 flex flex-col justify-center animate-slide-up" style={{animationDelay: '0.2s'}}>
+                        <button
+                          onClick={generateWithGemini}
+                          disabled={isGenerating || !pdfText}
+                          className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                        >
+                          {isGenerating ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                              Generating...
+                            </span>
+                          ) : (
+                            <span className="flex items-center justify-center gap-2">
+                              ✨ Generate Questions
+                            </span>
+                          )}
+                        </button>
+                        {!pdfText && (
+                          <p className="text-xs text-slate-400 mt-3 text-center">Upload a PDF first</p>
+                        )}
+                      </div>
                     </div>
-
-                    {/* Generate Button */}
-                    <button
-                      onClick={generateWithGemini}
-                      disabled={isGenerating || !pdfText}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-                    >
-                      {isGenerating ? "🤖 Generating..." : "✨ Generate Questions"}
-                    </button>
 
                     {error && (
-                      <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-lg">
-                        <p className="text-red-300 text-sm">{error}</p>
+                      <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-xl animate-slide-up">
+                        <div className="flex items-start gap-3">
+                          <span className="text-2xl">⚠️</span>
+                          <div>
+                            <p className="font-semibold text-red-300">Error</p>
+                            <p className="text-sm text-red-200 mt-1">{error}</p>
+                          </div>
+                        </div>
                       </div>
                     )}
 
                     {/* Generated Questions Preview */}
                     {generatedQuestions && (
-                      <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20">
-                        <h4 className="text-base md:text-lg font-bold text-white mb-3">Generated Questions</h4>
-                        <div className="bg-black/30 rounded-lg p-4 mb-4 max-h-96 overflow-y-auto">
-                          <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap">{generatedQuestions}</pre>
+                      <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
+                            ✨
+                          </div>
+                          <div>
+                            <h4 className="text-lg md:text-xl font-bold text-white">Questions Generated!</h4>
+                            <p className="text-sm text-slate-300">Review and create your quiz</p>
+                          </div>
+                        </div>
+                        <div className="bg-black/30 rounded-xl p-4 mb-4 max-h-96 overflow-y-auto border border-white/10">
+                          <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap font-mono">{generatedQuestions}</pre>
                         </div>
                         <button
                           onClick={handleAISubmit}
                           disabled={saving}
-                          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+                          className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
                         >
-                          {saving ? "Creating Quiz..." : "🚀 Create Quiz from AI"}
+                          {saving ? (
+                            <span className="flex items-center justify-center gap-2">
+                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                              Creating Quiz...
+                            </span>
+                          ) : (
+                            "🚀 Create Quiz from AI"
+                          )}
                         </button>
                       </div>
                     )}
