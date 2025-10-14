@@ -112,22 +112,50 @@ export default function LeaderboardPage() {
     if (!classData?.members) return;
     const profiles: { [uid: string]: { username: string; name: string } } = {};
     
-    for (const memberId of classData.members) {
+    console.log('[Leaderboard] Loading profiles for members:', classData.members);
+    
+    for (const memberIdOrEmail of classData.members) {
       try {
-        const userRef = doc(db, 'users', memberId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          profiles[memberId] = {
-            username: userData.username || memberId,
-            name: userData.name || userData.username || memberId
+        // First, try to get user by UID directly
+        let userDoc = null;
+        let uid = memberIdOrEmail;
+        
+        try {
+          const userRef = doc(db, 'users', memberIdOrEmail);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            userDoc = userSnap;
+          }
+        } catch (err) {
+          // Not a valid UID, try email lookup
+        }
+        
+        // If not found by UID, try to find by email
+        if (!userDoc) {
+          const usersQuery = query(collection(db, 'users'), where('email', '==', memberIdOrEmail));
+          const usersSnap = await getDocs(usersQuery);
+          if (!usersSnap.empty) {
+            userDoc = usersSnap.docs[0];
+            uid = usersSnap.docs[0].id;
+          }
+        }
+        
+        if (userDoc && userDoc.exists()) {
+          const userData = userDoc.data();
+          profiles[uid] = {
+            username: userData.username || uid,
+            name: userData.name || userData.username || uid
           };
+          console.log(`[Leaderboard] Loaded profile for ${uid}:`, profiles[uid]);
+        } else {
+          console.log(`[Leaderboard] No profile found for ${memberIdOrEmail}`);
         }
       } catch (err) {
-        console.error(`Failed to load profile for ${memberId}:`, err);
+        console.error(`Failed to load profile for ${memberIdOrEmail}:`, err);
       }
     }
     
+    console.log('[Leaderboard] All profiles loaded:', profiles);
     setUserProfiles(profiles);
   };
 
@@ -414,6 +442,7 @@ export default function LeaderboardPage() {
                       {quizSpecificScores.map((record) => {
                         const profile = userProfiles[record.username];
                         const displayName = profile?.name || profile?.username || record.username;
+                        console.log('[Leaderboard] Rendering record:', { username: record.username, profile, displayName, allProfiles: userProfiles });
                         return (
                         <li
                           key={`${record.username}-${record.completedAt}`}
@@ -442,14 +471,20 @@ export default function LeaderboardPage() {
                 {selectedRecord && (
                   <div className="fixed inset-0 bg-black bg-opacity-70 z-50 w-screen h-screen overflow-auto">
                     <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900 rounded-none shadow-none p-8 w-full h-full relative border-none max-h-screen overflow-y-auto flex flex-col">
-                      <div className="mb-8"><nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit"><span className="font-semibold text-white text-lg">{selectedRecord.username}</span></nav></div>
+                      <div className="mb-8">
+                        <nav className="bg-white/10 rounded-xl px-8 py-4 min-w-fit">
+                          <span className="font-semibold text-white text-lg">
+                            {userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}
+                          </span>
+                        </nav>
+                      </div>
                       <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-200 text-2xl" onClick={() => setSelectedRecord(null)}>
                         ✖
                       </button>
                       <h3 className="text-2xl font-extrabold mb-4 text-purple-200">Quiz Record Details</h3>
                       <div className="mb-2 text-white font-bold text-lg">Quiz: {quizzes.find(q => q.key === selectedQuiz)?.quiz.title}</div>
                       <div className="mb-2 text-purple-200">Subject: {quizzes.find(q => q.key === selectedQuiz)?.quiz.subject}</div>
-                      <div className="mb-2 text-purple-100">User ID: <span className="font-bold">{selectedRecord.username}</span></div>
+                      <div className="mb-2 text-purple-100">User: <span className="font-bold">{userProfiles[selectedRecord.username]?.name || userProfiles[selectedRecord.username]?.username || selectedRecord.username}</span></div>
                       <div className="mb-2 text-purple-100">Score: <span className="font-bold text-green-400">{selectedRecord.score}</span></div>
                       <div className="mb-2 text-purple-100">Date: {new Date(selectedRecord.completedAt).toLocaleString()}</div>
                       <div className="mb-6">
