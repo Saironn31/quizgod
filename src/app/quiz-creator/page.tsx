@@ -247,6 +247,18 @@ export default function CreatePage() {
       
       // Always run OCR on all pages for additional text capture
       console.log('Running OCR on all pages...');
+      
+      // Create a Tesseract worker with CDN configuration
+      const worker = await Tesseract.createWorker('eng', 1, {
+        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+        logger: (m: any) => {
+          if (m.status === 'recognizing text') {
+            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+          }
+        }
+      });
+      
       for (let i = 1; i <= pdf.numPages; i++) {
         try {
           const page = await pdf.getPage(i);
@@ -262,20 +274,17 @@ export default function CreatePage() {
             await page.render({ canvasContext: context, viewport }).promise;
             
             // Run OCR on the rendered page
-            const { data } = await Tesseract.recognize(canvas, 'eng', {
-              logger: (m: any) => {
-                if (m.status === 'recognizing text') {
-                  console.log(`OCR Page ${i}: ${Math.round(m.progress * 100)}%`);
-                }
-              }
-            });
-            
+            console.log(`Processing page ${i}/${pdf.numPages}...`);
+            const { data } = await worker.recognize(canvas);
             ocrText += data.text + '\n\n';
           }
         } catch (ocrError) {
           console.error(`OCR failed for page ${i}:`, ocrError);
         }
       }
+      
+      // Terminate worker
+      await worker.terminate();
       
       console.log(`OCR extracted ${ocrText.length} characters`);
       
