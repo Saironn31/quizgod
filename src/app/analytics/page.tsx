@@ -178,97 +178,200 @@ export default function AnalyticsPage() {
         </div>
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
-            <h3 className="text-xl font-bold text-white mb-4">Quiz Analytics</h3>
+            <h3 className="text-2xl font-bold text-white mb-6">📊 Performance Dashboard</h3>
             
-            {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="glass-card rounded-xl p-4">
-                <div className="text-sm text-slate-400 mb-1">Total Quizzes</div>
-                <div className="text-3xl font-black gradient-text">{stats.quizzesTaken}</div>
+            {/* Stats Cards - Bento Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all duration-300">
+                <div className="text-xs md:text-sm text-blue-200 mb-1 font-medium">Total Quizzes</div>
+                <div className="text-2xl md:text-3xl font-black text-blue-300">{stats.quizzesTaken}</div>
+                <div className="text-xs text-blue-300/60 mt-1">Completed</div>
               </div>
-              <div className="glass-card rounded-xl p-4">
-                <div className="text-sm text-slate-400 mb-1">Avg Score</div>
-                <div className="text-3xl font-black gradient-text">{stats.avgScore}%</div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all duration-300">
+                <div className="text-xs md:text-sm text-purple-200 mb-1 font-medium">Avg Score</div>
+                <div className="text-2xl md:text-3xl font-black text-purple-300">{stats.avgScore}%</div>
+                <div className="text-xs text-purple-300/60 mt-1">Overall</div>
               </div>
-              <div className="glass-card rounded-xl p-4">
-                <div className="text-sm text-slate-400 mb-1">Best Score</div>
-                <div className="text-3xl font-black text-emerald-400">{stats.bestScore}%</div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border border-emerald-400/30 hover:scale-105 transition-all duration-300">
+                <div className="text-xs md:text-sm text-emerald-200 mb-1 font-medium">Best Score</div>
+                <div className="text-2xl md:text-3xl font-black text-emerald-300">{stats.bestScore}%</div>
+                <div className="text-xs text-emerald-300/60 mt-1">Personal Best</div>
               </div>
-              <div className="glass-card rounded-xl p-4">
-                <div className="text-sm text-slate-400 mb-1">Total Points</div>
-                <div className="text-3xl font-black text-cyan-400">{stats.totalScore}</div>
+              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 border border-cyan-400/30 hover:scale-105 transition-all duration-300">
+                <div className="text-xs md:text-sm text-cyan-200 mb-1 font-medium">Total Points</div>
+                <div className="text-2xl md:text-3xl font-black text-cyan-300">{stats.totalScore}</div>
+                <div className="text-xs text-cyan-300/60 mt-1">Earned</div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mt-8">
-              <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
-                <h2 className="text-xl font-semibold mb-4 text-purple-200">Score History</h2>
-                <div className="w-full h-56 sm:h-96">
-                  <Bar data={barData} options={{
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } },
-                  }} />
+            {/* Charts - Improved Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-8">
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl shadow-xl p-6 border border-slate-600/30 hover:border-slate-500/50 transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xl">
+                    📈
+                  </div>
+                  <h2 className="text-lg md:text-xl font-bold text-white">Score History</h2>
                 </div>
-              </div>
-              <div className="bg-white/10 rounded-xl shadow-lg p-6 flex flex-col items-center">
-                <h2 className="text-xl font-semibold mb-4 text-purple-200">Top Subjects</h2>
-                <div className="w-full h-56 sm:h-96 max-w-sm">
-                  <Doughnut data={doughnutData} options={{
-                    maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#fff' } } },
-                  }} />
-                </div>
-              </div>
-            </div>
-            
-            {/* Subject Breakdown */}
-            <div className="mt-8 bg-white/10 rounded-xl shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4 text-white">Subject Performance</h2>
-              <div className="space-y-3">
-                {stats.topSubjects.map((subject, index) => (
-                  <div key={subject.subject} className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white font-bold">
-                        #{index + 1}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">{subject.subject}</div>
-                        <div className="text-sm text-slate-400">{subject.quizCount} quizzes taken</div>
+                <div className="w-full h-56 sm:h-72">
+                  {stats.scoreHistory.length > 0 ? (
+                    <Bar data={barData} options={{
+                      maintainAspectRatio: false,
+                      plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                          titleColor: '#fff',
+                          bodyColor: '#fff',
+                          padding: 12,
+                          cornerRadius: 8
+                        }
+                      },
+                      scales: { 
+                        y: { 
+                          beginAtZero: true, 
+                          ticks: { color: '#94a3b8' },
+                          grid: { color: 'rgba(255, 255, 255, 0.05)' }
+                        }, 
+                        x: { 
+                          ticks: { color: '#94a3b8' },
+                          grid: { display: false }
+                        } 
+                      },
+                    }} />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-slate-400">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📊</div>
+                        <p>No quiz history yet</p>
                       </div>
                     </div>
-                    <div className="text-2xl font-black gradient-text">{subject.score}%</div>
-                  </div>
-                ))}
+                  )}
+                </div>
               </div>
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl shadow-xl p-6 border border-slate-600/30 hover:border-slate-500/50 transition-all duration-300">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                    🎯
+                  </div>
+                  <h2 className="text-lg md:text-xl font-bold text-white">Top Subjects</h2>
+                </div>
+                <div className="w-full h-56 sm:h-72 flex items-center justify-center">
+                  {stats.topSubjects.length > 0 ? (
+                    <div className="w-full max-w-[280px]">
+                      <Doughnut data={doughnutData} options={{
+                        maintainAspectRatio: false,
+                        plugins: { 
+                          legend: { 
+                            labels: { 
+                              color: '#fff',
+                              padding: 15,
+                              font: { size: 12 }
+                            },
+                            position: 'bottom'
+                          },
+                          tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            padding: 12,
+                            cornerRadius: 8
+                          }
+                        },
+                      }} />
+                    </div>
+                  ) : (
+                    <div className="text-center text-slate-400">
+                      <div className="text-4xl mb-2">📚</div>
+                      <p>No subjects yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Subject Breakdown - Enhanced */}
+            <div className="mt-8 bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl shadow-xl p-6 border border-slate-600/30">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-xl">
+                  🏆
+                </div>
+                <h2 className="text-lg md:text-xl font-bold text-white">Subject Performance</h2>
+              </div>
+              {stats.topSubjects.length > 0 ? (
+                <div className="space-y-3">
+                  {stats.topSubjects.map((subject, index) => (
+                    <div key={subject.subject} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-200 border border-white/5 hover:border-white/10">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg shadow-lg ${
+                          index === 0 ? 'from-yellow-400 to-orange-500' :
+                          index === 1 ? 'from-gray-300 to-gray-500' :
+                          'from-orange-600 to-red-700'
+                        }`}>
+                          {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-white text-base md:text-lg">{subject.subject}</div>
+                          <div className="text-xs md:text-sm text-slate-400">{subject.quizCount} {subject.quizCount === 1 ? 'quiz' : 'quizzes'} taken</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <div className="text-2xl md:text-3xl font-black bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            {subject.score}%
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-slate-400">
+                  <div className="text-4xl mb-3">📖</div>
+                  <p>Complete quizzes to see your subject performance</p>
+                </div>
+              )}
             </div>
           </div>
           
           <div className="glass-card rounded-3xl p-6 md:col-span-1 animate-slide-up" style={{animationDelay: '0.1s'}}>
-            <h3 className="text-xl font-bold text-white mb-4">Recent Quizzes</h3>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-xl">
+                ⏱️
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-white">Recent Quizzes</h3>
+            </div>
             <div className="space-y-3">
               {stats.recentQuizzes.length > 0 ? (
                 stats.recentQuizzes.map((quiz) => (
-                  <div key={quiz.id} className="glass-card rounded-xl p-4">
-                    <div className="font-semibold text-white mb-1">{quiz.quizTitle}</div>
+                  <div key={quiz.id} className="glass-card rounded-xl p-4 bg-gradient-to-br from-slate-800/50 to-slate-700/50 border border-slate-600/30 hover:border-slate-500/50 hover:scale-[1.02] transition-all duration-200">
+                    <div className="font-semibold text-white mb-2 line-clamp-2">{quiz.quizTitle}</div>
                     {quiz.subject && (
-                      <div className="text-xs text-slate-400 mb-2">{quiz.subject}</div>
-                    )}
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-slate-300">
-                        {quiz.score}/{quiz.maxScore}
+                      <div className="inline-block px-2 py-1 rounded-lg bg-purple-500/20 border border-purple-400/30 text-xs text-purple-200 mb-2">
+                        {quiz.subject}
                       </div>
-                      <div className="text-lg font-black gradient-text">{quiz.percentage}%</div>
+                    )}
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="text-sm text-slate-300">
+                        {quiz.score}/{quiz.maxScore} correct
+                      </div>
+                      <div className={`text-xl font-black ${
+                        quiz.percentage >= 80 ? 'text-emerald-400' :
+                        quiz.percentage >= 60 ? 'text-yellow-400' :
+                        'text-red-400'
+                      }`}>{quiz.percentage}%</div>
                     </div>
-                    <div className="text-xs text-slate-500 mt-2">
+                    <div className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                      <span>📅</span>
                       {quiz.timestamp?.toDate?.() ? new Date(quiz.timestamp.toDate()).toLocaleDateString() : 'N/A'}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-400">
-                  <div className="text-4xl mb-2">📊</div>
-                  <div>No quizzes yet</div>
+                <div className="text-center py-12 text-slate-400">
+                  <div className="text-5xl mb-3">🎯</div>
+                  <div className="font-medium mb-1">No quizzes yet</div>
+                  <p className="text-xs text-slate-500">Start taking quizzes to track your progress</p>
                 </div>
               )}
             </div>

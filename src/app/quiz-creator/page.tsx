@@ -49,8 +49,8 @@ export default function CreatePage() {
   const [generatedQuestions, setGeneratedQuestions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [useOCR, setUseOCR] = useState(false);
-  const [ocrProgress, setOcrProgress] = useState(0);
+  const [useOCR, setUseOCR] = useState(true);
+  const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -223,10 +223,10 @@ export default function CreatePage() {
     setPdfFile(file);
     setIsExtracting(true);
     setError("");
+    setOcrProgress({ current: 0, total: 0, percentage: 0 });
 
     try {
       const pdfjsLib = await import('pdfjs-dist');
-      const Tesseract = await import('tesseract.js');
       
       pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
@@ -247,59 +247,77 @@ export default function CreatePage() {
       
       console.log(`Extracted ${extractedText.length} characters from embedded text`);
       
-      // Always run OCR on all pages for additional text capture
-      console.log('Running OCR on all pages...');
-      
-      // Create a Tesseract worker with CDN configuration
-      const worker = await Tesseract.createWorker('eng', 1, {
-        workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-        corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
-        logger: (m: any) => {
-          if (m.status === 'recognizing text') {
-            console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+      // Run OCR only if enabled
+      if (useOCR) {
+        console.log('Running OCR on all pages...');
+        
+        const Tesseract = await import('tesseract.js');
+        
+        // Create a Tesseract worker with CDN configuration
+        const worker = await Tesseract.createWorker('eng', 1, {
+          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+          logger: (m: any) => {
+            if (m.status === 'recognizing text') {
+              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+            }
           }
-        }
-      });
-      
-      for (let i = 1; i <= pdf.numPages; i++) {
-        try {
-          const page = await pdf.getPage(i);
-          const viewport = page.getViewport({ scale: 2.0 });
-          
-          // Create canvas to render PDF page
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
-          
-          if (context) {
-            await page.render({ canvasContext: context, viewport }).promise;
+        });
+        
+        setOcrProgress({ current: 0, total: pdf.numPages, percentage: 0 });
+        
+        for (let i = 1; i <= pdf.numPages; i++) {
+          try {
+            const page = await pdf.getPage(i);
+            const viewport = page.getViewport({ scale: 1.5 }); // Reduced from 2.0 for speed
             
-            // Run OCR on the rendered page
-            console.log(`Processing page ${i}/${pdf.numPages}...`);
-            const { data } = await worker.recognize(canvas);
-            ocrText += data.text + '\n\n';
+            // Create canvas to render PDF page
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            
+            if (context) {
+              await page.render({ canvasContext: context, viewport }).promise;
+              
+              // Update progress before OCR
+              setOcrProgress({ 
+                current: i, 
+                total: pdf.numPages, 
+                percentage: Math.round((i / pdf.numPages) * 100) 
+              });
+              
+              // Run OCR on the rendered page
+              console.log(`Processing page ${i}/${pdf.numPages}...`);
+              const { data } = await worker.recognize(canvas);
+              ocrText += data.text + '\n\n';
+            }
+          } catch (ocrError) {
+            console.error(`OCR failed for page ${i}:`, ocrError);
           }
-        } catch (ocrError) {
-          console.error(`OCR failed for page ${i}:`, ocrError);
         }
+        
+        // Terminate worker
+        await worker.terminate();
+        
+        console.log(`OCR extracted ${ocrText.length} characters`);
+        
+        // Combine both texts
+        const combinedText = extractedText + '\n\n--- OCR Text ---\n\n' + ocrText;
+        setPdfText(combinedText);
+        
+        console.log(`Total text: ${combinedText.length} characters`);
+      } else {
+        // Just use extracted text without OCR
+        setPdfText(extractedText);
+        console.log(`Total text (no OCR): ${extractedText.length} characters`);
       }
-      
-      // Terminate worker
-      await worker.terminate();
-      
-      console.log(`OCR extracted ${ocrText.length} characters`);
-      
-      // Combine both texts
-      const combinedText = extractedText + '\n\n--- OCR Text ---\n\n' + ocrText;
-      setPdfText(combinedText);
-      
-      console.log(`Total text: ${combinedText.length} characters`);
     } catch (error) {
       console.error('Error extracting PDF:', error);
       setError('Failed to extract text from PDF. Please try again.');
     } finally {
       setIsExtracting(false);
+      setOcrProgress({ current: 0, total: 0, percentage: 0 });
     }
   };
 
@@ -815,6 +833,25 @@ Provide exactly ${numQuestions} questions.`;
                             <p className="text-sm text-slate-300">Upload your PDF and let AI generate quiz questions automatically</p>
                           </div>
                         </div>
+                        
+                        {/* OCR Checkbox */}
+                        <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
+                          <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={useOCR}
+                              onChange={(e) => setUseOCR(e.target.checked)}
+                              className="mt-1 w-5 h-5 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <span className="text-white font-medium">Enable OCR (Optical Character Recognition)</span>
+                              <p className="text-xs text-slate-400 mt-1">
+                                Extract text from scanned PDFs and images. Recommended for better accuracy but takes longer.
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                        
                         <input
                           ref={fileInputRef}
                           type="file"
@@ -830,7 +867,9 @@ Provide exactly ${numQuestions} questions.`;
                           {isExtracting ? (
                             <span className="flex items-center justify-center gap-2">
                               <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                              Extracting text + Running OCR...
+                              {useOCR && ocrProgress.total > 0 
+                                ? `Processing OCR: ${ocrProgress.current}/${ocrProgress.total} pages (${ocrProgress.percentage}%)`
+                                : 'Extracting text from PDF...'}
                             </span>
                           ) : pdfFile ? (
                             <span className="flex items-center justify-center gap-2">
@@ -841,6 +880,26 @@ Provide exactly ${numQuestions} questions.`;
                             "📤 Choose PDF File"
                           )}
                         </button>
+                        
+                        {/* OCR Progress Bar */}
+                        {isExtracting && useOCR && ocrProgress.total > 0 && (
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between text-sm text-slate-300 mb-2">
+                              <span>OCR Progress</span>
+                              <span className="font-semibold">{ocrProgress.percentage}%</span>
+                            </div>
+                            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
+                              <div 
+                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                                style={{ width: `${ocrProgress.percentage}%` }}
+                              ></div>
+                            </div>
+                            <p className="text-xs text-slate-400 mt-2">
+                              Processing page {ocrProgress.current} of {ocrProgress.total}
+                            </p>
+                          </div>
+                        )}
+                        
                         {pdfText && (
                           <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
                             <div className="flex items-center justify-between">
