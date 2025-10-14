@@ -270,6 +270,11 @@ export default function CreatePage() {
     setError("");
 
     try {
+      console.log('Starting Gemini API request...');
+      console.log('API Key exists:', !!apiKey);
+      console.log('PDF Text length:', pdfText?.length || 0);
+      console.log('Custom Prompt length:', customPrompt?.length || 0);
+      
       const basePrompt = customPrompt || `Create ${numQuestions} multiple choice quiz questions about ${subject}.
 ${pdfText ? `\n\nBased on this content:\n${pdfText.slice(0, 10000)}` : ''}
 
@@ -301,20 +306,24 @@ Provide exactly ${numQuestions} questions.`;
       );
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
+        throw new Error(`API request failed (${response.status}): ${errorMessage}`);
       }
 
       const data = await response.json();
       const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!generatedText) {
-        throw new Error('No content generated');
+        throw new Error('No content generated from AI. Please try again.');
       }
 
       setGeneratedQuestions(generatedText);
     } catch (error) {
       console.error('Error generating with Gemini:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate questions. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
+      setError(errorMsg);
+      alert('Error: ' + errorMsg);
     } finally {
       setIsGenerating(false);
     }
