@@ -531,12 +531,15 @@ export default function CreatePage() {
       }
     } catch (error) {
       console.error('Preview generation error:', error);
+      // Don't show error for preview - it's not critical
+      // Preview will just show loading state
     }
   };
 
   const generatePdfPreview = async (file: File) => {
-    const pdfjsLib = await import('pdfjs-dist');
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
     
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -545,6 +548,9 @@ export default function CreatePage() {
     setTotalPages(pdf.numPages);
     setCurrentPage(1);
     renderPdfPage(pdf, 1);
+    } catch (error) {
+      console.error('PDF preview generation error:', error);
+    }
   };
 
   const renderPdfPage = async (pdf: any, pageNum: number) => {
@@ -566,20 +572,25 @@ export default function CreatePage() {
   };
 
   const generateDocxPreview = async (file: File) => {
-    // For DOCX, we'll create a simple HTML preview
-    const mammoth = await import('mammoth');
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
+    try {
+      // For DOCX, we'll create a simple HTML preview
+      const mammoth = await import('mammoth');
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
     
     const blob = new Blob([`
+      <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
             body { 
               font-family: Arial, sans-serif; 
               padding: 20px; 
               line-height: 1.6;
               background: white;
+              color: black;
             }
             img { max-width: 100%; height: auto; }
           </style>
@@ -592,11 +603,15 @@ export default function CreatePage() {
     setPreviewUrl(url);
     setTotalPages(1);
     setCurrentPage(1);
+    } catch (error) {
+      console.error('DOCX preview generation error:', error);
+    }
   };
 
   const generatePptxPreview = async (file: File) => {
-    const JSZip = await import('jszip');
-    const zip = await JSZip.default.loadAsync(file);
+    try {
+      const JSZip = await import('jszip');
+      const zip = await JSZip.default.loadAsync(file);
     
     // Extract all images from slides
     const imageFiles = Object.keys(zip.files)
@@ -618,7 +633,17 @@ export default function CreatePage() {
         .filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'))
         .sort();
       
-      let htmlContent = '<html><head><style>body{font-family:Arial;padding:20px;background:white;}</style></head><body>';
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial; padding: 20px; background: white; color: black; }
+          </style>
+        </head>
+        <body>`;
       
       for (const slideName of slideFiles) {
         const slideContent = await zip.files[slideName].async('string');
@@ -635,6 +660,9 @@ export default function CreatePage() {
       setPreviewUrl(url);
       setTotalPages(slideFiles.length);
       setCurrentPage(1);
+    }
+    } catch (error) {
+      console.error('PPTX preview generation error:', error);
     }
   };
 
