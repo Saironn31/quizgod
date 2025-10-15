@@ -50,6 +50,8 @@ export default function CreatePage() {
   const [generatedQuestions, setGeneratedQuestions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [useOCR, setUseOCR] = useState(true);
+  const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
   
   const fileInputRef = useRef<HTMLInputElement>(null);

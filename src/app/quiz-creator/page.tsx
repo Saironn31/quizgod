@@ -215,8 +215,16 @@ export default function CreatePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      alert('Please upload a PDF file');
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+      'application/msword', // .doc (legacy)
+      'application/vnd.ms-powerpoint' // .ppt (legacy)
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, Word document (.docx), or PowerPoint file (.pptx)');
       return;
     }
 
@@ -226,12 +234,14 @@ export default function CreatePage() {
     setOcrProgress({ current: 0, total: 0, percentage: 0 });
 
     try {
-      const pdfjsLib = await import('pdfjs-dist');
-      
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      // Handle PDF files with OCR
+      if (file.type === 'application/pdf') {
+        const pdfjsLib = await import('pdfjs-dist');
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
       
       let extractedText = '';
       let ocrText = '';
@@ -312,9 +322,51 @@ export default function CreatePage() {
         setPdfText(extractedText);
         console.log(`Total text (no OCR): ${extractedText.length} characters`);
       }
+      }
+      // Handle DOCX files
+      else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        setPdfText(result.value);
+        console.log(`Extracted ${result.value.length} characters from Word document`);
+      }
+      // Handle PPTX files
+      else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.ms-powerpoint') {
+        try {
+          const JSZip = await import('jszip');
+          const zip = await JSZip.default.loadAsync(file);
+          let fullText = '';
+          
+          // Extract text from slides
+          const slideFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'));
+          
+          for (const slideName of slideFiles) {
+            const slideContent = await zip.files[slideName].async('string');
+            // Extract text between <a:t> tags (PowerPoint text tags)
+            const textMatches = slideContent.match(/<a:t>([^<]+)<\/a:t>/g);
+            if (textMatches) {
+              const slideText = textMatches.map(match => match.replace(/<\/?a:t>/g, '')).join(' ');
+              fullText += slideText + '\n\n';
+            }
+          }
+          
+          if (!fullText.trim()) {
+            throw new Error('No text content found in PowerPoint file');
+          }
+          
+          setPdfText(fullText);
+          console.log(`Extracted ${fullText.length} characters from PowerPoint`);
+        } catch (error) {
+          console.error('PowerPoint extraction error:', error);
+          setError('Failed to extract text from PowerPoint. The file might be password-protected or corrupted.');
+          setIsExtracting(false);
+          return;
+        }
+      }
     } catch (error) {
-      console.error('Error extracting PDF:', error);
-      setError('Failed to extract text from PDF. Please try again.');
+      console.error('Error extracting document:', error);
+      setError('Failed to extract text from document. Please try again.');
     } finally {
       setIsExtracting(false);
       setOcrProgress({ current: 0, total: 0, percentage: 0 });
@@ -328,7 +380,7 @@ export default function CreatePage() {
     }
 
     if (!pdfText) {
-      alert("Please upload a PDF file");
+      alert("Please upload a document (PDF/Word/PowerPoint) file");
       return;
     }
 
@@ -830,11 +882,12 @@ Provide exactly ${numQuestions} questions.`;
                           </div>
                           <div className="flex-1">
                             <h4 className="text-lg md:text-xl font-bold text-white mb-1">Upload Study Material</h4>
-                            <p className="text-sm text-slate-300">Upload your PDF and let AI generate quiz questions automatically</p>
+                            <p className="text-sm text-slate-300">PDF, Word (.docx), or PowerPoint (.pptx) - AI will extract and generate questions</p>
                           </div>
                         </div>
                         
-                        {/* OCR Checkbox */}
+                        {/* OCR Checkbox - Only for PDFs */}
+                        {pdfFile && pdfFile.type === 'application/pdf' && (
                         <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
                           <label className="flex items-start gap-3 cursor-pointer">
                             <input
@@ -851,11 +904,12 @@ Provide exactly ${numQuestions} questions.`;
                             </div>
                           </label>
                         </div>
+                        )}
                         
                         <input
                           ref={fileInputRef}
                           type="file"
-                          accept=".pdf"
+                          accept=".pdf,.docx,.doc,.pptx,.ppt"
                           onChange={handlePDFUpload}
                           className="hidden"
                         />
@@ -877,7 +931,7 @@ Provide exactly ${numQuestions} questions.`;
                               {pdfFile.name}
                             </span>
                           ) : (
-                            "📤 Choose PDF File"
+                            "📤 Choose Document (PDF/Word/PPT)"
                           )}
                         </button>
                         
@@ -953,7 +1007,7 @@ Provide exactly ${numQuestions} questions.`;
                           )}
                         </button>
                         {!pdfText && (
-                          <p className="text-xs text-slate-400 mt-3 text-center">Upload a PDF first</p>
+                          <p className="text-xs text-slate-400 mt-3 text-center">Upload a document first</p>
                         )}
                       </div>
                     </div>
