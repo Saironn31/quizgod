@@ -323,15 +323,81 @@ export default function CreatePage() {
         console.log(`Total text (no OCR): ${extractedText.length} characters`);
       }
       }
-      // Handle DOCX files
+      // Handle DOCX files with OCR for images
       else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
         const mammoth = await import('mammoth');
+        const JSZip = await import('jszip');
         const arrayBuffer = await file.arrayBuffer();
+        
+        // Extract text content
         const result = await mammoth.extractRawText({ arrayBuffer });
-        setPdfText(result.value);
-        console.log(`Extracted ${result.value.length} characters from Word document`);
+        let docxText = result.value;
+        console.log(`Extracted ${docxText.length} characters from Word document`);
+        
+        // Extract and OCR images if enabled
+        if (useOCR) {
+          try {
+            const Tesseract = await import('tesseract.js');
+            const zip = await JSZip.default.loadAsync(file);
+            
+            // Find all image files in the Word document
+            const imageFiles = Object.keys(zip.files).filter(name => 
+              name.startsWith('word/media/') && 
+              (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.gif'))
+            );
+            
+            if (imageFiles.length > 0) {
+              console.log(`Found ${imageFiles.length} images in Word document. Running OCR...`);
+              
+              const worker = await Tesseract.createWorker('eng', 1, {
+                workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+                logger: (m: any) => {
+                  if (m.status === 'recognizing text') {
+                    console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+                  }
+                }
+              });
+              
+              setOcrProgress({ current: 0, total: imageFiles.length, percentage: 0 });
+              let imageOcrText = '';
+              
+              for (let i = 0; i < imageFiles.length; i++) {
+                try {
+                  const imageFile = imageFiles[i];
+                  const imageData = await zip.files[imageFile].async('base64');
+                  const imageUrl = `data:image/${imageFile.split('.').pop()};base64,${imageData}`;
+                  
+                  setOcrProgress({ 
+                    current: i + 1, 
+                    total: imageFiles.length, 
+                    percentage: Math.round(((i + 1) / imageFiles.length) * 100) 
+                  });
+                  
+                  console.log(`OCR on image ${i + 1}/${imageFiles.length}...`);
+                  const { data } = await worker.recognize(imageUrl);
+                  imageOcrText += data.text + '\n\n';
+                } catch (imgError) {
+                  console.error(`OCR failed for image ${i + 1}:`, imgError);
+                }
+              }
+              
+              await worker.terminate();
+              
+              if (imageOcrText.trim()) {
+                docxText += '\n\n--- Text from Images (OCR) ---\n\n' + imageOcrText;
+                console.log(`OCR extracted ${imageOcrText.length} characters from images`);
+              }
+            }
+          } catch (ocrError) {
+            console.error('OCR processing error:', ocrError);
+          }
+        }
+        
+        setPdfText(docxText);
+        console.log(`Total text from Word: ${docxText.length} characters`);
       }
-      // Handle PPTX files
+      // Handle PPTX files with OCR for images
       else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.ms-powerpoint') {
         try {
           const JSZip = await import('jszip');
@@ -351,12 +417,81 @@ export default function CreatePage() {
             }
           }
           
+          console.log(`Extracted ${fullText.length} characters from PowerPoint text`);
+          
+          // Extract and OCR images if enabled
+          if (useOCR) {
+            try {
+              const Tesseract = await import('tesseract.js');
+              
+              // Find all image files in the PowerPoint
+              const imageFiles = Object.keys(zip.files).filter(name => 
+                name.startsWith('ppt/media/') && 
+                (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.gif') || name.endsWith('.emf') || name.endsWith('.wmf'))
+              );
+              
+              if (imageFiles.length > 0) {
+                console.log(`Found ${imageFiles.length} images in PowerPoint. Running OCR...`);
+                
+                const worker = await Tesseract.createWorker('eng', 1, {
+                  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+                  logger: (m: any) => {
+                    if (m.status === 'recognizing text') {
+                      console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+                    }
+                  }
+                });
+                
+                setOcrProgress({ current: 0, total: imageFiles.length, percentage: 0 });
+                let imageOcrText = '';
+                
+                for (let i = 0; i < imageFiles.length; i++) {
+                  try {
+                    const imageFile = imageFiles[i];
+                    const imageExt = imageFile.split('.').pop()?.toLowerCase();
+                    
+                    // Skip vector formats that Tesseract can't process
+                    if (imageExt === 'emf' || imageExt === 'wmf') {
+                      console.log(`Skipping vector image: ${imageFile}`);
+                      continue;
+                    }
+                    
+                    const imageData = await zip.files[imageFile].async('base64');
+                    const imageUrl = `data:image/${imageExt};base64,${imageData}`;
+                    
+                    setOcrProgress({ 
+                      current: i + 1, 
+                      total: imageFiles.length, 
+                      percentage: Math.round(((i + 1) / imageFiles.length) * 100) 
+                    });
+                    
+                    console.log(`OCR on image ${i + 1}/${imageFiles.length}...`);
+                    const { data } = await worker.recognize(imageUrl);
+                    imageOcrText += data.text + '\n\n';
+                  } catch (imgError) {
+                    console.error(`OCR failed for image ${i + 1}:`, imgError);
+                  }
+                }
+                
+                await worker.terminate();
+                
+                if (imageOcrText.trim()) {
+                  fullText += '\n\n--- Text from Images (OCR) ---\n\n' + imageOcrText;
+                  console.log(`OCR extracted ${imageOcrText.length} characters from images`);
+                }
+              }
+            } catch (ocrError) {
+              console.error('OCR processing error:', ocrError);
+            }
+          }
+          
           if (!fullText.trim()) {
             throw new Error('No text content found in PowerPoint file');
           }
           
           setPdfText(fullText);
-          console.log(`Extracted ${fullText.length} characters from PowerPoint`);
+          console.log(`Total text from PowerPoint: ${fullText.length} characters`);
         } catch (error) {
           console.error('PowerPoint extraction error:', error);
           setError('Failed to extract text from PowerPoint. The file might be password-protected or corrupted.');
@@ -886,8 +1021,8 @@ Provide exactly ${numQuestions} questions.`;
                           </div>
                         </div>
                         
-                        {/* OCR Checkbox - Only for PDFs */}
-                        {pdfFile && pdfFile.type === 'application/pdf' && (
+                        {/* OCR Checkbox - For all document types */}
+                        {pdfFile && (
                         <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
                           <label className="flex items-start gap-3 cursor-pointer">
                             <input
@@ -899,7 +1034,9 @@ Provide exactly ${numQuestions} questions.`;
                             <div className="flex-1">
                               <span className="text-white font-medium">Enable OCR (Optical Character Recognition)</span>
                               <p className="text-xs text-slate-400 mt-1">
-                                Extract text from scanned PDFs and images. Recommended for better accuracy but takes longer.
+                                {pdfFile.type === 'application/pdf' 
+                                  ? 'Extract text from scanned PDFs and images. Recommended for better accuracy but takes longer.'
+                                  : 'Extract text from images embedded in your document. Useful for slides with screenshots or diagrams containing text.'}
                               </p>
                             </div>
                           </label>
