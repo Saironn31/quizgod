@@ -216,8 +216,16 @@ export default function CreatePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== 'application/pdf') {
-      alert('Please upload a PDF file');
+    const allowedTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+      'application/msword', // .doc (legacy)
+      'application/vnd.ms-powerpoint' // .ppt (legacy)
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, Word document (.docx), or PowerPoint file (.pptx)');
       return;
     }
 
@@ -226,24 +234,68 @@ export default function CreatePage() {
     setError("");
 
     try {
-      const pdfjsLib = await import('pdfjs-dist');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      // Handle PDF files
+      if (file.type === 'application/pdf') {
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
 
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        fullText += pageText + '\n\n';
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          fullText += pageText + '\n\n';
+        }
+
+        setPdfText(fullText);
+      } 
+      // Handle DOCX files
+      else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        setPdfText(result.value);
       }
-
-      setPdfText(fullText);
+      // Handle PPTX files
+      else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.ms-powerpoint') {
+        // For PPTX, we'll use a simple text extraction approach
+        // Note: This requires the 'pizzip' and 'docxtemplater' or similar library
+        try {
+          const JSZip = await import('jszip');
+          const zip = await JSZip.default.loadAsync(file);
+          let fullText = '';
+          
+          // Extract text from slides
+          const slideFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'));
+          
+          for (const slideName of slideFiles) {
+            const slideContent = await zip.files[slideName].async('string');
+            // Extract text between <a:t> tags (PowerPoint text tags)
+            const textMatches = slideContent.match(/<a:t>([^<]+)<\/a:t>/g);
+            if (textMatches) {
+              const slideText = textMatches.map(match => match.replace(/<\/?a:t>/g, '')).join(' ');
+              fullText += slideText + '\n\n';
+            }
+          }
+          
+          if (!fullText.trim()) {
+            throw new Error('No text content found in PowerPoint file');
+          }
+          
+          setPdfText(fullText);
+        } catch (error) {
+          console.error('PowerPoint extraction error:', error);
+          setError('Failed to extract text from PowerPoint. The file might be password-protected or corrupted.');
+          setIsExtracting(false);
+          return;
+        }
+      }
     } catch (error) {
-      console.error('Error extracting PDF:', error);
-      setError('Failed to extract text from PDF. Please try again.');
+      console.error('Error extracting document:', error);
+      setError('Failed to extract text from document. Please try again.');
     } finally {
       setIsExtracting(false);
     }
@@ -256,7 +308,7 @@ export default function CreatePage() {
     }
 
     if (!pdfText && !customPrompt) {
-      alert("Please upload a PDF or enter a custom prompt");
+      alert("Please upload a document (PDF/Word/PowerPoint) or enter a custom prompt");
       return;
     }
 
@@ -745,14 +797,14 @@ Provide exactly ${numQuestions} questions.`;
                       <div className="flex items-center gap-3 mb-3">
                         <span className="text-2xl">📄</span>
                         <div>
-                          <h4 className="text-base md:text-lg font-bold text-white">Upload PDF</h4>
-                          <p className="text-xs md:text-sm text-slate-300">Generate questions from your study material</p>
+                          <h4 className="text-base md:text-lg font-bold text-white">Upload Document</h4>
+                          <p className="text-xs md:text-sm text-slate-300">PDF, Word (.docx), or PowerPoint (.pptx)</p>
                         </div>
                       </div>
                       <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".pdf"
+                        accept=".pdf,.docx,.doc,.pptx,.ppt"
                         onChange={handlePDFUpload}
                         className="hidden"
                       />
@@ -761,7 +813,7 @@ Provide exactly ${numQuestions} questions.`;
                         disabled={isExtracting}
                         className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
                       >
-                        {isExtracting ? "📖 Extracting text..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload PDF File"}
+                        {isExtracting ? "📖 Extracting text..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload Document"}
                       </button>
                       {pdfText && (
                         <div className="mt-3 p-3 bg-white/5 rounded-lg">
