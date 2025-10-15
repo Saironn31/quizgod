@@ -53,6 +53,14 @@ export default function CreatePage() {
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
   
+  // Document preview states
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load saved draft
@@ -506,8 +514,174 @@ export default function CreatePage() {
       setIsExtracting(false);
       setOcrProgress({ current: 0, total: 0, percentage: 0 });
     }
+    
+    // Generate preview after extraction
+    generatePreview(file);
   };
 
+  // Preview generation functions
+  const generatePreview = async (file: File) => {
+    try {
+      if (file.type === 'application/pdf') {
+        await generatePdfPreview(file);
+      } else if (file.type.includes('word') || file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        await generateDocxPreview(file);
+      } else if (file.type.includes('presentation') || file.name.endsWith('.pptx') || file.name.endsWith('.ppt')) {
+        await generatePptxPreview(file);
+      }
+    } catch (error) {
+      console.error('Preview generation error:', error);
+    }
+  };
+
+  const generatePdfPreview = async (file: File) => {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    setPdfDoc(pdf);
+    setTotalPages(pdf.numPages);
+    setCurrentPage(1);
+    renderPdfPage(pdf, 1);
+  };
+
+  const renderPdfPage = async (pdf: any, pageNum: number) => {
+    if (!canvasRef.current) return;
+    
+    const page = await pdf.getPage(pageNum);
+    const scale = zoomLevel / 100;
+    const viewport = page.getViewport({ scale });
+    
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    
+    if (context) {
+      await page.render({ canvasContext: context, viewport }).promise;
+    }
+  };
+
+  const generateDocxPreview = async (file: File) => {
+    // For DOCX, we'll create a simple HTML preview
+    const mammoth = await import('mammoth');
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.convertToHtml({ arrayBuffer });
+    
+    const blob = new Blob([`
+      <html>
+        <head>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 20px; 
+              line-height: 1.6;
+              background: white;
+            }
+            img { max-width: 100%; height: auto; }
+          </style>
+        </head>
+        <body>${result.value}</body>
+      </html>
+    `], { type: 'text/html' });
+    
+    const url = URL.createObjectURL(blob);
+    setPreviewUrl(url);
+    setTotalPages(1);
+    setCurrentPage(1);
+  };
+
+  const generatePptxPreview = async (file: File) => {
+    const JSZip = await import('jszip');
+    const zip = await JSZip.default.loadAsync(file);
+    
+    // Extract all images from slides
+    const imageFiles = Object.keys(zip.files)
+      .filter(name => name.startsWith('ppt/media/') && 
+        (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg')))
+      .sort();
+    
+    if (imageFiles.length > 0) {
+      // Create preview from first image
+      const firstImage = imageFiles[0];
+      const imageData = await zip.files[firstImage].async('base64');
+      const imageExt = firstImage.split('.').pop();
+      setPreviewUrl(`data:image/${imageExt};base64,${imageData}`);
+      setTotalPages(imageFiles.length);
+      setCurrentPage(1);
+    } else {
+      // No images found, create text preview
+      const slideFiles = Object.keys(zip.files)
+        .filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'))
+        .sort();
+      
+      let htmlContent = '<html><head><style>body{font-family:Arial;padding:20px;background:white;}</style></head><body>';
+      
+      for (const slideName of slideFiles) {
+        const slideContent = await zip.files[slideName].async('string');
+        const textMatches = slideContent.match(/<a:t>([^<]+)<\/a:t>/g);
+        if (textMatches) {
+          const slideText = textMatches.map(match => match.replace(/<\/?a:t>/g, '')).join('<br>');
+          htmlContent += `<div style="margin-bottom:20px;padding:20px;border:1px solid #ccc;">${slideText}</div>`;
+        }
+      }
+      
+      htmlContent += '</body></html>';
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      setTotalPages(slideFiles.length);
+      setCurrentPage(1);
+    }
+  };
+
+  // Preview navigation functions
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      if (pdfDoc) {
+        renderPdfPage(pdfDoc, nextPage);
+      }
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      if (pdfDoc) {
+        renderPdfPage(pdfDoc, prevPage);
+      }
+    }
+  };
+
+  const handleZoomIn = () => {
+    const newZoom = Math.min(zoomLevel + 25, 200);
+    setZoomLevel(newZoom);
+    if (pdfDoc) {
+      renderPdfPage(pdfDoc, currentPage);
+    }
+  };
+
+  const handleZoomOut = () => {
+    const newZoom = Math.max(zoomLevel - 25, 50);
+    setZoomLevel(newZoom);
+    if (pdfDoc) {
+      renderPdfPage(pdfDoc, currentPage);
+    }
+  };
+
+  // Update PDF rendering when zoom changes
+  useEffect(() => {
+    if (pdfDoc && canvasRef.current) {
+      renderPdfPage(pdfDoc, currentPage);
+    }
+  }, [zoomLevel]);
+  
   const generateWithGemini = async () => {
     if (!title.trim() || !subject) {
       alert("Please fill in quiz title and select a subject");
@@ -1006,7 +1180,9 @@ Provide exactly ${numQuestions} questions.`;
 
                 {/* AI Mode */}
                 {mode === 'ai' && (
-                  <div className="space-y-4 md:space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Quiz Builder (2/3 width) */}
+                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
                     {/* Bento Grid Layout */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* PDF Upload - Large Card */}
@@ -1190,6 +1366,109 @@ Provide exactly ${numQuestions} questions.`;
                             "🚀 Create Quiz from AI"
                           )}
                         </button>
+                      </div>
+                    )}
+                    </div>
+                    
+                    {/* Right Column - Document Preview (1/3 width) */}
+                    {pdfFile && (
+                      <div className="lg:col-span-1">
+                        <div className="sticky top-4 glass-card rounded-2xl p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-400/30">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                              <span>📄</span>
+                              Document Preview
+                            </h4>
+                            <span className="text-xs text-slate-400">{pdfFile.name}</span>
+                          </div>
+                          
+                          {/* Preview Controls */}
+                          <div className="flex items-center justify-between mb-4 gap-2">
+                            {/* Page Navigation */}
+                            {totalPages > 1 && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={goToPrevPage}
+                                  disabled={currentPage === 1}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Previous page"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                  </svg>
+                                </button>
+                                <span className="text-xs text-white font-medium">
+                                  {currentPage} / {totalPages}
+                                </span>
+                                <button
+                                  onClick={goToNextPage}
+                                  disabled={currentPage === totalPages}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Next page"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                            
+                            {/* Zoom Controls */}
+                            {pdfDoc && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={handleZoomOut}
+                                  disabled={zoomLevel <= 50}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Zoom out"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                                  </svg>
+                                </button>
+                                <span className="text-xs text-white font-medium">{zoomLevel}%</span>
+                                <button
+                                  onClick={handleZoomIn}
+                                  disabled={zoomLevel >= 200}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Zoom in"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Preview Container */}
+                          <div className="bg-white/5 rounded-xl p-2 border border-white/10 overflow-auto max-h-[calc(100vh-300px)]">
+                            {pdfDoc ? (
+                              <canvas ref={canvasRef} className="w-full h-auto" />
+                            ) : previewUrl ? (
+                              <iframe
+                                src={previewUrl}
+                                className="w-full h-[calc(100vh-350px)] border-0 rounded-lg bg-white"
+                                title="Document Preview"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-64 text-slate-400">
+                                <div className="text-center">
+                                  <div className="text-4xl mb-2">📄</div>
+                                  <p className="text-sm">Processing preview...</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* File Info */}
+                          <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between text-xs text-slate-400">
+                              <span>File size: {(pdfFile.size / 1024).toFixed(2)} KB</span>
+                              {totalPages > 0 && <span>{totalPages} {totalPages === 1 ? 'page' : 'pages'}</span>}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
