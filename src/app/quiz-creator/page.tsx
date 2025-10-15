@@ -241,6 +241,9 @@ export default function CreatePage() {
     setError("");
     setOcrProgress({ current: 0, total: 0, percentage: 0 });
 
+    // Generate preview immediately after upload
+    generatePreview(file);
+
     try {
       // Handle PDF files with OCR
       if (file.type === 'application/pdf') {
@@ -514,9 +517,6 @@ export default function CreatePage() {
       setIsExtracting(false);
       setOcrProgress({ current: 0, total: 0, percentage: 0 });
     }
-    
-    // Generate preview after extraction
-    generatePreview(file);
   };
 
   // Preview generation functions
@@ -1180,9 +1180,7 @@ Provide exactly ${numQuestions} questions.`;
 
                 {/* AI Mode */}
                 {mode === 'ai' && (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Quiz Builder (2/3 width) */}
-                    <div className="lg:col-span-2 space-y-4 md:space-y-6">
+                  <div className="space-y-6">
                     {/* Bento Grid Layout */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* PDF Upload - Large Card */}
@@ -1339,7 +1337,7 @@ Provide exactly ${numQuestions} questions.`;
 
                     {/* Generated Questions Preview */}
                     {generatedQuestions && (
-                      <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
+                      <div className="md:col-span-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
                             ✨
@@ -1368,110 +1366,107 @@ Provide exactly ${numQuestions} questions.`;
                         </button>
                       </div>
                     )}
-                    </div>
                     
-                    {/* Right Column - Document Preview (1/3 width) */}
+                    {/* Document Preview - 2nd Row, 2nd Column */}
                     {pdfFile && (
-                      <div className="lg:col-span-1">
-                        <div className="sticky top-4 glass-card rounded-2xl p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-400/30">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                              <span>📄</span>
-                              Document Preview
-                            </h4>
-                            <span className="text-xs text-slate-400">{pdfFile.name}</span>
-                          </div>
-                          
-                          {/* Preview Controls */}
-                          <div className="flex items-center justify-between mb-4 gap-2">
-                            {/* Page Navigation */}
-                            {totalPages > 1 && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={goToPrevPage}
-                                  disabled={currentPage === 1}
-                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                  title="Previous page"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                  </svg>
-                                </button>
-                                <span className="text-xs text-white font-medium">
-                                  {currentPage} / {totalPages}
-                                </span>
-                                <button
-                                  onClick={goToNextPage}
-                                  disabled={currentPage === totalPages}
-                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                  title="Next page"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                            
-                            {/* Zoom Controls */}
-                            {pdfDoc && (
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={handleZoomOut}
-                                  disabled={zoomLevel <= 50}
-                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                  title="Zoom out"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-                                  </svg>
-                                </button>
-                                <span className="text-xs text-white font-medium">{zoomLevel}%</span>
-                                <button
-                                  onClick={handleZoomIn}
-                                  disabled={zoomLevel >= 200}
-                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                  title="Zoom in"
-                                >
-                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Preview Container */}
-                          <div className="bg-white/5 rounded-xl p-2 border border-white/10 overflow-auto max-h-[calc(100vh-300px)]">
-                            {pdfDoc ? (
-                              <canvas ref={canvasRef} className="w-full h-auto" />
-                            ) : previewUrl ? (
-                              <iframe
-                                src={previewUrl}
-                                className="w-full h-[calc(100vh-350px)] border-0 rounded-lg bg-white"
-                                title="Document Preview"
-                              />
-                            ) : (
-                              <div className="flex items-center justify-center h-64 text-slate-400">
-                                <div className="text-center">
-                                  <div className="text-4xl mb-2">📄</div>
-                                  <p className="text-sm">Processing preview...</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* File Info */}
-                          <div className="mt-4 pt-4 border-t border-white/10">
-                            <div className="flex items-center justify-between text-xs text-slate-400">
-                              <span>File size: {(pdfFile.size / 1024).toFixed(2)} KB</span>
-                              {totalPages > 0 && <span>{totalPages} {totalPages === 1 ? 'page' : 'pages'}</span>}
+                      <div className="glass-card rounded-2xl p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-400/30">
+                        <div className="flex items-center justify-between mb-4">
+                          <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                            <span>📄</span>
+                            Document Preview
+                          </h4>
+                          <span className="text-xs text-slate-400">{pdfFile.name}</span>
+                        </div>
+                        
+                        {/* Preview Controls */}
+                        <div className="flex items-center justify-between mb-4 gap-2">
+                          {/* Page Navigation */}
+                          {totalPages > 1 && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={goToPrevPage}
+                                disabled={currentPage === 1}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                title="Previous page"
+                              >
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                </svg>
+                              </button>
+                              <span className="text-xs text-white font-medium">
+                                {currentPage} / {totalPages}
+                              </span>
+                              <button
+                                onClick={goToNextPage}
+                                disabled={currentPage === totalPages}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                title="Next page"
+                              >
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
                             </div>
+                          )}
+                          
+                          {/* Zoom Controls */}
+                          {pdfDoc && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={handleZoomOut}
+                                disabled={zoomLevel <= 50}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                title="Zoom out"
+                              >
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                                </svg>
+                              </button>
+                              <span className="text-xs text-white font-medium">{zoomLevel}%</span>
+                              <button
+                                onClick={handleZoomIn}
+                                disabled={zoomLevel >= 200}
+                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                title="Zoom in"
+                              >
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                </svg>
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Preview Container */}
+                        <div className="bg-white/5 rounded-xl p-2 border border-white/10 overflow-auto max-h-[600px]">
+                          {pdfDoc ? (
+                            <canvas ref={canvasRef} className="w-full h-auto" />
+                          ) : previewUrl ? (
+                            <iframe
+                              src={previewUrl}
+                              className="w-full h-[500px] border-0 rounded-lg bg-white"
+                              title="Document Preview"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-64 text-slate-400">
+                              <div className="text-center">
+                                <div className="text-4xl mb-2">📄</div>
+                                <p className="text-sm">Processing preview...</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* File Info */}
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                          <div className="flex items-center justify-between text-xs text-slate-400">
+                            <span>File size: {(pdfFile.size / 1024).toFixed(2)} KB</span>
+                            {totalPages > 0 && <span>{totalPages} {totalPages === 1 ? 'page' : 'pages'}</span>}
                           </div>
                         </div>
                       </div>
                     )}
-                  </div>
+                    </div>
                 )}
               </>
             )}
