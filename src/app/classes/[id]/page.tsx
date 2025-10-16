@@ -242,11 +242,11 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
         <h2 className="text-2xl font-bold text-gray-800">📝 Class Quizzes</h2>
         <div className="flex gap-3 items-center">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Sort by:</span>
+            <span className="text-sm text-slate-300 font-semibold">Sort by:</span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'name' | 'subject')}
-              className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 transition-all hover:bg-white/15 hover:border-white/30 cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2"
             >
               <option value="name">Name</option>
               <option value="subject">Subject</option>

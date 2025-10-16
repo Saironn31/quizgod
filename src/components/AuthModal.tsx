@@ -60,19 +60,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 animate-fade-in">
       {/* Stronger overlay and blur for visibility */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px] pointer-events-auto transition-all duration-300" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-[8px] pointer-events-auto transition-all duration-300 animate-fade-in" />
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-400/20 rounded-full filter blur-3xl animate-float" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1s'}} />
         <div className="absolute top-1/2 left-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}} />
       </div>
       <div className="relative z-10 w-full max-w-md">
-        <div className="glass-card rounded-3xl p-8 md:p-10 bg-gradient-to-br from-cyan-400/40 via-violet-500/30 to-pink-500/30 border-2 border-white/20 shadow-glow animate-fade-in">
+        <div className="glass-card rounded-3xl p-8 md:p-10 bg-gradient-to-br from-cyan-400/40 via-violet-500/30 to-pink-500/30 border-2 border-white/20 shadow-glow animate-scale-in">
           {/* Geometric/glowing icon */}
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-4xl font-black shadow-glow animate-bounce-soft">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-4xl font-black shadow-glow animate-bounce-in">
               <span className="drop-shadow-lg">QG</span>
             </div>
           </div>
@@ -85,7 +85,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   role="tab"
                   aria-selected={isLogin}
                   onClick={() => setActiveTab('login')}
-                  className={`flex-1 py-2 px-3 text-base font-bold rounded-xl transition-all ${isLogin ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-glow' : 'text-slate-300 hover:bg-white/10'}`}
+                  className={`flex-1 py-2 px-3 text-base font-bold rounded-xl transition-all hover-lift ${isLogin ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-glow' : 'text-slate-300 hover:bg-white/10'}`}
                 >
                   Login
                 </button>
@@ -94,7 +94,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   role="tab"
                   aria-selected={!isLogin}
                   onClick={() => setActiveTab('signup')}
-                  className={`flex-1 py-2 px-3 text-base font-bold rounded-xl transition-all ${!isLogin ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-glow' : 'text-slate-300 hover:bg-white/10'}`}
+                  className={`flex-1 py-2 px-3 text-base font-bold rounded-xl transition-all hover-lift ${!isLogin ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white shadow-glow' : 'text-slate-300 hover:bg-white/10'}`}
                 >
                   Sign up
                 </button>
@@ -169,7 +169,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-pink-500 text-white py-3 px-4 text-lg font-bold rounded-xl shadow-glow transition-all duration-200 disabled:opacity-60"
+              className="w-full bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-pink-500 text-white py-3 px-4 text-lg font-bold rounded-xl shadow-glow transition-all duration-200 disabled:opacity-60 hover-lift active:scale-95"
             >
               {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Create account')}
             </button>

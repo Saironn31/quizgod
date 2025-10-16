@@ -206,11 +206,11 @@ export default function QuizzesPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Filter by Subject</label>
+                  <label className="block text-xs md:text-sm font-semibold text-white mb-2">Filter by Subject</label>
                   <select
                     value={selectedSubject}
                     onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400"
+                    className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400/50 transition-all hover:bg-white/15 hover:border-white/30 cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2"
                   >
                     <option value="">All Subjects</option>
                     {subjects.map(subject => (

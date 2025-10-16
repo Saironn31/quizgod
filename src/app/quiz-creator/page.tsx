@@ -882,9 +882,9 @@ Provide exactly ${numQuestions} questions.`;
                       />
                     </div>
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Subject *</label>
+                      <label className="block text-xs md:text-sm font-semibold text-white mb-2">Subject *</label>
                       <select 
-                        className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                        className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 transition-all hover:bg-white/15 hover:border-white/30 cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2" 
                         value={subject} 
                         onChange={e => handleSubjectChange(e.target.value)}
                       >
@@ -899,9 +899,9 @@ Provide exactly ${numQuestions} questions.`;
                   </div>
 
                   <div>
-                    <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Add to Class (Optional)</label>
+                    <label className="block text-xs md:text-sm font-semibold text-white mb-2">Add to Class (Optional)</label>
                     <select 
-                      className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" 
+                      className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 transition-all hover:bg-white/15 hover:border-white/30 cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2" 
                       value={selectedClass} 
                       onChange={e => handleClassChange(e.target.value)}
                     >

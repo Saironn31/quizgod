@@ -33,8 +33,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Remove preload class after page loads to enable animations
+              window.addEventListener('load', () => {
+                document.body.classList.remove('preload');
+              });
+            `,
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased preload`}
         suppressHydrationWarning={true}
       >
         <AuthProvider>
