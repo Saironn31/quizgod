@@ -44,37 +44,29 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
 
   // Load job from localStorage on mount
   useEffect(() => {
-    console.log('[DocumentProcessingContext] Initializing...');
     const savedJob = localStorage.getItem('document_processing_job');
     if (savedJob) {
       try {
         const job = JSON.parse(savedJob);
-        console.log('[DocumentProcessingContext] Found saved job:', job);
         // Only restore if job is less than 1 hour old and still processing
         if (job.isExtracting && Date.now() - job.startTime < 3600000) {
-          console.log('[DocumentProcessingContext] Restoring active job');
           setCurrentJob(job);
           jobsRef.current.set(job.id, job);
         } else {
-          console.log('[DocumentProcessingContext] Job expired or completed, removing');
           localStorage.removeItem('document_processing_job');
         }
       } catch (error) {
         console.error('[DocumentProcessingContext] Failed to restore processing job:', error);
         localStorage.removeItem('document_processing_job');
       }
-    } else {
-      console.log('[DocumentProcessingContext] No saved job found');
     }
   }, []);
 
   // Save job to localStorage whenever it changes
   useEffect(() => {
     if (currentJob) {
-      console.log('[DocumentProcessingContext] Saving job to localStorage:', currentJob.id);
       localStorage.setItem('document_processing_job', JSON.stringify(currentJob));
     } else {
-      console.log('[DocumentProcessingContext] Removing job from localStorage');
       localStorage.removeItem('document_processing_job');
     }
   }, [currentJob]);
@@ -98,8 +90,6 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
   ): string => {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    console.log('[DocumentProcessingContext] Starting new job:', jobId, 'File:', file.name, 'OCR:', useOCR);
-    
     const job: ProcessingJob = {
       id: jobId,
       fileName: file.name,
@@ -118,8 +108,6 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
     const abortController = new AbortController();
     abortControllersRef.current.set(jobId, abortController);
 
-    console.log('[DocumentProcessingContext] Job initialized, starting extraction...');
-    
     // Start the extraction process
     extractTextFromDocument(file, useOCR, jobId, abortController.signal);
 

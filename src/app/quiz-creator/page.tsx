@@ -278,27 +278,21 @@ export default function CreatePage() {
     // Generate preview immediately after upload
     generatePreview(file);
 
-    console.log('[Quiz Creator] Starting processing with context...');
-    
     // Start processing using the persistent context
     const jobId = startProcessing(
       file,
       useOCR,
       (extractedText) => {
         // On completion callback
-        console.log('[Quiz Creator] Processing complete, received text:', extractedText.length, 'characters');
         setPdfText(extractedText);
         setIsExtracting(false);
         setOcrProgress({ current: 0, total: 0, percentage: 0 });
       },
       (progress) => {
         // On progress callback
-        console.log('[Quiz Creator] Progress update:', progress);
         setOcrProgress(progress);
       }
     );
-    
-    console.log('[Quiz Creator] Started job:', jobId);
   };
 
   // Preview generation functions
