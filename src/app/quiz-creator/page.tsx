@@ -52,6 +52,7 @@ export default function CreatePage() {
   const [useOCR, setUseOCR] = useState(true);
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
+  const [extractionJobId, setExtractionJobId] = useState<string | null>(null);
   
   // Document preview states
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -62,6 +63,7 @@ export default function CreatePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const extractionAbortControllerRef = useRef<AbortController | null>(null);
 
   // Load saved draft
   useEffect(() => {
@@ -83,6 +85,13 @@ export default function CreatePage() {
           setNumQuestions(draft.numQuestions || 5);
           setGeneratedQuestions(draft.generatedQuestions || "");
           setPdfText(draft.pdfText || "");
+          
+          // Restore extraction state (but don't restart extraction automatically)
+          if (draft.isExtracting === false && draft.pdfText) {
+            // Extraction was completed
+            setIsExtracting(false);
+            setOcrProgress(draft.ocrProgress || { current: 0, total: 0, percentage: 0 });
+          }
         } else {
           localStorage.removeItem('create_quiz_draft_v3');
         }
@@ -90,6 +99,13 @@ export default function CreatePage() {
     } catch (error) {
       console.error('Failed to load draft:', error);
       localStorage.removeItem('create_quiz_draft_v3');
+    }
+  }, []);
+
+  // Request notification permission
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
     }
   }, []);
 
@@ -114,11 +130,16 @@ export default function CreatePage() {
       numQuestions,
       generatedQuestions,
       pdfText,
+      isExtracting,
+      ocrProgress,
+      pdfFileName: pdfFile?.name || null,
+      pdfFileSize: pdfFile?.size || null,
+      pdfFileType: pdfFile?.type || null,
       timestamp: Date.now()
     };
     
     localStorage.setItem('create_quiz_draft_v3', JSON.stringify(draft));
-  }, [mode, title, subject, selectedClass, description, questions, numQuestions, generatedQuestions, pdfText]);
+  }, [mode, title, subject, selectedClass, description, questions, numQuestions, generatedQuestions, pdfText, isExtracting, ocrProgress, pdfFile]);
 
   // Dynamic filtering
   useEffect(() => {
@@ -244,6 +265,15 @@ export default function CreatePage() {
     // Generate preview immediately after upload
     generatePreview(file);
 
+    // Create a new abort controller for this extraction job
+    extractionAbortControllerRef.current = new AbortController();
+
+    // Run extraction in background (won't block navigation)
+    extractTextFromDocument(file, extractionAbortControllerRef.current.signal);
+  };
+
+  // Separate function for text extraction that runs independently
+  const extractTextFromDocument = async (file: File, signal: AbortSignal) => {
     try {
       // Handle PDF files with OCR
       if (file.type === 'application/pdf') {
@@ -288,6 +318,13 @@ export default function CreatePage() {
         setOcrProgress({ current: 0, total: pdf.numPages, percentage: 0 });
         
         for (let i = 1; i <= pdf.numPages; i++) {
+          // Check if extraction was aborted
+          if (signal.aborted) {
+            console.log('Extraction aborted by user');
+            await worker.terminate();
+            return;
+          }
+          
           try {
             const page = await pdf.getPage(i);
             const viewport = page.getViewport({ scale: 1.5 }); // Reduced from 2.0 for speed
@@ -374,6 +411,13 @@ export default function CreatePage() {
               let imageOcrText = '';
               
               for (let i = 0; i < imageFiles.length; i++) {
+                // Check if extraction was aborted
+                if (signal.aborted) {
+                  console.log('Extraction aborted by user');
+                  await worker.terminate();
+                  return;
+                }
+                
                 try {
                   const imageFile = imageFiles[i];
                   const imageData = await zip.files[imageFile].async('base64');
@@ -458,6 +502,13 @@ export default function CreatePage() {
                 let imageOcrText = '';
                 
                 for (let i = 0; i < imageFiles.length; i++) {
+                  // Check if extraction was aborted
+                  if (signal.aborted) {
+                    console.log('Extraction aborted by user');
+                    await worker.terminate();
+                    return;
+                  }
+                  
                   try {
                     const imageFile = imageFiles[i];
                     const imageExt = imageFile.split('.').pop()?.toLowerCase();
@@ -512,10 +563,22 @@ export default function CreatePage() {
       }
     } catch (error) {
       console.error('Error extracting document:', error);
-      setError('Failed to extract text from document. Please try again.');
+      if (!signal.aborted) {
+        setError('Failed to extract text from document. Please try again.');
+      }
     } finally {
-      setIsExtracting(false);
-      setOcrProgress({ current: 0, total: 0, percentage: 0 });
+      if (!signal.aborted) {
+        setIsExtracting(false);
+        setOcrProgress({ current: 0, total: 0, percentage: 0 });
+        
+        // Show notification when extraction completes
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+          new Notification('Document Processing Complete', {
+            body: 'Text extraction finished! You can now generate quiz questions.',
+            icon: '/favicon.ico'
+          });
+        }
+      }
     }
   };
 
@@ -1041,6 +1104,28 @@ Provide exactly ${numQuestions} questions.`;
             </button>
           </div>
         </div>
+
+        {/* Background Processing Indicator */}
+        {isExtracting && (
+          <div className="relative z-10 mb-6 glass-card rounded-2xl p-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-spin">
+                <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent"></div>
+              </div>
+              <div className="flex-1">
+                <p className="text-white font-bold">Document Processing in Background</p>
+                <p className="text-sm text-slate-300">
+                  {useOCR && ocrProgress.total > 0 
+                    ? `OCR Processing: ${ocrProgress.current}/${ocrProgress.total} (${ocrProgress.percentage}%)`
+                    : 'Extracting text from document...'}
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  💡 You can navigate to other pages - processing will continue in the background!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-20">
