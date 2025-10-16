@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
 import { 
   getUserSubjects, 
   getAllUserSubjects,
@@ -23,6 +24,7 @@ interface ExtendedFirebaseSubject extends FirebaseSubject {
 
 export default function CreatePage() {
   const { user } = useAuth();
+  const { currentJob, startProcessing, cancelProcessing } = useDocumentProcessing();
   
   // Mode selection
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
@@ -52,7 +54,6 @@ export default function CreatePage() {
   const [useOCR, setUseOCR] = useState(true);
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
-  const [extractionJobId, setExtractionJobId] = useState<string | null>(null);
   
   // Document preview states
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -63,7 +64,6 @@ export default function CreatePage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const extractionAbortControllerRef = useRef<AbortController | null>(null);
 
   // Load saved draft
   useEffect(() => {
@@ -265,321 +265,21 @@ export default function CreatePage() {
     // Generate preview immediately after upload
     generatePreview(file);
 
-    // Create a new abort controller for this extraction job
-    extractionAbortControllerRef.current = new AbortController();
-
-    // Run extraction in background (won't block navigation)
-    extractTextFromDocument(file, extractionAbortControllerRef.current.signal);
-  };
-
-  // Separate function for text extraction that runs independently
-  const extractTextFromDocument = async (file: File, signal: AbortSignal) => {
-    try {
-      // Handle PDF files with OCR
-      if (file.type === 'application/pdf') {
-        const pdfjsLib = await import('pdfjs-dist');
-        
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
-
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      
-      let extractedText = '';
-      let ocrText = '';
-      
-      // Extract embedded text using PDF.js
-      console.log(`Extracting text from ${pdf.numPages} pages...`);
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map((item: any) => item.str).join(' ');
-        extractedText += pageText + '\n\n';
-      }
-      
-      console.log(`Extracted ${extractedText.length} characters from embedded text`);
-      
-      // Run OCR only if enabled
-      if (useOCR) {
-        console.log('Running OCR on all pages...');
-        
-        const Tesseract = await import('tesseract.js');
-        
-        // Create a Tesseract worker with CDN configuration
-        const worker = await Tesseract.createWorker('eng', 1, {
-          workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-          corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
-          logger: (m: any) => {
-            if (m.status === 'recognizing text') {
-              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-            }
-          }
-        });
-        
-        setOcrProgress({ current: 0, total: pdf.numPages, percentage: 0 });
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-          // Check if extraction was aborted
-          if (signal.aborted) {
-            console.log('Extraction aborted by user');
-            await worker.terminate();
-            return;
-          }
-          
-          try {
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 1.5 }); // Reduced from 2.0 for speed
-            
-            // Create canvas to render PDF page
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-            
-            if (context) {
-              await page.render({ canvasContext: context, viewport }).promise;
-              
-              // Update progress before OCR
-              setOcrProgress({ 
-                current: i, 
-                total: pdf.numPages, 
-                percentage: Math.round((i / pdf.numPages) * 100) 
-              });
-              
-              // Run OCR on the rendered page
-              console.log(`Processing page ${i}/${pdf.numPages}...`);
-              const { data } = await worker.recognize(canvas);
-              ocrText += data.text + '\n\n';
-            }
-          } catch (ocrError) {
-            console.error(`OCR failed for page ${i}:`, ocrError);
-          }
-        }
-        
-        // Terminate worker
-        await worker.terminate();
-        
-        console.log(`OCR extracted ${ocrText.length} characters`);
-        
-        // Combine both texts
-        const combinedText = extractedText + '\n\n--- OCR Text ---\n\n' + ocrText;
-        setPdfText(combinedText);
-        
-        console.log(`Total text: ${combinedText.length} characters`);
-      } else {
-        // Just use extracted text without OCR
+    // Start processing using the persistent context
+    startProcessing(
+      file,
+      useOCR,
+      (extractedText) => {
+        // On completion callback
         setPdfText(extractedText);
-        console.log(`Total text (no OCR): ${extractedText.length} characters`);
-      }
-      }
-      // Handle DOCX files with OCR for images
-      else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.type === 'application/msword') {
-        const mammoth = await import('mammoth');
-        const JSZip = await import('jszip');
-        const arrayBuffer = await file.arrayBuffer();
-        
-        // Extract text content
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        let docxText = result.value;
-        console.log(`Extracted ${docxText.length} characters from Word document`);
-        
-        // Extract and OCR images if enabled
-        if (useOCR) {
-          try {
-            const Tesseract = await import('tesseract.js');
-            const zip = await JSZip.default.loadAsync(file);
-            
-            // Find all image files in the Word document
-            const imageFiles = Object.keys(zip.files).filter(name => 
-              name.startsWith('word/media/') && 
-              (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.gif'))
-            );
-            
-            if (imageFiles.length > 0) {
-              console.log(`Found ${imageFiles.length} images in Word document. Running OCR...`);
-              
-              const worker = await Tesseract.createWorker('eng', 1, {
-                workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-                corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
-                logger: (m: any) => {
-                  if (m.status === 'recognizing text') {
-                    console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-                  }
-                }
-              });
-              
-              setOcrProgress({ current: 0, total: imageFiles.length, percentage: 0 });
-              let imageOcrText = '';
-              
-              for (let i = 0; i < imageFiles.length; i++) {
-                // Check if extraction was aborted
-                if (signal.aborted) {
-                  console.log('Extraction aborted by user');
-                  await worker.terminate();
-                  return;
-                }
-                
-                try {
-                  const imageFile = imageFiles[i];
-                  const imageData = await zip.files[imageFile].async('base64');
-                  const imageUrl = `data:image/${imageFile.split('.').pop()};base64,${imageData}`;
-                  
-                  setOcrProgress({ 
-                    current: i + 1, 
-                    total: imageFiles.length, 
-                    percentage: Math.round(((i + 1) / imageFiles.length) * 100) 
-                  });
-                  
-                  console.log(`OCR on image ${i + 1}/${imageFiles.length}...`);
-                  const { data } = await worker.recognize(imageUrl);
-                  imageOcrText += data.text + '\n\n';
-                } catch (imgError) {
-                  console.error(`OCR failed for image ${i + 1}:`, imgError);
-                }
-              }
-              
-              await worker.terminate();
-              
-              if (imageOcrText.trim()) {
-                docxText += '\n\n--- Text from Images (OCR) ---\n\n' + imageOcrText;
-                console.log(`OCR extracted ${imageOcrText.length} characters from images`);
-              }
-            }
-          } catch (ocrError) {
-            console.error('OCR processing error:', ocrError);
-          }
-        }
-        
-        setPdfText(docxText);
-        console.log(`Total text from Word: ${docxText.length} characters`);
-      }
-      // Handle PPTX files with OCR for images
-      else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.ms-powerpoint') {
-        try {
-          const JSZip = await import('jszip');
-          const zip = await JSZip.default.loadAsync(file);
-          let fullText = '';
-          
-          // Extract text from slides
-          const slideFiles = Object.keys(zip.files).filter(name => name.startsWith('ppt/slides/slide') && name.endsWith('.xml'));
-          
-          for (const slideName of slideFiles) {
-            const slideContent = await zip.files[slideName].async('string');
-            // Extract text between <a:t> tags (PowerPoint text tags)
-            const textMatches = slideContent.match(/<a:t>([^<]+)<\/a:t>/g);
-            if (textMatches) {
-              const slideText = textMatches.map(match => match.replace(/<\/?a:t>/g, '')).join(' ');
-              fullText += slideText + '\n\n';
-            }
-          }
-          
-          console.log(`Extracted ${fullText.length} characters from PowerPoint text`);
-          
-          // Extract and OCR images if enabled
-          if (useOCR) {
-            try {
-              const Tesseract = await import('tesseract.js');
-              
-              // Find all image files in the PowerPoint
-              const imageFiles = Object.keys(zip.files).filter(name => 
-                name.startsWith('ppt/media/') && 
-                (name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.gif') || name.endsWith('.emf') || name.endsWith('.wmf'))
-              );
-              
-              if (imageFiles.length > 0) {
-                console.log(`Found ${imageFiles.length} images in PowerPoint. Running OCR...`);
-                
-                const worker = await Tesseract.createWorker('eng', 1, {
-                  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-                  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
-                  logger: (m: any) => {
-                    if (m.status === 'recognizing text') {
-                      console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
-                    }
-                  }
-                });
-                
-                setOcrProgress({ current: 0, total: imageFiles.length, percentage: 0 });
-                let imageOcrText = '';
-                
-                for (let i = 0; i < imageFiles.length; i++) {
-                  // Check if extraction was aborted
-                  if (signal.aborted) {
-                    console.log('Extraction aborted by user');
-                    await worker.terminate();
-                    return;
-                  }
-                  
-                  try {
-                    const imageFile = imageFiles[i];
-                    const imageExt = imageFile.split('.').pop()?.toLowerCase();
-                    
-                    // Skip vector formats that Tesseract can't process
-                    if (imageExt === 'emf' || imageExt === 'wmf') {
-                      console.log(`Skipping vector image: ${imageFile}`);
-                      continue;
-                    }
-                    
-                    const imageData = await zip.files[imageFile].async('base64');
-                    const imageUrl = `data:image/${imageExt};base64,${imageData}`;
-                    
-                    setOcrProgress({ 
-                      current: i + 1, 
-                      total: imageFiles.length, 
-                      percentage: Math.round(((i + 1) / imageFiles.length) * 100) 
-                    });
-                    
-                    console.log(`OCR on image ${i + 1}/${imageFiles.length}...`);
-                    const { data } = await worker.recognize(imageUrl);
-                    imageOcrText += data.text + '\n\n';
-                  } catch (imgError) {
-                    console.error(`OCR failed for image ${i + 1}:`, imgError);
-                  }
-                }
-                
-                await worker.terminate();
-                
-                if (imageOcrText.trim()) {
-                  fullText += '\n\n--- Text from Images (OCR) ---\n\n' + imageOcrText;
-                  console.log(`OCR extracted ${imageOcrText.length} characters from images`);
-                }
-              }
-            } catch (ocrError) {
-              console.error('OCR processing error:', ocrError);
-            }
-          }
-          
-          if (!fullText.trim()) {
-            throw new Error('No text content found in PowerPoint file');
-          }
-          
-          setPdfText(fullText);
-          console.log(`Total text from PowerPoint: ${fullText.length} characters`);
-        } catch (error) {
-          console.error('PowerPoint extraction error:', error);
-          setError('Failed to extract text from PowerPoint. The file might be password-protected or corrupted.');
-          setIsExtracting(false);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error extracting document:', error);
-      if (!signal.aborted) {
-        setError('Failed to extract text from document. Please try again.');
-      }
-    } finally {
-      if (!signal.aborted) {
         setIsExtracting(false);
         setOcrProgress({ current: 0, total: 0, percentage: 0 });
-        
-        // Show notification when extraction completes
-        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-          new Notification('Document Processing Complete', {
-            body: 'Text extraction finished! You can now generate quiz questions.',
-            icon: '/favicon.ico'
-          });
-        }
+      },
+      (progress) => {
+        // On progress callback
+        setOcrProgress(progress);
       }
-    }
+    );
   };
 
   // Preview generation functions

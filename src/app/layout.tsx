@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "../contexts/ThemeContext";
 import { AuthProvider } from "../contexts/AuthContext";
+import { DocumentProcessingProvider } from "../contexts/DocumentProcessingContext";
 import ChatOverlay from '@/components/ChatOverlay';
 
 const geistSans = Geist({
@@ -37,10 +38,12 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <AuthProvider>
-          <ThemeProvider>
-            {children}
-            <ChatOverlay />
-          </ThemeProvider>
+          <DocumentProcessingProvider>
+            <ThemeProvider>
+              {children}
+              <ChatOverlay />
+            </ThemeProvider>
+          </DocumentProcessingProvider>
         </AuthProvider>
       </body>
     </html>
