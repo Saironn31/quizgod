@@ -109,6 +109,19 @@ export default function CreatePage() {
     }
   }, []);
 
+  // Sync context job state with local state
+  useEffect(() => {
+    if (currentJob) {
+      setIsExtracting(currentJob.isExtracting);
+      setOcrProgress(currentJob.ocrProgress);
+      
+      // If extraction is complete and we have text, update pdfText
+      if (!currentJob.isExtracting && currentJob.extractedText && !pdfText) {
+        setPdfText(currentJob.extractedText);
+      }
+    }
+  }, [currentJob]);
+
   // Auto-save draft
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -265,21 +278,27 @@ export default function CreatePage() {
     // Generate preview immediately after upload
     generatePreview(file);
 
+    console.log('[Quiz Creator] Starting processing with context...');
+    
     // Start processing using the persistent context
-    startProcessing(
+    const jobId = startProcessing(
       file,
       useOCR,
       (extractedText) => {
         // On completion callback
+        console.log('[Quiz Creator] Processing complete, received text:', extractedText.length, 'characters');
         setPdfText(extractedText);
         setIsExtracting(false);
         setOcrProgress({ current: 0, total: 0, percentage: 0 });
       },
       (progress) => {
         // On progress callback
+        console.log('[Quiz Creator] Progress update:', progress);
         setOcrProgress(progress);
       }
     );
+    
+    console.log('[Quiz Creator] Started job:', jobId);
   };
 
   // Preview generation functions
@@ -806,7 +825,7 @@ Provide exactly ${numQuestions} questions.`;
         </div>
 
         {/* Background Processing Indicator */}
-        {isExtracting && (
+        {(isExtracting || (currentJob && currentJob.isExtracting)) && (
           <div className="relative z-10 mb-6 glass-card rounded-2xl p-4 bg-gradient-to-r from-blue-500/20 to-purple-500/20 border border-blue-400/30 animate-pulse">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-spin">
@@ -815,8 +834,8 @@ Provide exactly ${numQuestions} questions.`;
               <div className="flex-1">
                 <p className="text-white font-bold">Document Processing in Background</p>
                 <p className="text-sm text-slate-300">
-                  {useOCR && ocrProgress.total > 0 
-                    ? `OCR Processing: ${ocrProgress.current}/${ocrProgress.total} (${ocrProgress.percentage}%)`
+                  {(currentJob?.ocrProgress.total || ocrProgress.total) > 0 
+                    ? `OCR Processing: ${currentJob?.ocrProgress.current || ocrProgress.current}/${currentJob?.ocrProgress.total || ocrProgress.total} (${currentJob?.ocrProgress.percentage || ocrProgress.percentage}%)`
                     : 'Extracting text from document...'}
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
