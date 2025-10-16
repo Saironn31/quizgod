@@ -246,7 +246,7 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'name' | 'subject')}
-              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-cyan-400/50 transition-all hover:bg-white/15 hover:border-white/30 cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2"
+              className="px-4 py-2 rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-200 hover:bg-white/[0.12] hover:border-white/30 active:scale-[0.99] cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white [&>option]:py-2 [&>option]:px-4"
             >
               <option value="name">Name</option>
               <option value="subject">Subject</option>
