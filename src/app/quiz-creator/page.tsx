@@ -1036,9 +1036,6 @@ Provide exactly ${numQuestions} questions.`;
                 {/* AI Mode */}
                 {mode === 'ai' && (
                   <div className="space-y-6">
-                    {/* API Status Banner */}
-                    <ApiStatusBanner className="animate-slide-up" />
-
                     {/* Bento Grid Layout */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* PDF Upload - Large Card */}

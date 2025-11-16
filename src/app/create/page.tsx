@@ -625,36 +625,30 @@ Provide exactly ${numQuestions} questions.`;
                 </h1>
                 <p className="text-slate-300 text-sm md:text-base lg:text-lg">Build manually or generate with AI</p>
               </div>
-              <Link href="/quizzes" className="px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow w-full sm:w-auto text-center">
-                My Quizzes
-              </Link>
+              {/* Mode Switcher in Header */}
+              <div className="flex gap-3 bg-white/5 backdrop-blur-sm p-2 rounded-2xl border border-white/10">
+                <button
+                  onClick={() => setMode('manual')}
+                  className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl font-bold transition-all ${
+                    mode === 'manual'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  ✍️ Manual
+                </button>
+                <button
+                  onClick={() => setMode('ai')}
+                  className={`px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl font-bold transition-all ${
+                    mode === 'ai'
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  🤖 AI Generator
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Mode Toggle */}
-        <div className="relative z-10 mb-6">
-          <div className="glass-card rounded-2xl p-2 inline-flex gap-2">
-            <button
-              onClick={() => setMode('manual')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                mode === 'manual'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              ✍️ Manual
-            </button>
-            <button
-              onClick={() => setMode('ai')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                mode === 'ai'
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              🤖 AI Generator
-            </button>
           </div>
         </div>
 
@@ -824,97 +818,115 @@ Provide exactly ${numQuestions} questions.`;
 
                 {/* AI Mode */}
                 {mode === 'ai' && (
-                  <div className="space-y-4 md:space-y-6">
-                    {/* API Status Banner */}
-                    <ApiStatusBanner />
-
-                    {/* PDF Upload */}
-                    <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-xl p-4 md:p-6">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl">📄</span>
-                        <div>
-                          <h4 className="text-base md:text-lg font-bold text-white">Upload Document</h4>
-                          <p className="text-xs md:text-sm text-slate-300">PDF, Word (.docx), or PowerPoint (.pptx)</p>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                    {/* AI Settings Column */}
+                    <div className="lg:col-span-1 space-y-4">
+                      {/* PDF Upload */}
+                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-xl p-4 md:p-6">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-2xl">📄</span>
+                          <div>
+                            <h4 className="text-base md:text-lg font-bold text-white">Upload Document</h4>
+                            <p className="text-xs md:text-sm text-slate-300">PDF, Word, or PowerPoint</p>
+                          </div>
                         </div>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf,.docx,.doc,.pptx,.ppt"
+                          onChange={handlePDFUpload}
+                          className="hidden"
+                        />
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isExtracting}
+                          className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
+                        >
+                          {isExtracting ? "📖 Extracting..." : pdfFile ? `✓ ${pdfFile.name.substring(0, 20)}...` : "📤 Upload"}
+                        </button>
+                        {pdfText && (
+                          <div className="mt-3 p-3 bg-white/5 rounded-lg">
+                            <p className="text-xs text-slate-300">
+                              ✓ Extracted {pdfText.length} characters
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf,.docx,.doc,.pptx,.ppt"
-                        onChange={handlePDFUpload}
-                        className="hidden"
-                      />
+
+                      {/* Number of Questions */}
+                      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20">
+                        <label className="block text-sm font-semibold text-white mb-3">Number of Questions</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="50"
+                          value={numQuestions}
+                          onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
+                          className="w-full p-3 text-base border-2 border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                        />
+                      </div>
+
+                      {/* Custom Prompt */}
+                      <div className="bg-white/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-white/20">
+                        <label className="block text-sm font-semibold text-white mb-3">Custom Prompt (Optional)</label>
+                        <textarea
+                          value={customPrompt}
+                          onChange={(e) => setCustomPrompt(e.target.value)}
+                          className="w-full h-32 p-3 text-sm border-2 border-white/20 bg-white/10 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                          placeholder="Custom instructions..."
+                        />
+                      </div>
+
+                      {/* Generate Button */}
                       <button
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={isExtracting}
-                        className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all font-medium disabled:opacity-50 text-sm md:text-base"
+                        onClick={generateWithGemini}
+                        disabled={isGenerating || (!pdfText && !customPrompt)}
+                        className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-base shadow-lg"
                       >
-                        {isExtracting ? "📖 Extracting text..." : pdfFile ? `✓ ${pdfFile.name}` : "📤 Upload Document"}
+                        {isGenerating ? "🤖 Generating..." : "✨ Generate Questions"}
                       </button>
-                      {pdfText && (
-                        <div className="mt-3 p-3 bg-white/5 rounded-lg">
-                          <p className="text-xs text-slate-300">
-                            ✓ Extracted {pdfText.length} characters from PDF
-                          </p>
+
+                      {error && (
+                        <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-lg">
+                          <p className="text-red-300 text-sm">{error}</p>
                         </div>
                       )}
                     </div>
 
-                    {/* Number of Questions */}
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Number of Questions</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max="50"
-                        value={numQuestions}
-                        onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
-                        className="w-full p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                    </div>
-
-                    {/* Custom Prompt */}
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">Custom Prompt (Optional)</label>
-                      <textarea
-                        value={customPrompt}
-                        onChange={(e) => setCustomPrompt(e.target.value)}
-                        className="w-full h-32 p-2 md:p-3 text-sm md:text-base border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Enter custom instructions for question generation..."
-                      />
-                    </div>
-
-                    {/* Generate Button */}
-                    <button
-                      onClick={generateWithGemini}
-                      disabled={isGenerating || (!pdfText && !customPrompt)}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-                    >
-                      {isGenerating ? "🤖 Generating..." : "✨ Generate Questions"}
-                    </button>
-
-                    {error && (
-                      <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-lg">
-                        <p className="text-red-300 text-sm">{error}</p>
-                      </div>
-                    )}
-
-                    {/* Generated Questions Preview */}
-                    {generatedQuestions && (
-                      <div className="bg-white/5 backdrop-blur-sm rounded-lg p-4 md:p-6 border border-white/20">
-                        <h4 className="text-base md:text-lg font-bold text-white mb-3">Generated Questions</h4>
-                        <div className="bg-black/30 rounded-lg p-4 mb-4 max-h-96 overflow-y-auto">
-                          <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap">{generatedQuestions}</pre>
+                    {/* Document Preview Column */}
+                    <div className="lg:col-span-2">
+                      {generatedQuestions ? (
+                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 h-full">
+                          <h4 className="text-xl font-bold text-white mb-4">Generated Questions</h4>
+                          <div className="bg-black/30 rounded-lg p-4 mb-6 max-h-[600px] overflow-y-auto">
+                            <pre className="text-sm text-slate-200 whitespace-pre-wrap">{generatedQuestions}</pre>
+                          </div>
+                          <button
+                            onClick={handleAISubmit}
+                            disabled={saving}
+                            className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-base shadow-lg"
+                          >
+                            {saving ? "Creating Quiz..." : "🚀 Create Quiz from AI"}
+                          </button>
                         </div>
-                        <button
-                          onClick={handleAISubmit}
-                          disabled={saving}
-                          className="w-full px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
-                        >
-                          {saving ? "Creating Quiz..." : "🚀 Create Quiz from AI"}
-                        </button>
-                      </div>
-                    )}
+                      ) : pdfText ? (
+                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/20 h-full">
+                          <h4 className="text-xl font-bold text-white mb-4">Document Preview</h4>
+                          <div className="bg-black/30 rounded-lg p-4 max-h-[600px] overflow-y-auto">
+                            <pre className="text-sm text-slate-200 whitespace-pre-wrap">{pdfText.substring(0, 3000)}{pdfText.length > 3000 ? '...' : ''}</pre>
+                          </div>
+                          <p className="text-slate-400 text-sm mt-4">
+                            {pdfText.length} total characters • Click "Generate Questions" to create quiz
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-white/5 backdrop-blur-sm rounded-xl p-12 border border-white/20 h-full flex flex-col items-center justify-center text-center">
+                          <div className="text-6xl mb-4">📄</div>
+                          <h4 className="text-xl font-semibold text-white mb-2">Upload a Document</h4>
+                          <p className="text-slate-300">Upload a PDF, Word, or PowerPoint file to get started</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </>
