@@ -548,15 +548,21 @@ export default function CreatePage() {
 Based on this content:
 ${pdfText.slice(0, 15000)}
 
-Format each question EXACTLY like this:
+IMPORTANT: Format each question EXACTLY like this example:
 1. Question text here?
-A) Option 1
-B) Option 2*
-C) Option 3
-D) Option 4
+A) Wrong option
+B) Correct option*
+C) Wrong option
+D) Wrong option
 
-Mark the correct answer with an asterisk (*).
-Provide exactly ${numQuestions} questions.`;
+RULES:
+- Mark the ONE correct answer with an asterisk (*) immediately after the option text
+- Put the asterisk BEFORE the closing of the line, like: "Correct answer*"
+- Only ONE option should have an asterisk per question
+- Include exactly 4 options (A, B, C, D) for each question
+
+Provide exactly ${numQuestions} questions following this format strictly.`;
+
 
     // Try Groq first (lightning fast, high free tier limits)
     try {
@@ -770,10 +776,18 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
       for (let i = 1; i < lines.length && options.length < 4; i++) {
         const line = lines[i].trim();
-        const match = line.match(/^[A-D][\)\.]?\s*(.+?)(\*)?$/i);
+        // Match patterns like "A) text*", "A. text*", "A text*", or just "text*"
+        const match = line.match(/^[A-D][\)\.\:]?\s*(.+?)$/i);
         if (match) {
-          options.push(match[1].trim().replace(/\*$/, ''));
-          if (match[2] || line.includes('*')) {
+          const optionText = match[1].trim();
+          // Check if this option has an asterisk (correct answer marker)
+          const hasAsterisk = optionText.includes('*');
+          // Remove asterisk from the option text
+          const cleanText = optionText.replace(/\*+/g, '').trim();
+          
+          options.push(cleanText);
+          
+          if (hasAsterisk) {
             correctIndex = options.length - 1;
           }
         }
