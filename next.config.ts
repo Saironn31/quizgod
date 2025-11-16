@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.googleapis.com https://*.firebaseapp.com https://*.googleusercontent.com https://*.firebasestorage.app",
-              "connect-src 'self' data: blob: https://*.firebaseapp.com https://*.googleapis.com https://*.firestore.googleapis.com https://vercel.live wss://*.vercel.app https://smnjootmzkihsobrwarn.supabase.co https://cdn.jsdelivr.net https://openrouter.ai",
+              "connect-src 'self' data: blob: https://*.firebaseapp.com https://*.googleapis.com https://*.firestore.googleapis.com https://vercel.live wss://*.vercel.app https://smnjootmzkihsobrwarn.supabase.co https://cdn.jsdelivr.net https://openrouter.ai https://api.groq.com",
               "frame-src 'self' blob: https://vercel.live",
               "worker-src 'self' blob: data: https://cdn.jsdelivr.net",
               "child-src 'self' blob: data: https://cdn.jsdelivr.net"
