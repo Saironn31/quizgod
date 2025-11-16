@@ -591,7 +591,7 @@ Generate ${numQuestions} questions NOW:`;
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile', // Better instruction following than 8B
+              model: 'llama-4-scout', // Good balance of cost and instruction following
               messages: [
                 { 
                   role: 'system', 
