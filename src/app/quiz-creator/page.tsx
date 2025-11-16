@@ -1035,41 +1035,41 @@ Provide exactly ${numQuestions} questions.`;
 
                 {/* AI Mode */}
                 {mode === 'ai' && (
-                  <div className="space-y-6">
-                    {/* Bento Grid Layout */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* PDF Upload - Large Card */}
-                      <div className="md:col-span-2 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 animate-slide-up">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Left Column - Settings Cards */}
+                    <div className="lg:col-span-1 space-y-4">
+                      {/* PDF Upload Card */}
+                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 animate-slide-up">
                         <div className="flex items-start gap-4 mb-4">
                           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-2xl shrink-0">
                             📄
                           </div>
                           <div className="flex-1">
-                            <h4 className="text-lg md:text-xl font-bold text-white mb-1">Upload Study Material</h4>
-                            <p className="text-sm text-slate-300">PDF, Word (.docx), or PowerPoint (.pptx) - AI will extract and generate questions</p>
+                            <h4 className="text-lg font-bold text-white mb-1">Upload Study Material</h4>
+                            <p className="text-xs text-slate-300">PDF, Word, or PowerPoint</p>
                           </div>
                         </div>
                         
-                        {/* OCR Checkbox - For all document types */}
+                        {/* OCR Checkbox */}
                         {pdfFile && (
-                        <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
-                          <label className="flex items-start gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={useOCR}
-                              onChange={(e) => setUseOCR(e.target.checked)}
-                              className="mt-1 w-5 h-5 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
-                            />
-                            <div className="flex-1">
-                              <span className="text-white font-medium">Enable OCR (Optical Character Recognition)</span>
-                              <p className="text-xs text-slate-400 mt-1">
-                                {pdfFile.type === 'application/pdf' 
-                                  ? 'Extract text from scanned PDFs and images. Recommended for better accuracy but takes longer.'
-                                  : 'Extract text from images embedded in your document. Useful for slides with screenshots or diagrams containing text.'}
-                              </p>
-                            </div>
-                          </label>
-                        </div>
+                          <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
+                            <label className="flex items-start gap-3 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={useOCR}
+                                onChange={(e) => setUseOCR(e.target.checked)}
+                                className="mt-1 w-5 h-5 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
+                              />
+                              <div className="flex-1">
+                                <span className="text-white font-medium text-sm">Enable OCR</span>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {pdfFile.type === 'application/pdf' 
+                                    ? 'Extract text from scanned PDFs and images.'
+                                    : 'Extract text from images in your document.'}
+                                </p>
+                              </div>
+                            </label>
+                          </div>
                         )}
                         
                         <input
@@ -1088,16 +1088,16 @@ Provide exactly ${numQuestions} questions.`;
                             <span className="flex items-center justify-center gap-2">
                               <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                               {useOCR && ocrProgress.total > 0 
-                                ? `Processing OCR: ${ocrProgress.current}/${ocrProgress.total} pages (${ocrProgress.percentage}%)`
-                                : 'Extracting text from PDF...'}
+                                ? `OCR: ${ocrProgress.current}/${ocrProgress.total}`
+                                : 'Extracting...'}
                             </span>
                           ) : pdfFile ? (
                             <span className="flex items-center justify-center gap-2">
                               <span className="text-green-300">✓</span>
-                              {pdfFile.name}
+                              {pdfFile.name.length > 20 ? pdfFile.name.substring(0, 20) + '...' : pdfFile.name}
                             </span>
                           ) : (
-                            "📤 Choose Document (PDF/Word/PPT)"
+                            "📤 Choose Document"
                           )}
                         </button>
                         
@@ -1115,7 +1115,7 @@ Provide exactly ${numQuestions} questions.`;
                               ></div>
                             </div>
                             <p className="text-xs text-slate-400 mt-2">
-                              Processing page {ocrProgress.current} of {ocrProgress.total}
+                              Page {ocrProgress.current} of {ocrProgress.total}
                             </p>
                           </div>
                         )}
@@ -1124,8 +1124,8 @@ Provide exactly ${numQuestions} questions.`;
                           <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="text-sm font-semibold text-white">✓ Text Extracted Successfully</p>
-                                <p className="text-xs text-slate-400 mt-1">{pdfText.length.toLocaleString()} characters ready for AI processing</p>
+                                <p className="text-sm font-semibold text-white">✓ Text Extracted</p>
+                                <p className="text-xs text-slate-400 mt-1">{pdfText.length.toLocaleString()} characters</p>
                               </div>
                               <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-xl">
                                 ✓
@@ -1135,7 +1135,7 @@ Provide exactly ${numQuestions} questions.`;
                         )}
                       </div>
 
-                      {/* Number of Questions - Small Card */}
+                      {/* Number of Questions Card */}
                       <div className="glass-card rounded-2xl p-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
                         <div className="flex items-center gap-3 mb-3">
                           <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
@@ -1154,7 +1154,7 @@ Provide exactly ${numQuestions} questions.`;
                         <p className="text-xs text-slate-400 mt-2 text-center">AI will generate this many questions</p>
                       </div>
 
-                      {/* Generate Button - Small Card */}
+                      {/* Generate Button Card */}
                       <div className="glass-card rounded-2xl p-6 flex flex-col justify-center animate-slide-up" style={{animationDelay: '0.2s'}}>
                         <button
                           onClick={generateWithGemini}
@@ -1176,152 +1176,198 @@ Provide exactly ${numQuestions} questions.`;
                           <p className="text-xs text-slate-400 mt-3 text-center">Upload a document first</p>
                         )}
                       </div>
+
+                      {/* Error Display */}
+                      {error && (
+                        <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-xl animate-slide-up">
+                          <div className="flex items-start gap-3">
+                            <span className="text-2xl">⚠️</span>
+                            <div>
+                              <p className="font-semibold text-red-300">Error</p>
+                              <p className="text-sm text-red-200 mt-1">{error}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {error && (
-                      <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-xl animate-slide-up">
-                        <div className="flex items-start gap-3">
-                          <span className="text-2xl">⚠️</span>
-                          <div>
-                            <p className="font-semibold text-red-300">Error</p>
-                            <p className="text-sm text-red-200 mt-1">{error}</p>
+                    {/* Right Column - Preview & Chatbot */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Document Preview Card */}
+                      {pdfFile ? (
+                        <div className="glass-card rounded-2xl p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-400/30">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                              <span>📄</span>
+                              Document Preview
+                            </h4>
+                            <span className="text-xs text-slate-400">{pdfFile.name}</span>
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Generated Questions Preview */}
-                    {generatedQuestions && (
-                      <div className="md:col-span-2 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
-                            ✨
-                          </div>
-                          <div>
-                            <h4 className="text-lg md:text-xl font-bold text-white">Questions Generated!</h4>
-                            <p className="text-sm text-slate-300">Review and create your quiz</p>
-                          </div>
-                        </div>
-                        <div className="bg-black/30 rounded-xl p-4 mb-4 max-h-96 overflow-y-auto border border-white/10">
-                          <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap font-mono">{generatedQuestions}</pre>
-                        </div>
-                        <button
-                          onClick={handleAISubmit}
-                          disabled={saving}
-                          className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                        >
-                          {saving ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                              Creating Quiz...
-                            </span>
-                          ) : (
-                            "🚀 Create Quiz from AI"
-                          )}
-                        </button>
-                      </div>
-                    )}
-                    
-                    {/* Document Preview - 2nd Row, 2nd Column */}
-                    {pdfFile && (
-                      <div className="glass-card rounded-2xl p-4 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-400/30">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="text-lg font-bold text-white flex items-center gap-2">
-                            <span>📄</span>
-                            Document Preview
-                          </h4>
-                          <span className="text-xs text-slate-400">{pdfFile.name}</span>
-                        </div>
-                        
-                        {/* Preview Controls */}
-                        <div className="flex items-center justify-between mb-4 gap-2">
-                          {/* Page Navigation */}
-                          {totalPages > 1 && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={goToPrevPage}
-                                disabled={currentPage === 1}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                title="Previous page"
-                              >
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                </svg>
-                              </button>
-                              <span className="text-xs text-white font-medium">
-                                {currentPage} / {totalPages}
-                              </span>
-                              <button
-                                onClick={goToNextPage}
-                                disabled={currentPage === totalPages}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                title="Next page"
-                              >
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
                           
-                          {/* Zoom Controls */}
-                          {pdfDoc && (
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={handleZoomOut}
-                                disabled={zoomLevel <= 50}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                title="Zoom out"
-                              >
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
-                                </svg>
-                              </button>
-                              <span className="text-xs text-white font-medium">{zoomLevel}%</span>
-                              <button
-                                onClick={handleZoomIn}
-                                disabled={zoomLevel >= 200}
-                                className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                                title="Zoom in"
-                              >
-                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
-                                </svg>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Preview Container */}
-                        <div className="bg-white/5 rounded-xl p-2 border border-white/10 overflow-auto max-h-[600px]">
-                          {pdfDoc ? (
-                            <canvas ref={canvasRef} className="w-full h-auto" />
-                          ) : previewUrl ? (
-                            <iframe
-                              src={previewUrl}
-                              className="w-full h-[500px] border-0 rounded-lg bg-white"
-                              title="Document Preview"
-                            />
-                          ) : (
-                            <div className="flex items-center justify-center h-64 text-slate-400">
-                              <div className="text-center">
-                                <div className="text-4xl mb-2">📄</div>
-                                <p className="text-sm">Processing preview...</p>
+                          {/* Preview Controls */}
+                          <div className="flex items-center justify-between mb-4 gap-2">
+                            {/* Page Navigation */}
+                            {totalPages > 1 && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={goToPrevPage}
+                                  disabled={currentPage === 1}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Previous page"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                                  </svg>
+                                </button>
+                                <span className="text-xs text-white font-medium">
+                                  {currentPage} / {totalPages}
+                                </span>
+                                <button
+                                  onClick={goToNextPage}
+                                  disabled={currentPage === totalPages}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Next page"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
                               </div>
+                            )}
+                            
+                            {/* Zoom Controls */}
+                            {pdfDoc && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={handleZoomOut}
+                                  disabled={zoomLevel <= 50}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Zoom out"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" />
+                                  </svg>
+                                </button>
+                                <span className="text-xs text-white font-medium">{zoomLevel}%</span>
+                                <button
+                                  onClick={handleZoomIn}
+                                  disabled={zoomLevel >= 200}
+                                  className="p-2 bg-white/10 hover:bg-white/20 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                  title="Zoom in"
+                                >
+                                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Preview Container */}
+                          <div className="bg-white/5 rounded-xl p-2 border border-white/10 overflow-auto max-h-[500px]">
+                            {pdfDoc ? (
+                              <canvas ref={canvasRef} className="w-full h-auto" />
+                            ) : previewUrl ? (
+                              <iframe
+                                src={previewUrl}
+                                className="w-full h-[400px] border-0 rounded-lg bg-white"
+                                title="Document Preview"
+                              />
+                            ) : (
+                              <div className="flex items-center justify-center h-64 text-slate-400">
+                                <div className="text-center">
+                                  <div className="text-4xl mb-2">📄</div>
+                                  <p className="text-sm">Processing preview...</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* File Info */}
+                          <div className="mt-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center justify-between text-xs text-slate-400">
+                              <span>File size: {(pdfFile.size / 1024).toFixed(2)} KB</span>
+                              {totalPages > 0 && <span>{totalPages} {totalPages === 1 ? 'page' : 'pages'}</span>}
                             </div>
-                          )}
-                        </div>
-                        
-                        {/* File Info */}
-                        <div className="mt-4 pt-4 border-t border-white/10">
-                          <div className="flex items-center justify-between text-xs text-slate-400">
-                            <span>File size: {(pdfFile.size / 1024).toFixed(2)} KB</span>
-                            {totalPages > 0 && <span>{totalPages} {totalPages === 1 ? 'page' : 'pages'}</span>}
                           </div>
                         </div>
+                      ) : (
+                        <div className="glass-card rounded-2xl p-12 border border-white/20 text-center">
+                          <div className="text-6xl mb-4">📄</div>
+                          <h4 className="text-xl font-bold text-white mb-2">No Document Uploaded</h4>
+                          <p className="text-sm text-slate-400">Upload a document to see the preview here</p>
+                        </div>
+                      )}
+
+                      {/* AI Chatbot Card */}
+                      <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border border-cyan-400/30">
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-2xl">
+                            🤖
+                          </div>
+                          <div>
+                            <h4 className="text-lg font-bold text-white">AI Assistant</h4>
+                            <p className="text-xs text-slate-300">Chat with DeepSeek R1 about your document</p>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white/5 rounded-xl border border-white/10 p-4 mb-4 h-64 overflow-y-auto">
+                          <div className="text-sm text-slate-400 text-center py-8">
+                            <div className="text-4xl mb-3">💬</div>
+                            <p>AI chatbot coming soon!</p>
+                            <p className="text-xs mt-2">Ask questions about your uploaded document</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Ask a question about your document..."
+                            disabled
+                            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <button
+                            disabled
+                            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Send
+                          </button>
+                        </div>
                       </div>
-                    )}
+
+                      {/* Generated Questions Preview */}
+                      {generatedQuestions && (
+                        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
+                              ✨
+                            </div>
+                            <div>
+                              <h4 className="text-lg md:text-xl font-bold text-white">Questions Generated!</h4>
+                              <p className="text-sm text-slate-300">Review and create your quiz</p>
+                            </div>
+                          </div>
+                          <div className="bg-black/30 rounded-xl p-4 mb-4 max-h-96 overflow-y-auto border border-white/10">
+                            <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap font-mono">{generatedQuestions}</pre>
+                          </div>
+                          <button
+                            onClick={handleAISubmit}
+                            disabled={saving}
+                            className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                          >
+                            {saving ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Creating Quiz...
+                              </span>
+                            ) : (
+                              "🚀 Create Quiz from AI"
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  </div>
                 )}
               </>
             )}
