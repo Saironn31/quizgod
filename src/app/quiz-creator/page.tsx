@@ -548,20 +548,30 @@ export default function CreatePage() {
 Based on this content:
 ${pdfText.slice(0, 15000)}
 
-IMPORTANT: Format each question EXACTLY like this example:
+CRITICAL: Output ONLY the questions in the format below. NO introductions, NO explanations, NO additional text before or after.
+
+Start directly with question 1 and end with the last question. Format EXACTLY like this:
+
 1. Question text here?
 A) Wrong option
 B) Correct option*
 C) Wrong option
 D) Wrong option
 
+2. Next question text?
+A) Option
+B) Option
+C) Option*
+D) Option
+
 RULES:
+- Start immediately with "1." - no other text before
 - Mark the ONE correct answer with an asterisk (*) immediately after the option text
-- Put the asterisk BEFORE the closing of the line, like: "Correct answer*"
 - Only ONE option should have an asterisk per question
 - Include exactly 4 options (A, B, C, D) for each question
+- End immediately after the last question - no closing remarks
 
-Provide exactly ${numQuestions} questions following this format strictly.`;
+Generate exactly ${numQuestions} questions now:`;
 
 
     // Try Groq first (lightning fast, high free tier limits)
@@ -589,9 +599,30 @@ Provide exactly ${numQuestions} questions following this format strictly.`;
 
         if (response.ok) {
           const data = await response.json();
-          const generatedText = data.choices?.[0]?.message?.content;
+          let generatedText = data.choices?.[0]?.message?.content;
           
           if (generatedText) {
+            // Clean up any extra text before first question or after last question
+            // Find the first question number and start from there
+            const firstQuestionMatch = generatedText.match(/1\.\s/);
+            if (firstQuestionMatch) {
+              generatedText = generatedText.substring(firstQuestionMatch.index!);
+            }
+            
+            // Remove any trailing text after the last question pattern
+            // Look for text after the last option pattern (A-D with closing parenthesis or period)
+            const lines = generatedText.split('\n');
+            let lastQuestionLineIndex = -1;
+            for (let i = lines.length - 1; i >= 0; i--) {
+              if (lines[i].trim().match(/^[A-D][\)\.\:]\s*.+/i)) {
+                lastQuestionLineIndex = i;
+                break;
+              }
+            }
+            if (lastQuestionLineIndex !== -1) {
+              generatedText = lines.slice(0, lastQuestionLineIndex + 1).join('\n');
+            }
+            
             console.log('✅ Successfully generated with Groq');
             setGeneratedQuestions(generatedText);
             alert('✅ Quiz generated successfully with Groq! Review and parse the questions below.');
