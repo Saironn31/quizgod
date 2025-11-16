@@ -56,6 +56,12 @@ export default function CreatePage() {
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
   
+  // AI Chatbot states
+  const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  
   // Document preview states
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -596,6 +602,92 @@ Provide exactly ${numQuestions} questions.`;
   // Keep old function name for compatibility
   const generateWithGemini = generateWithAI;
 
+  // AI Chatbot function
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !pdfText) {
+      if (!pdfText) {
+        alert("Please upload a document first before chatting with the AI.");
+      }
+      return;
+    }
+
+    const userMessage = chatInput.trim();
+    setChatInput("");
+    
+    // Add user message to chat
+    const newMessages = [...chatMessages, { role: 'user' as const, content: userMessage }];
+    setChatMessages(newMessages);
+    setIsChatLoading(true);
+
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error("API key not configured");
+      }
+
+      // Build conversation context with document
+      const systemMessage = `You are a helpful AI assistant analyzing a document. Here's the document content:\n\n${pdfText.slice(0, 10000)}\n\nAnswer questions about this document clearly and concisely.`;
+      
+      const conversationMessages = [
+        { role: 'system', content: systemMessage },
+        ...newMessages.map(msg => ({ role: msg.role, content: msg.content }))
+      ];
+
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
+          'X-Title': 'QuizGod AI Assistant',
+        },
+        body: JSON.stringify({
+          model: 'deepseek/deepseek-r1:free',
+          messages: conversationMessages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData?.error?.message || 'Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      const assistantMessage = data.choices?.[0]?.message?.content;
+
+      if (!assistantMessage) {
+        throw new Error('No response from AI');
+      }
+
+      // Add assistant response to chat
+      setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
+      
+      // Scroll to bottom
+      setTimeout(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to send message';
+      alert(errorMsg);
+      // Remove the user message if error occurred
+      setChatMessages(chatMessages);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
+
+  // Auto-scroll chat on new messages
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
   const parseQuizQuestions = (text: string) => {
     const questions: Question[] = [];
     const questionBlocks = text.split(/\d+\.\s+/).filter(block => block.trim());
@@ -814,36 +906,30 @@ Provide exactly ${numQuestions} questions.`;
                 </h1>
                 <p className="text-slate-300 text-sm md:text-base lg:text-lg">Build manually or generate with AI</p>
               </div>
-              <Link href="/quizzes" className="px-4 md:px-6 py-2 md:py-3 text-sm md:text-base rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-glow w-full sm:w-auto text-center">
-                My Quizzes
-              </Link>
+              {/* Mode Switcher in Header */}
+              <div className="glass-card rounded-2xl p-2 inline-flex gap-2">
+                <button
+                  onClick={() => setMode('manual')}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                    mode === 'manual'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  ✍️ Manual
+                </button>
+                <button
+                  onClick={() => setMode('ai')}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                    mode === 'ai'
+                      ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  🤖 AI Generator
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Mode Toggle */}
-        <div className="relative z-10 mb-6">
-          <div className="glass-card rounded-2xl p-2 inline-flex gap-2">
-            <button
-              onClick={() => setMode('manual')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                mode === 'manual'
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              ✍️ Manual
-            </button>
-            <button
-              onClick={() => setMode('ai')}
-              className={`px-6 py-3 rounded-xl font-bold transition-all ${
-                mode === 'ai'
-                  ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              🤖 AI Generator
-            </button>
           </div>
         </div>
 
@@ -1036,159 +1122,163 @@ Provide exactly ${numQuestions} questions.`;
                 {/* AI Mode */}
                 {mode === 'ai' && (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Left Column - Settings Cards */}
-                    <div className="lg:col-span-1 space-y-4">
-                      {/* PDF Upload Card */}
-                      <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-2xl p-6 animate-slide-up">
-                        <div className="flex items-start gap-4 mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-2xl shrink-0">
-                            📄
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="text-lg font-bold text-white mb-1">Upload Study Material</h4>
-                            <p className="text-xs text-slate-300">PDF, Word, or PowerPoint</p>
-                          </div>
+                    {/* Left Column - Quiz Settings in One Container */}
+                    <div className="lg:col-span-1">
+                      <div className="glass-card rounded-2xl p-6 space-y-6">
+                        <div className="border-b border-white/20 pb-4">
+                          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                            <span>⚙️</span>
+                            Quiz Settings
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-1">Configure your AI-generated quiz</p>
                         </div>
-                        
-                        {/* OCR Checkbox */}
-                        {pdfFile && (
-                          <div className="mb-4 bg-white/5 rounded-xl p-4 border border-white/10">
-                            <label className="flex items-start gap-3 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={useOCR}
-                                onChange={(e) => setUseOCR(e.target.checked)}
-                                className="mt-1 w-5 h-5 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
-                              />
-                              <div className="flex-1">
-                                <span className="text-white font-medium text-sm">Enable OCR</span>
-                                <p className="text-xs text-slate-400 mt-1">
-                                  {pdfFile.type === 'application/pdf' 
-                                    ? 'Extract text from scanned PDFs and images.'
-                                    : 'Extract text from images in your document.'}
-                                </p>
-                              </div>
-                            </label>
-                          </div>
-                        )}
-                        
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept=".pdf,.docx,.doc,.pptx,.ppt"
-                          onChange={handlePDFUpload}
-                          className="hidden"
-                        />
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isExtracting}
-                          className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-bold disabled:opacity-50 shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                        >
-                          {isExtracting ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                              {useOCR && ocrProgress.total > 0 
-                                ? `OCR: ${ocrProgress.current}/${ocrProgress.total}`
-                                : 'Extracting...'}
-                            </span>
-                          ) : pdfFile ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="text-green-300">✓</span>
-                              {pdfFile.name.length > 20 ? pdfFile.name.substring(0, 20) + '...' : pdfFile.name}
-                            </span>
-                          ) : (
-                            "📤 Choose Document"
-                          )}
-                        </button>
-                        
-                        {/* OCR Progress Bar */}
-                        {isExtracting && useOCR && ocrProgress.total > 0 && (
-                          <div className="mt-4">
-                            <div className="flex items-center justify-between text-sm text-slate-300 mb-2">
-                              <span>OCR Progress</span>
-                              <span className="font-semibold">{ocrProgress.percentage}%</span>
-                            </div>
-                            <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden">
-                              <div 
-                                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                                style={{ width: `${ocrProgress.percentage}%` }}
-                              ></div>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-2">
-                              Page {ocrProgress.current} of {ocrProgress.total}
-                            </p>
-                          </div>
-                        )}
-                        
-                        {pdfText && (
-                          <div className="mt-4 p-4 bg-white/5 rounded-xl border border-white/10">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm font-semibold text-white">✓ Text Extracted</p>
-                                <p className="text-xs text-slate-400 mt-1">{pdfText.length.toLocaleString()} characters</p>
-                              </div>
-                              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center text-xl">
-                                ✓
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
 
-                      {/* Number of Questions Card */}
-                      <div className="glass-card rounded-2xl p-6 animate-slide-up" style={{animationDelay: '0.1s'}}>
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
-                            🔢
-                          </div>
-                          <label className="text-base font-bold text-white">Questions</label>
-                        </div>
-                        <input
-                          type="number"
-                          min="1"
-                          max="50"
-                          value={numQuestions}
-                          onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
-                          className="w-full p-3 text-lg font-bold border border-purple-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
-                        />
-                        <p className="text-xs text-slate-400 mt-2 text-center">AI will generate this many questions</p>
-                      </div>
-
-                      {/* Generate Button Card */}
-                      <div className="glass-card rounded-2xl p-6 flex flex-col justify-center animate-slide-up" style={{animationDelay: '0.2s'}}>
-                        <button
-                          onClick={generateWithGemini}
-                          disabled={isGenerating || !pdfText}
-                          className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                        >
-                          {isGenerating ? (
-                            <span className="flex items-center justify-center gap-2">
-                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                              Generating...
-                            </span>
-                          ) : (
-                            <span className="flex items-center justify-center gap-2">
-                              ✨ Generate Questions
-                            </span>
-                          )}
-                        </button>
-                        {!pdfText && (
-                          <p className="text-xs text-slate-400 mt-3 text-center">Upload a document first</p>
-                        )}
-                      </div>
-
-                      {/* Error Display */}
-                      {error && (
-                        <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-xl animate-slide-up">
-                          <div className="flex items-start gap-3">
-                            <span className="text-2xl">⚠️</span>
+                        {/* Upload Document Section */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xl">
+                              📄
+                            </div>
                             <div>
-                              <p className="font-semibold text-red-300">Error</p>
-                              <p className="text-sm text-red-200 mt-1">{error}</p>
+                              <h4 className="text-base font-bold text-white">Upload Document</h4>
+                              <p className="text-xs text-slate-400">PDF, Word, or PowerPoint</p>
                             </div>
                           </div>
+                          
+                          {/* OCR Checkbox */}
+                          {pdfFile && (
+                            <div className="mb-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                              <label className="flex items-start gap-2 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={useOCR}
+                                  onChange={(e) => setUseOCR(e.target.checked)}
+                                  className="mt-0.5 w-4 h-4 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
+                                />
+                                <div className="flex-1">
+                                  <span className="text-white font-medium text-sm">Enable OCR</span>
+                                  <p className="text-xs text-slate-400 mt-1">
+                                    {pdfFile.type === 'application/pdf' 
+                                      ? 'Extract text from scanned PDFs'
+                                      : 'Extract text from images'}
+                                  </p>
+                                </div>
+                              </label>
+                            </div>
+                          )}
+                          
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".pdf,.docx,.doc,.pptx,.ppt"
+                            onChange={handlePDFUpload}
+                            className="hidden"
+                          />
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isExtracting}
+                            className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-bold disabled:opacity-50 text-sm"
+                          >
+                            {isExtracting ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                {useOCR && ocrProgress.total > 0 
+                                  ? `OCR: ${ocrProgress.current}/${ocrProgress.total}`
+                                  : 'Extracting...'}
+                              </span>
+                            ) : pdfFile ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="text-green-300">✓</span>
+                                {pdfFile.name.length > 15 ? pdfFile.name.substring(0, 15) + '...' : pdfFile.name}
+                              </span>
+                            ) : (
+                              "📤 Choose Document"
+                            )}
+                          </button>
+                          
+                          {/* OCR Progress */}
+                          {isExtracting && useOCR && ocrProgress.total > 0 && (
+                            <div className="mt-3">
+                              <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
+                                <span>OCR Progress</span>
+                                <span className="font-semibold">{ocrProgress.percentage}%</span>
+                              </div>
+                              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                                  style={{ width: `${ocrProgress.percentage}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {pdfText && (
+                            <div className="mt-3 p-3 bg-green-500/10 rounded-xl border border-green-400/30">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-400 text-lg">✓</span>
+                                <div>
+                                  <p className="text-sm font-semibold text-white">Text Extracted</p>
+                                  <p className="text-xs text-slate-400">{pdfText.length.toLocaleString()} chars</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        {/* Number of Questions */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
+                              🔢
+                            </div>
+                            <label className="text-base font-bold text-white">Number of Questions</label>
+                          </div>
+                          <input
+                            type="number"
+                            min="1"
+                            max="50"
+                            value={numQuestions}
+                            onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
+                            className="w-full p-3 text-lg font-bold border border-white/20 bg-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
+                          />
+                        </div>
+
+                        {/* Generate Button */}
+                        <div>
+                          <button
+                            onClick={generateWithGemini}
+                            disabled={isGenerating || !pdfText}
+                            className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                          >
+                            {isGenerating ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Generating...
+                              </span>
+                            ) : (
+                              <span className="flex items-center justify-center gap-2">
+                                ✨ Generate Questions
+                              </span>
+                            )}
+                          </button>
+                          {!pdfText && (
+                            <p className="text-xs text-slate-400 mt-2 text-center">Upload a document first</p>
+                          )}
+                        </div>
+
+                        {/* Error Display */}
+                        {error && (
+                          <div className="p-4 bg-red-500/20 border border-red-400/30 rounded-xl">
+                            <div className="flex items-start gap-3">
+                              <span className="text-xl">⚠️</span>
+                              <div>
+                                <p className="font-semibold text-red-300 text-sm">Error</p>
+                                <p className="text-xs text-red-200 mt-1">{error}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Right Column - Preview & Chatbot */}
@@ -1311,26 +1401,73 @@ Provide exactly ${numQuestions} questions.`;
                           </div>
                         </div>
                         
-                        <div className="bg-white/5 rounded-xl border border-white/10 p-4 mb-4 h-64 overflow-y-auto">
-                          <div className="text-sm text-slate-400 text-center py-8">
-                            <div className="text-4xl mb-3">💬</div>
-                            <p>AI chatbot coming soon!</p>
-                            <p className="text-xs mt-2">Ask questions about your uploaded document</p>
-                          </div>
+                        {/* Chat Messages */}
+                        <div 
+                          ref={chatContainerRef}
+                          className="bg-white/5 rounded-xl border border-white/10 p-4 mb-4 h-64 overflow-y-auto space-y-3"
+                        >
+                          {chatMessages.length === 0 ? (
+                            <div className="text-sm text-slate-400 text-center py-8">
+                              <div className="text-4xl mb-3">💬</div>
+                              <p>Ask questions about your document!</p>
+                              <p className="text-xs mt-2">Upload a document first, then chat with AI</p>
+                            </div>
+                          ) : (
+                            chatMessages.map((msg, idx) => (
+                              <div 
+                                key={idx}
+                                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div 
+                                  className={`max-w-[80%] px-4 py-2 rounded-xl ${
+                                    msg.role === 'user'
+                                      ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                                      : 'bg-white/10 text-slate-200'
+                                  }`}
+                                >
+                                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                          {isChatLoading && (
+                            <div className="flex justify-start">
+                              <div className="bg-white/10 px-4 py-2 rounded-xl">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                  <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         
+                        {/* Chat Input */}
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            placeholder="Ask a question about your document..."
-                            disabled
+                            placeholder={pdfText ? "Ask a question about your document..." : "Upload a document first..."}
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && !isChatLoading && pdfText) {
+                                sendChatMessage();
+                              }
+                            }}
+                            disabled={!pdfText || isChatLoading}
                             className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <button
-                            disabled
-                            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                            onClick={sendChatMessage}
+                            disabled={!pdfText || isChatLoading || !chatInput.trim()}
+                            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:from-cyan-600 hover:to-blue-600 transition-all"
                           >
-                            Send
+                            {isChatLoading ? (
+                              <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            ) : (
+                              "Send"
+                            )}
                           </button>
                         </div>
                       </div>
