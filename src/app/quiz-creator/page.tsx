@@ -1636,44 +1636,46 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                           </button>
                         </div>
                       </div>
-
-                      {/* Generated Questions Preview */}
-                      {generatedQuestions && (
-                        <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6 animate-slide-up">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
-                              ✨
-                            </div>
-                            <div>
-                              <h4 className="text-lg md:text-xl font-bold text-white">Questions Generated!</h4>
-                              <p className="text-sm text-slate-300">Review and create your quiz</p>
-                            </div>
-                          </div>
-                          <div className="bg-black/30 rounded-xl p-4 mb-4 max-h-96 overflow-y-auto border border-white/10">
-                            <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap font-mono">{generatedQuestions}</pre>
-                          </div>
-                          <button
-                            onClick={handleAISubmit}
-                            disabled={saving}
-                            className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
-                          >
-                            {saving ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                Creating Quiz...
-                              </span>
-                            ) : (
-                              "🚀 Create Quiz from AI"
-                            )}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
               </>
             )}
           </div>
+
+          {/* Right Column - Generated Questions Preview (only in AI mode) */}
+          {mode === 'ai' && generatedQuestions && (
+            <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up lg:sticky lg:top-4 lg:self-start">
+              <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-2xl">
+                    ✨
+                  </div>
+                  <div>
+                    <h4 className="text-lg md:text-xl font-bold text-white">Generated Questions</h4>
+                    <p className="text-sm text-slate-300">Review your quiz</p>
+                  </div>
+                </div>
+                <div className="bg-black/30 rounded-xl p-4 mb-4 max-h-[calc(100vh-300px)] overflow-y-auto border border-white/10">
+                  <pre className="text-xs md:text-sm text-slate-200 whitespace-pre-wrap font-mono">{generatedQuestions}</pre>
+                </div>
+                <button
+                  onClick={handleAISubmit}
+                  disabled={saving}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                >
+                  {saving ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Creating Quiz...
+                    </span>
+                  ) : (
+                    "🚀 Create Quiz from AI"
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
