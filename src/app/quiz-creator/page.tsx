@@ -504,21 +504,10 @@ export default function CreatePage() {
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-    if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
-      alert("Please configure your OpenRouter API key in .env.local file.\n\nGet your free API key from: https://openrouter.ai/keys");
-      return;
-    }
-
     setIsGenerating(true);
     setError("");
 
-    try {
-      console.log('Starting DeepSeek R1 API request via OpenRouter...');
-      console.log('API Key exists:', !!apiKey);
-      console.log('PDF Text length:', pdfText?.length || 0);
-      
-      const basePrompt = `Create ${numQuestions} multiple choice quiz questions about ${subject}.
+    const basePrompt = `Create ${numQuestions} multiple choice quiz questions about ${subject}.
 
 Based on this content:
 ${pdfText.slice(0, 15000)}
@@ -533,24 +522,69 @@ D) Option 4
 Mark the correct answer with an asterisk (*).
 Provide exactly ${numQuestions} questions.`;
 
+    // Try Gemini first
+    try {
+      console.log('Trying Gemini API first...');
+      const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      
+      if (geminiKey && geminiKey !== 'your_api_key_here') {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: basePrompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 4000,
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (generatedText) {
+            console.log('✅ Successfully generated with Gemini');
+            setGeneratedQuestions(generatedText);
+            alert('✅ Quiz generated successfully with Gemini! Review and parse the questions below.');
+            setIsGenerating(false);
+            return;
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.log('Gemini failed, trying backup...', errorData);
+        }
+      }
+    } catch (geminiError) {
+      console.log('Gemini error, falling back to OpenRouter:', geminiError);
+    }
+
+    // Fallback to OpenRouter DeepSeek R1
+    try {
+      console.log('Falling back to OpenRouter DeepSeek R1...');
+      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      
+      if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
+        throw new Error("No AI API keys configured. Please add NEXT_PUBLIC_GEMINI_API_KEY or NEXT_PUBLIC_OPENROUTER_API_KEY to .env.local");
+      }
+
       const response = await fetch(
         'https://openrouter.ai/api/v1/chat/completions',
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${apiKey}`,
+            'Authorization': `Bearer ${openrouterKey}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
             'X-Title': 'QuizGod AI Quiz Generator',
           },
           body: JSON.stringify({
             model: 'deepseek/deepseek-r1:free',
-            messages: [
-              {
-                role: 'user',
-                content: basePrompt
-              }
-            ],
+            messages: [{ role: 'user', content: basePrompt }],
             temperature: 0.7,
             max_tokens: 4000,
           })
@@ -561,21 +595,15 @@ Provide exactly ${numQuestions} questions.`;
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
         
-        // Handle specific error cases
         if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded') || errorMessage.includes('rate limit')) {
           throw new Error(
-            '⚠️ API Rate Limit Reached\n\n' +
-            'The rate limit has been reached. Options:\n\n' +
-            '1. Wait a minute and try again\n' +
-            '2. Try with fewer questions\n' +
-            '3. Check your API key at https://openrouter.ai/keys\n' +
-            '4. Upgrade your plan for higher limits\n\n' +
-            'DeepSeek R1 Free tier is generous but has rate limits.\n\n' +
+            '⚠️ Both AI services are rate limited\n\n' +
+            'Please wait a moment and try again, or try with fewer questions.\n\n' +
             'Current time: ' + new Date().toLocaleTimeString()
           );
         }
         
-        throw new Error(`API request failed (${response.status}): ${errorMessage}`);
+        throw new Error(`OpenRouter API failed (${response.status}): ${errorMessage}`);
       }
 
       const data = await response.json();
@@ -585,14 +613,13 @@ Provide exactly ${numQuestions} questions.`;
         throw new Error('No content generated from AI. Please try again.');
       }
 
+      console.log('✅ Successfully generated with OpenRouter DeepSeek R1');
       setGeneratedQuestions(generatedText);
-      alert('✅ Quiz generated successfully with DeepSeek R1! Review and parse the questions below.');
+      alert('✅ Quiz generated successfully with DeepSeek R1 (backup)! Review and parse the questions below.');
     } catch (error) {
-      console.error('Error generating with DeepSeek R1:', error);
+      console.error('Error generating questions:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
       setError(errorMsg);
-      
-      // Show user-friendly error dialog
       alert(errorMsg);
     } finally {
       setIsGenerating(false);
@@ -602,7 +629,7 @@ Provide exactly ${numQuestions} questions.`;
   // Keep old function name for compatibility
   const generateWithGemini = generateWithAI;
 
-  // AI Chatbot function
+  // AI Chatbot function with Gemini primary and OpenRouter backup
   const sendChatMessage = async () => {
     if (!chatInput.trim() || !pdfText) {
       if (!pdfText) {
@@ -619,15 +646,75 @@ Provide exactly ${numQuestions} questions.`;
     setChatMessages(newMessages);
     setIsChatLoading(true);
 
+    // Build conversation context with document
+    const systemMessage = `You are a helpful AI assistant analyzing a document. Here's the document content:\n\n${pdfText.slice(0, 10000)}\n\nAnswer questions about this document clearly and concisely.`;
+
+    // Try Gemini first
     try {
-      const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-      if (!apiKey) {
-        throw new Error("API key not configured");
+      console.log('Trying Gemini for chat...');
+      const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      
+      if (geminiKey && geminiKey !== 'your_api_key_here') {
+        // Build conversation history for Gemini
+        const geminiMessages = [
+          { text: systemMessage }
+        ];
+        
+        // Add conversation history
+        for (const msg of newMessages) {
+          geminiMessages.push({ text: `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}` });
+        }
+
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: geminiMessages }],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1000,
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          
+          if (assistantMessage) {
+            console.log('✅ Chat response from Gemini');
+            setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
+            
+            // Scroll to bottom
+            setTimeout(() => {
+              if (chatContainerRef.current) {
+                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+              }
+            }, 100);
+            
+            setIsChatLoading(false);
+            return;
+          }
+        } else {
+          console.log('Gemini chat failed, trying backup...');
+        }
+      }
+    } catch (geminiError) {
+      console.log('Gemini chat error, falling back to OpenRouter:', geminiError);
+    }
+
+    // Fallback to OpenRouter DeepSeek R1
+    try {
+      console.log('Falling back to OpenRouter for chat...');
+      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      
+      if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
+        throw new Error("No AI API keys configured");
       }
 
-      // Build conversation context with document
-      const systemMessage = `You are a helpful AI assistant analyzing a document. Here's the document content:\n\n${pdfText.slice(0, 10000)}\n\nAnswer questions about this document clearly and concisely.`;
-      
       const conversationMessages = [
         { role: 'system', content: systemMessage },
         ...newMessages.map(msg => ({ role: msg.role, content: msg.content }))
@@ -636,7 +723,7 @@ Provide exactly ${numQuestions} questions.`;
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${openrouterKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
           'X-Title': 'QuizGod AI Assistant',
@@ -661,7 +748,7 @@ Provide exactly ${numQuestions} questions.`;
         throw new Error('No response from AI');
       }
 
-      // Add assistant response to chat
+      console.log('✅ Chat response from OpenRouter DeepSeek R1');
       setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
       
       // Scroll to bottom
