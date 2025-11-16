@@ -62,6 +62,15 @@ export default function CreatePage() {
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   
+  // User statistics for chatbot
+  const [userStats, setUserStats] = useState({
+    totalClasses: 0,
+    totalSubjects: 0,
+    totalQuizzes: 0,
+    classesAsPresident: 0,
+    classesAsMember: 0
+  });
+  
   // Document preview states
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -219,10 +228,37 @@ export default function CreatePage() {
       setFilteredSubjects(extendedSubjects);
       setClasses(userClasses);
       setFilteredClasses(userClasses);
+      
+      // Load user statistics for chatbot
+      await loadUserStatistics(user.uid, user.email, userClasses, extendedSubjects);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserStatistics = async (userId: string, userEmail: string, userClasses: FirebaseClass[], allSubjects: ExtendedFirebaseSubject[]) => {
+    try {
+      // Get all user's quizzes
+      const { getUserQuizzes } = await import('@/lib/firestore');
+      const userQuizzes = await getUserQuizzes(userId);
+      
+      // Calculate class statistics
+      const classesAsPresident = userClasses.filter(c => 
+        c.president === userEmail || c.memberRoles?.[userEmail] === 'president'
+      ).length;
+      const classesAsMember = userClasses.length - classesAsPresident;
+      
+      setUserStats({
+        totalClasses: userClasses.length,
+        totalSubjects: allSubjects.length,
+        totalQuizzes: userQuizzes.length,
+        classesAsPresident,
+        classesAsMember
+      });
+    } catch (error) {
+      console.error('Error loading user statistics:', error);
     }
   };
 
@@ -593,6 +629,16 @@ Provide exactly ${numQuestions} questions.`;
 
     // Build conversation context with document AND QuizGod knowledge
     const systemMessage = `You are QuizGod AI Assistant - an expert helper for the QuizGod quiz creation platform.
+
+CURRENT USER PROFILE:
+- Username: ${user?.displayName || user?.email || 'User'}
+- Total Classes: ${userStats.totalClasses}
+  · As President: ${userStats.classesAsPresident}
+  · As Member: ${userStats.classesAsMember}
+- Total Subjects: ${userStats.totalSubjects}
+- Total Quizzes Created: ${userStats.totalQuizzes}
+- Available Classes: ${classes.map(c => c.name).join(', ') || 'None'}
+- Available Subjects: ${subjects.slice(0, 10).map(s => s.name).join(', ')}${subjects.length > 10 ? ` and ${subjects.length - 10} more` : ''}
 
 ABOUT QUIZGOD:
 QuizGod is a comprehensive quiz management platform that helps educators and students create, share, and take quizzes.
