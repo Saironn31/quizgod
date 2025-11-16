@@ -165,27 +165,17 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
 
         // Run OCR only if enabled
         if (useOCR) {
-          console.log(`[Job ${jobId}] Running OCR on all pages...`);
+          console.log(`[Job ${jobId}] Running PARALLEL OCR on ${pdf.numPages} pages...`);
 
           const Tesseract = await import('tesseract.js');
-          const worker = await Tesseract.createWorker('eng', 1, {
-            workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-            corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
-            logger: (m: any) => {
-              if (m.status === 'recognizing text') {
-                console.log(`[Job ${jobId}] OCR Progress: ${Math.round(m.progress * 100)}%`);
-              }
-            }
-          });
-
+          
           updateJob(jobId, { ocrProgress: { current: 0, total: pdf.numPages, percentage: 0 } });
 
+          // Prepare all pages for OCR first
+          const pageCanvases: { pageNum: number; canvas: HTMLCanvasElement }[] = [];
           for (let i = 1; i <= pdf.numPages; i++) {
-            if (signal.aborted) {
-              await worker.terminate();
-              return;
-            }
-
+            if (signal.aborted) return;
+            
             try {
               const page = await pdf.getPage(i);
               const viewport = page.getViewport({ scale: 1.5 });
@@ -197,26 +187,82 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
 
               if (context) {
                 await page.render({ canvasContext: context, viewport }).promise;
-
-                const progress = {
-                  current: i,
-                  total: pdf.numPages,
-                  percentage: Math.round((i / pdf.numPages) * 100)
-                };
-                updateJob(jobId, { ocrProgress: progress });
-                callbacks.onProgress(progress);
-
-                console.log(`[Job ${jobId}] Processing page ${i}/${pdf.numPages}...`);
-                const { data } = await worker.recognize(canvas);
-                ocrText += data.text + '\n\n';
+                pageCanvases.push({ pageNum: i, canvas });
               }
-            } catch (ocrError) {
-              console.error(`[Job ${jobId}] OCR failed for page ${i}:`, ocrError);
+            } catch (renderError) {
+              console.error(`[Job ${jobId}] Failed to render page ${i}:`, renderError);
             }
           }
 
-          await worker.terminate();
-          console.log(`[Job ${jobId}] OCR extracted ${ocrText.length} characters`);
+          console.log(`[Job ${jobId}] Rendered ${pageCanvases.length} pages, starting parallel OCR...`);
+
+          // Create multiple workers for parallel processing
+          const numWorkers = Math.min(4, pageCanvases.length); // Max 4 workers
+          const workers = await Promise.all(
+            Array.from({ length: numWorkers }, () =>
+              Tesseract.createWorker('eng', 1, {
+                workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
+                corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core.wasm.js',
+              })
+            )
+          );
+
+          let completedPages = 0;
+          const pageResults: { pageNum: number; text: string }[] = [];
+          const progressLock = { value: 0 }; // For thread-safe progress updates
+
+          // Process a single page
+          const processPage = async (pageCanvas: { pageNum: number; canvas: HTMLCanvasElement }, workerIndex: number) => {
+            if (signal.aborted) return;
+
+            try {
+              const worker = workers[workerIndex];
+              console.log(`[Job ${jobId}] Worker ${workerIndex} processing page ${pageCanvas.pageNum}...`);
+              
+              const { data } = await worker.recognize(pageCanvas.canvas);
+              
+              progressLock.value++;
+              const progress = {
+                current: progressLock.value,
+                total: pdf.numPages,
+                percentage: Math.round((progressLock.value / pdf.numPages) * 100)
+              };
+              updateJob(jobId, { ocrProgress: progress });
+              callbacks.onProgress(progress);
+
+              pageResults.push({ pageNum: pageCanvas.pageNum, text: data.text });
+              
+              console.log(`[Job ${jobId}] Completed page ${pageCanvas.pageNum} (${progressLock.value}/${pdf.numPages})`);
+            } catch (ocrError) {
+              console.error(`[Job ${jobId}] OCR failed for page ${pageCanvas.pageNum}:`, ocrError);
+            }
+          };
+
+          // Distribute pages across workers and process in parallel
+          const processingQueue: Promise<void>[] = [];
+          
+          for (let i = 0; i < pageCanvases.length; i++) {
+            if (signal.aborted) break;
+            const workerIndex = i % numWorkers;
+            
+            // Add to processing queue
+            processingQueue.push(processPage(pageCanvases[i], workerIndex));
+            
+            // Process in batches (one batch per worker to avoid overwhelming)
+            if (processingQueue.length >= numWorkers || i === pageCanvases.length - 1) {
+              await Promise.all(processingQueue);
+              processingQueue.length = 0; // Clear the queue
+            }
+          }
+
+          // Terminate all workers
+          await Promise.all(workers.map(worker => worker.terminate()));
+
+          // Sort results by page number and combine
+          pageResults.sort((a, b) => a.pageNum - b.pageNum);
+          ocrText = pageResults.map(r => r.text).join('\n\n');
+          
+          console.log(`[Job ${jobId}] Parallel OCR completed! Extracted ${ocrText.length} characters`);
 
           const combinedText = extractedText + '\n\n--- OCR Text ---\n\n' + ocrText;
           completeJob(jobId, combinedText);

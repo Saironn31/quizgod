@@ -52,7 +52,7 @@ export default function CreatePage() {
   const [generatedQuestions, setGeneratedQuestions] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [useOCR, setUseOCR] = useState(true);
+  const [useOCR, setUseOCR] = useState(false); // Default to false - user must enable
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
   
@@ -314,16 +314,25 @@ export default function CreatePage() {
     }
 
     setPdfFile(file);
-    setIsExtracting(true);
     setError("");
     setOcrProgress({ current: 0, total: 0, percentage: 0 });
 
     // Generate preview immediately after upload
     generatePreview(file);
 
+    // Do NOT start OCR automatically - user must click "Start OCR" button
+    // OCR will only be started when user explicitly clicks the button
+  };
+
+  // New function to start OCR processing
+  const handleStartOCR = () => {
+    if (!pdfFile || !useOCR) return;
+    
+    setIsExtracting(true);
+    
     // Start processing using the persistent context
     const jobId = startProcessing(
-      file,
+      pdfFile,
       useOCR,
       (extractedText) => {
         // On completion callback
@@ -755,7 +764,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-4-scout',
             messages: messages,
             temperature: 0.7,
             max_tokens: 1000,
@@ -1274,27 +1283,25 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                             </div>
                           </div>
                           
-                          {/* OCR Checkbox */}
-                          {pdfFile && (
-                            <div className="mb-3 bg-white/5 rounded-xl p-3 border border-white/10">
-                              <label className="flex items-start gap-2 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={useOCR}
-                                  onChange={(e) => setUseOCR(e.target.checked)}
-                                  className="mt-0.5 w-4 h-4 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer"
-                                />
-                                <div className="flex-1">
-                                  <span className="text-white font-medium text-sm">Enable OCR</span>
-                                  <p className="text-xs text-slate-400 mt-1">
-                                    {pdfFile.type === 'application/pdf' 
-                                      ? 'Extract text from scanned PDFs'
-                                      : 'Extract text from images'}
-                                  </p>
-                                </div>
-                              </label>
-                            </div>
-                          )}
+                          {/* OCR Checkbox - Show always for AI mode */}
+                          <div className="mb-3 bg-white/5 rounded-xl p-3 border border-white/10">
+                            <label className="flex items-start gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={useOCR}
+                                onChange={(e) => setUseOCR(e.target.checked)}
+                                disabled={isExtracting}
+                                className="mt-0.5 w-4 h-4 rounded border-2 border-purple-400 bg-white/10 checked:bg-purple-500 checked:border-purple-500 cursor-pointer disabled:opacity-50"
+                              />
+                              <div className="flex-1">
+                                <span className="text-white font-medium text-sm">Enable OCR (Optical Character Recognition)</span>
+                                <p className="text-xs text-slate-400 mt-1">
+                                  Extract text from scanned PDFs and images in documents. 
+                                  <strong className="text-yellow-400"> Note: This will be slower but more accurate for scanned documents.</strong>
+                                </p>
+                              </div>
+                            </label>
+                          </div>
                           
                           <input
                             ref={fileInputRef}
@@ -1308,36 +1315,65 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                             disabled={isExtracting}
                             className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all font-bold disabled:opacity-50 text-sm"
                           >
-                            {isExtracting ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                {useOCR && ocrProgress.total > 0 
-                                  ? `OCR: ${ocrProgress.current}/${ocrProgress.total}`
-                                  : 'Extracting...'}
-                              </span>
-                            ) : pdfFile ? (
-                              <span className="flex items-center justify-center gap-2">
-                                <span className="text-green-300">✓</span>
-                                {pdfFile.name.length > 15 ? pdfFile.name.substring(0, 15) + '...' : pdfFile.name}
-                              </span>
-                            ) : (
-                              "📤 Choose Document"
-                            )}
+                            {pdfFile ? 'Change Document' : '📤 Choose Document'}
                           </button>
+
+                          {/* Start OCR Button - Show when file is uploaded and OCR is enabled */}
+                          {pdfFile && useOCR && !isExtracting && !pdfText && (
+                            <button
+                              onClick={handleStartOCR}
+                              className="w-full mt-3 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-bold text-sm shadow-lg"
+                            >
+                              🔍 Start OCR Processing
+                            </button>
+                          )}
+
+                          {/* File Info */}
+                          {pdfFile && !isExtracting && (
+                            <div className="mt-3 p-3 bg-green-500/20 border border-green-400/30 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-green-300">✓</span>
+                                <span className="text-sm text-green-200">
+                                  {pdfFile.name.length > 30 ? pdfFile.name.substring(0, 30) + '...' : pdfFile.name}
+                                </span>
+                              </div>
+                              {!useOCR && (
+                                <p className="text-xs text-slate-400 mt-1">
+                                  Ready to generate quiz (without OCR)
+                                </p>
+                              )}
+                            </div>
+                          )}
                           
-                          {/* OCR Progress */}
-                          {isExtracting && useOCR && ocrProgress.total > 0 && (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
-                                <span>OCR Progress</span>
-                                <span className="font-semibold">{ocrProgress.percentage}%</span>
+                          {/* OCR Processing Indicator */}
+                          {isExtracting && (
+                            <div className="mt-3 p-4 bg-blue-500/20 border border-blue-400/30 rounded-xl">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center animate-spin">
+                                  <div className="w-6 h-6 rounded-full border-2 border-white border-t-transparent"></div>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-white font-bold text-sm">
+                                    {ocrProgress.total > 0 
+                                      ? `Processing Page ${ocrProgress.current} of ${ocrProgress.total}`
+                                      : 'Extracting text from document...'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
-                                  style={{ width: `${ocrProgress.percentage}%` }}
-                                ></div>
-                              </div>
+                              {ocrProgress.total > 0 && (
+                                <>
+                                  <div className="flex items-center justify-between text-xs text-slate-300 mb-2">
+                                    <span>OCR Progress</span>
+                                    <span className="font-semibold">{ocrProgress.percentage}%</span>
+                                  </div>
+                                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                                    <div 
+                                      className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                                      style={{ width: `${ocrProgress.percentage}%` }}
+                                    ></div>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           )}
                           
