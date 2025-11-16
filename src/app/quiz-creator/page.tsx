@@ -543,35 +543,37 @@ export default function CreatePage() {
     setIsGenerating(true);
     setError("");
 
-    const basePrompt = `Create ${numQuestions} multiple choice quiz questions about ${subject}.
+    const basePrompt = `You are a quiz generator. Create ${numQuestions} multiple choice questions about ${subject} based on the following content.
 
-Based on this content:
+Content:
 ${pdfText.slice(0, 15000)}
 
-CRITICAL: Output ONLY the questions in the format below. NO introductions, NO explanations, NO additional text before or after.
+MANDATORY FORMAT - Follow this EXACTLY:
 
-Start directly with question 1 and end with the last question. Format EXACTLY like this:
+1. What is the question text?
+A) First option
+B) Second option*
+C) Third option
+D) Fourth option
 
-1. Question text here?
-A) Wrong option
-B) Correct option*
-C) Wrong option
-D) Wrong option
+2. What is another question?
+A) Option one
+B) Option two
+C) Option three*
+D) Option four
 
-2. Next question text?
-A) Option
-B) Option
-C) Option*
-D) Option
+CRITICAL RULES:
+1. Start output with "1." immediately - NO introduction text
+2. Each question MUST have EXACTLY ONE asterisk (*) marking the correct answer
+3. Put asterisk directly after the correct answer text like this: "Correct answer*"
+4. Every question needs 4 options: A) B) C) D)
+5. End after the last question - NO conclusion text
 
-RULES:
-- Start immediately with "1." - no other text before
-- Mark the ONE correct answer with an asterisk (*) immediately after the option text
-- Only ONE option should have an asterisk per question
-- Include exactly 4 options (A, B, C, D) for each question
-- End immediately after the last question - no closing remarks
+The asterisk (*) is MANDATORY for marking correct answers. Without it, the quiz cannot work.
 
-Generate exactly ${numQuestions} questions now:`;
+Generate ${numQuestions} questions NOW:`;
+
+
 
 
     // Try Groq first (lightning fast, high free tier limits)
@@ -590,7 +592,13 @@ Generate exactly ${numQuestions} questions now:`;
             },
             body: JSON.stringify({
               model: 'llama-3.1-8b-instant', // Cost-effective and fast
-              messages: [{ role: 'user', content: basePrompt }],
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are a quiz generator. Always mark the correct answer with an asterisk (*) immediately after the option text. Format: "Correct answer*". This is mandatory.'
+                },
+                { role: 'user', content: basePrompt }
+              ],
               temperature: 0.7,
               max_tokens: 4000,
             })
@@ -803,7 +811,8 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
       const questionText = lines[0].replace(/\?$/, '').trim();
       const options = [];
-      let correctIndex = 0;
+      let correctIndex = -1; // Start with -1 to detect if no asterisk found
+      let foundAsterisk = false;
 
       for (let i = 1; i < lines.length && options.length < 4; i++) {
         const line = lines[i].trim();
@@ -818,13 +827,20 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
           
           options.push(cleanText);
           
-          if (hasAsterisk) {
+          if (hasAsterisk && !foundAsterisk) {
             correctIndex = options.length - 1;
+            foundAsterisk = true;
           }
         }
       }
 
+      // If no asterisk was found, log warning and default to first option
       if (questionText && options.length === 4) {
+        if (correctIndex === -1) {
+          console.warn(`No correct answer marked for question: "${questionText}". Defaulting to option A.`);
+          correctIndex = 0;
+        }
+        
         questions.push({
           question: questionText,
           options,
