@@ -320,8 +320,24 @@ export default function CreatePage() {
     // Generate preview immediately after upload
     generatePreview(file);
 
-    // Do NOT start OCR automatically - user must click "Start OCR" button
-    // OCR will only be started when user explicitly clicks the button
+    // Always extract text (embedded text) immediately
+    // OCR will only run if user enables it and clicks "Start OCR"
+    setIsExtracting(true);
+    
+    const jobId = startProcessing(
+      file,
+      false, // Don't use OCR initially
+      (extractedText) => {
+        // On completion callback for basic text extraction
+        setPdfText(extractedText);
+        setIsExtracting(false);
+        setOcrProgress({ current: 0, total: 0, percentage: 0 });
+      },
+      (progress) => {
+        // On progress callback (won't be used for non-OCR)
+        setOcrProgress(progress);
+      }
+    );
   };
 
   // New function to start OCR processing
@@ -330,10 +346,10 @@ export default function CreatePage() {
     
     setIsExtracting(true);
     
-    // Start processing using the persistent context
+    // Start processing using the persistent context with OCR enabled
     const jobId = startProcessing(
       pdfFile,
-      useOCR,
+      true, // Use OCR this time
       (extractedText) => {
         // On completion callback
         setPdfText(extractedText);
@@ -1318,18 +1334,18 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                             {pdfFile ? 'Change Document' : '📤 Choose Document'}
                           </button>
 
-                          {/* Start OCR Button - Show when file is uploaded and OCR is enabled */}
-                          {pdfFile && useOCR && !isExtracting && !pdfText && (
+                          {/* Start OCR Button - Show when text is extracted but user wants additional OCR */}
+                          {pdfFile && useOCR && !isExtracting && pdfText && !pdfText.includes('--- OCR Text ---') && (
                             <button
                               onClick={handleStartOCR}
                               className="w-full mt-3 px-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl hover:from-orange-600 hover:to-red-600 transition-all font-bold text-sm shadow-lg"
                             >
-                              🔍 Start OCR Processing
+                              🔍 Run Additional OCR Processing
                             </button>
                           )}
 
                           {/* File Info */}
-                          {pdfFile && !isExtracting && (
+                          {pdfFile && !isExtracting && pdfText && (
                             <div className="mt-3 p-3 bg-green-500/20 border border-green-400/30 rounded-lg">
                               <div className="flex items-center gap-2">
                                 <span className="text-green-300">✓</span>
@@ -1337,11 +1353,13 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                                   {pdfFile.name.length > 30 ? pdfFile.name.substring(0, 30) + '...' : pdfFile.name}
                                 </span>
                               </div>
-                              {!useOCR && (
-                                <p className="text-xs text-slate-400 mt-1">
-                                  Ready to generate quiz (without OCR)
-                                </p>
-                              )}
+                              <p className="text-xs text-slate-400 mt-1">
+                                {pdfText.includes('--- OCR Text ---') 
+                                  ? 'Text extracted with OCR' 
+                                  : useOCR 
+                                    ? 'Text extracted (click "Run Additional OCR" for image text)'
+                                    : 'Text extracted (embedded text only)'}
+                              </p>
                             </div>
                           )}
                           
@@ -1412,7 +1430,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                         <div>
                           <button
                             onClick={generateWithGemini}
-                            disabled={isGenerating || !pdfText}
+                            disabled={isGenerating || isExtracting || !pdfFile}
                             className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                           >
                             {isGenerating ? (
@@ -1420,14 +1438,25 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
                                 Generating...
                               </span>
+                            ) : isExtracting ? (
+                              <span className="flex items-center justify-center gap-2">
+                                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Extracting Text...
+                              </span>
                             ) : (
                               <span className="flex items-center justify-center gap-2">
                                 ✨ Generate Questions
                               </span>
                             )}
                           </button>
-                          {!pdfText && (
+                          {!pdfFile && (
                             <p className="text-xs text-slate-400 mt-2 text-center">Upload a document first</p>
+                          )}
+                          {pdfFile && isExtracting && (
+                            <p className="text-xs text-blue-400 mt-2 text-center">⏳ Extracting text from document...</p>
+                          )}
+                          {pdfFile && !isExtracting && pdfText && (
+                            <p className="text-xs text-green-400 mt-2 text-center">✓ Ready to generate questions!</p>
                           )}
                         </div>
 
