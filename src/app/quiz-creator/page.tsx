@@ -600,7 +600,7 @@ Generate ${numQuestions} questions NOW:`;
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-4-scout', // Good balance of cost and instruction following
+              model: 'meta-llama/llama-4-scout-17b-16e-instruct', // Good balance of cost and instruction following
               messages: [
                 { 
                   role: 'system', 
@@ -764,7 +764,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-4-scout',
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
             messages: messages,
             temperature: 0.7,
             max_tokens: 1000,
