@@ -573,7 +573,7 @@ Provide exactly ${numQuestions} questions.`;
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              model: 'llama-3.3-70b-versatile', // Fast and high quality
+              model: 'llama-3.1-8b-instant', // Cost-effective and fast
               messages: [{ role: 'user', content: basePrompt }],
               temperature: 0.7,
               max_tokens: 4000,
@@ -710,7 +710,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'llama-3.1-8b-instant',
             messages: messages,
             temperature: 0.7,
             max_tokens: 1000,
