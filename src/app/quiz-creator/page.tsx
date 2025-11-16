@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import ApiStatusBanner from '@/components/ApiStatusBanner';
+// Trigger redeploy
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
 import { 
