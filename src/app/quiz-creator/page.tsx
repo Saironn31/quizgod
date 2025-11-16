@@ -522,24 +522,22 @@ D) Option 4
 Mark the correct answer with an asterisk (*).
 Provide exactly ${numQuestions} questions.`;
 
-    // Try Gemini 2.0 Flash Experimental via OpenRouter first
+    // Try Groq first (lightning fast, high free tier limits)
     try {
-      console.log('Trying Gemini 2.0 Flash Experimental via OpenRouter...');
-      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      console.log('Trying Groq API...');
+      const groqKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
       
-      if (openrouterKey && openrouterKey !== 'your_openrouter_api_key_here') {
+      if (groqKey && groqKey !== 'your_groq_api_key_here') {
         const response = await fetch(
-          'https://openrouter.ai/api/v1/chat/completions',
+          'https://api.groq.com/openai/v1/chat/completions',
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${openrouterKey}`,
+              'Authorization': `Bearer ${groqKey}`,
               'Content-Type': 'application/json',
-              'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
-              'X-Title': 'QuizGod AI Quiz Generator',
             },
             body: JSON.stringify({
-              model: 'google/gemini-2.0-flash-exp:free',
+              model: 'llama-3.3-70b-versatile', // Fast and high quality
               messages: [{ role: 'user', content: basePrompt }],
               temperature: 0.7,
               max_tokens: 4000,
@@ -552,88 +550,31 @@ Provide exactly ${numQuestions} questions.`;
           const generatedText = data.choices?.[0]?.message?.content;
           
           if (generatedText) {
-            console.log('✅ Successfully generated with Gemini 2.0 Flash Experimental');
+            console.log('✅ Successfully generated with Groq');
             setGeneratedQuestions(generatedText);
-            alert('✅ Quiz generated successfully with Gemini 2.0 Flash! Review and parse the questions below.');
+            alert('✅ Quiz generated successfully with Groq! Review and parse the questions below.');
             setIsGenerating(false);
             return;
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          console.log('Gemini 2.0 failed, trying backup...', errorData);
+          console.log('Groq failed:', errorData);
         }
       }
-    } catch (geminiError) {
-      console.log('Gemini 2.0 error, falling back to DeepSeek R1:', geminiError);
+    } catch (groqError) {
+      console.log('Groq error:', groqError);
     }
 
-    // Fallback to OpenRouter DeepSeek R1
-    try {
-      console.log('Falling back to OpenRouter DeepSeek R1...');
-      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-      
-      if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
-        throw new Error("No OpenRouter API key configured. Please add NEXT_PUBLIC_OPENROUTER_API_KEY to .env.local");
-      }
-
-      const response = await fetch(
-        'https://openrouter.ai/api/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${openrouterKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
-            'X-Title': 'QuizGod AI Quiz Generator',
-          },
-          body: JSON.stringify({
-            model: 'deepseek/deepseek-r1:free',
-            messages: [{ role: 'user', content: basePrompt }],
-            temperature: 0.7,
-            max_tokens: 4000,
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
-        
-        if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded') || errorMessage.includes('rate limit')) {
-          throw new Error(
-            '⚠️ Both AI services are rate limited\n\n' +
-            'Please wait a moment and try again, or try with fewer questions.\n\n' +
-            'Current time: ' + new Date().toLocaleTimeString()
-          );
-        }
-        
-        throw new Error(`OpenRouter API failed (${response.status}): ${errorMessage}`);
-      }
-
-      const data = await response.json();
-      const generatedText = data.choices?.[0]?.message?.content;
-
-      if (!generatedText) {
-        throw new Error('No content generated from AI. Please try again.');
-      }
-
-      console.log('✅ Successfully generated with OpenRouter DeepSeek R1');
-      setGeneratedQuestions(generatedText);
-      alert('✅ Quiz generated successfully with DeepSeek R1 (backup)! Review and parse the questions below.');
-    } catch (error) {
-      console.error('Error generating questions:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
-      setError(errorMsg);
-      alert(errorMsg);
-    } finally {
-      setIsGenerating(false);
-    }
+    // No backup - just show error
+    setError("Failed to generate quiz. Please check your API key and try again.");
+    alert('❌ Failed to generate quiz. Please check your Groq API key in .env.local');
+    setIsGenerating(false);
   };
 
   // Keep old function name for compatibility
   const generateWithGemini = generateWithAI;
 
-  // AI Chatbot function with Gemini primary and OpenRouter backup
+  // AI Chatbot function with Groq
   const sendChatMessage = async () => {
     if (!chatInput.trim() || !pdfText) {
       if (!pdfText) {
@@ -653,120 +594,64 @@ Provide exactly ${numQuestions} questions.`;
     // Build conversation context with document
     const systemMessage = `You are a helpful AI assistant analyzing a document. Here's the document content:\n\n${pdfText.slice(0, 10000)}\n\nAnswer questions about this document clearly and concisely.`;
 
-    // Try Gemini 2.0 Flash Experimental via OpenRouter first
+    // Use Groq for chat
     try {
-      console.log('Trying Gemini 2.0 Flash Experimental for chat...');
-      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      console.log('Using Groq for chat...');
+      const groqKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
       
-      if (openrouterKey && openrouterKey !== 'your_openrouter_api_key_here') {
-        const messages = [
-          { role: 'system', content: systemMessage },
-          ...newMessages
-        ];
-
-        const response = await fetch(
-          'https://openrouter.ai/api/v1/chat/completions',
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${openrouterKey}`,
-              'Content-Type': 'application/json',
-              'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
-              'X-Title': 'QuizGod AI Assistant',
-            },
-            body: JSON.stringify({
-              model: 'google/gemini-2.0-flash-exp:free',
-              messages: messages,
-              temperature: 0.7,
-              max_tokens: 1000,
-            })
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          const assistantMessage = data.choices?.[0]?.message?.content;
-          
-          if (assistantMessage) {
-            console.log('✅ Chat response from Gemini 2.0 Flash');
-            setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
-            
-            // Scroll to bottom
-            setTimeout(() => {
-              if (chatContainerRef.current) {
-                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-              }
-            }, 100);
-            
-            setIsChatLoading(false);
-            return;
-          }
-        } else {
-          console.log('Gemini 2.0 chat failed, trying backup...');
-        }
-      }
-    } catch (geminiError) {
-      console.log('Gemini 2.0 chat error, falling back to DeepSeek R1:', geminiError);
-    }
-
-    // Fallback to OpenRouter DeepSeek R1
-    try {
-      console.log('Falling back to DeepSeek R1 for chat...');
-      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
-      
-      if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
-        throw new Error("No OpenRouter API key configured");
+      if (!groqKey || groqKey === 'your_groq_api_key_here') {
+        throw new Error("No Groq API key configured");
       }
 
-      const conversationMessages = [
-        { role: 'system', content: systemMessage },
-        ...newMessages.map(msg => ({ role: msg.role, content: msg.content }))
+      const messages = [
+        { role: 'system' as const, content: systemMessage },
+        ...newMessages
       ];
 
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openrouterKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
-          'X-Title': 'QuizGod AI Assistant',
-        },
-        body: JSON.stringify({
-          model: 'deepseek/deepseek-r1:free',
-          messages: conversationMessages,
-          temperature: 0.7,
-          max_tokens: 1000,
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || 'Failed to get response from AI');
-      }
-
-      const data = await response.json();
-      const assistantMessage = data.choices?.[0]?.message?.content;
-
-      if (!assistantMessage) {
-        throw new Error('No response from AI');
-      }
-
-      console.log('✅ Chat response from OpenRouter DeepSeek R1');
-      setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
-      
-      // Scroll to bottom
-      setTimeout(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      const response = await fetch(
+        'https://api.groq.com/openai/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${groqKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 1000,
+          })
         }
-      }, 100);
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const assistantMessage = data.choices?.[0]?.message?.content;
+        
+        if (assistantMessage) {
+          console.log('✅ Chat response from Groq');
+          setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
+          
+          // Scroll to bottom
+          setTimeout(() => {
+            if (chatContainerRef.current) {
+              chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+            }
+          }, 100);
+          
+          setIsChatLoading(false);
+          return;
+        }
+      }
+      
+      throw new Error("Failed to get response from Groq");
     } catch (error) {
       console.error('Chat error:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to send message';
-      alert(errorMsg);
-      // Remove the user message if error occurred
-      setChatMessages(chatMessages);
-    } finally {
+      setChatMessages([...newMessages, { 
+        role: 'assistant', 
+        content: '❌ Sorry, I encountered an error. Please try again.' 
+      }]);
       setIsChatLoading(false);
     }
   };
