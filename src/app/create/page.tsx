@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
+import ApiStatusBanner from '@/components/ApiStatusBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getUserSubjects, 
@@ -355,20 +356,42 @@ Provide exactly ${numQuestions} questions.`;
       );
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
+        
+        // Handle specific error cases
+        if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded')) {
+          throw new Error(
+            '⚠️ API Quota Exceeded\n\n' +
+            'The free tier limit has been reached. Options:\n\n' +
+            '1. Wait a few minutes and try again\n' +
+            '2. Try with fewer questions\n' +
+            '3. Use a different API key\n' +
+            '4. Upgrade to a paid plan at https://ai.google.dev/pricing\n\n' +
+            'Free tier limits:\n' +
+            '• 60 requests per minute\n' +
+            '• 1,500 requests per day\n\n' +
+            'Current time: ' + new Date().toLocaleTimeString()
+          );
+        }
+        
+        throw new Error(`API request failed (${response.status}): ${errorMessage}`);
       }
 
       const data = await response.json();
       const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!generatedText) {
-        throw new Error('No content generated');
+        throw new Error('No content generated from AI. Please try again.');
       }
 
       setGeneratedQuestions(generatedText);
+      alert('✅ Quiz generated successfully! Review and parse the questions below.');
     } catch (error) {
       console.error('Error generating with Gemini:', error);
-      setError(error instanceof Error ? error.message : 'Failed to generate questions. Please try again.');
+      const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
+      setError(errorMsg);
+      alert(errorMsg);
     } finally {
       setIsGenerating(false);
     }
@@ -794,6 +817,9 @@ Provide exactly ${numQuestions} questions.`;
                 {/* AI Mode */}
                 {mode === 'ai' && (
                   <div className="space-y-4 md:space-y-6">
+                    {/* API Status Banner */}
+                    <ApiStatusBanner />
+
                     {/* PDF Upload */}
                     <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-400/30 rounded-xl p-4 md:p-6">
                       <div className="flex items-center gap-3 mb-3">

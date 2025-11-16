@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
+import ApiStatusBanner from '@/components/ApiStatusBanner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
 import { 
@@ -546,6 +547,23 @@ Provide exactly ${numQuestions} questions.`;
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
+        
+        // Handle specific error cases
+        if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded')) {
+          throw new Error(
+            '⚠️ API Quota Exceeded\n\n' +
+            'The free tier limit has been reached. Options:\n\n' +
+            '1. Wait a few minutes and try again\n' +
+            '2. Try with fewer questions\n' +
+            '3. Use a different API key\n' +
+            '4. Upgrade to a paid plan at https://ai.google.dev/pricing\n\n' +
+            'Free tier limits:\n' +
+            '• 60 requests per minute\n' +
+            '• 1,500 requests per day\n\n' +
+            'Current time: ' + new Date().toLocaleTimeString()
+          );
+        }
+        
         throw new Error(`API request failed (${response.status}): ${errorMessage}`);
       }
 
@@ -557,11 +575,14 @@ Provide exactly ${numQuestions} questions.`;
       }
 
       setGeneratedQuestions(generatedText);
+      alert('✅ Quiz generated successfully! Review and parse the questions below.');
     } catch (error) {
       console.error('Error generating with Gemini:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
       setError(errorMsg);
-      alert('Error: ' + errorMsg);
+      
+      // Show user-friendly error dialog
+      alert(errorMsg);
     } finally {
       setIsGenerating(false);
     }
@@ -1007,6 +1028,9 @@ Provide exactly ${numQuestions} questions.`;
                 {/* AI Mode */}
                 {mode === 'ai' && (
                   <div className="space-y-6">
+                    {/* API Status Banner */}
+                    <ApiStatusBanner className="animate-slide-up" />
+
                     {/* Bento Grid Layout */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* PDF Upload - Large Card */}
