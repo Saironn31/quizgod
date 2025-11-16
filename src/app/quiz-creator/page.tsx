@@ -487,7 +487,7 @@ export default function CreatePage() {
     }
   }, [zoomLevel]);
   
-  const generateWithGemini = async () => {
+  const generateWithAI = async () => {
     if (!title.trim() || !subject) {
       alert("Please fill in quiz title and select a subject");
       return;
@@ -498,9 +498,9 @@ export default function CreatePage() {
       return;
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-      alert("Please configure your Gemini API key in .env.local file.\n\nGet your free API key from: https://makersuite.google.com/app/apikey");
+    const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+    if (!apiKey || apiKey === 'your_openrouter_api_key_here') {
+      alert("Please configure your OpenRouter API key in .env.local file.\n\nGet your free API key from: https://openrouter.ai/keys");
       return;
     }
 
@@ -508,14 +508,14 @@ export default function CreatePage() {
     setError("");
 
     try {
-      console.log('Starting Gemini API request...');
+      console.log('Starting DeepSeek R1 API request via OpenRouter...');
       console.log('API Key exists:', !!apiKey);
       console.log('PDF Text length:', pdfText?.length || 0);
       
       const basePrompt = `Create ${numQuestions} multiple choice quiz questions about ${subject}.
 
 Based on this content:
-${pdfText.slice(0, 10000)}
+${pdfText.slice(0, 15000)}
 
 Format each question EXACTLY like this:
 1. Question text here?
@@ -528,18 +528,25 @@ Mark the correct answer with an asterisk (*).
 Provide exactly ${numQuestions} questions.`;
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+        'https://openrouter.ai/api/v1/chat/completions',
         {
           method: 'POST',
           headers: {
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
+            'X-Title': 'QuizGod AI Quiz Generator',
           },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: basePrompt
-              }]
-            }]
+            model: 'deepseek/deepseek-r1:free',
+            messages: [
+              {
+                role: 'user',
+                content: basePrompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 4000,
           })
         }
       );
@@ -549,17 +556,15 @@ Provide exactly ${numQuestions} questions.`;
         const errorMessage = errorData?.error?.message || response.statusText || 'Unknown error';
         
         // Handle specific error cases
-        if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded')) {
+        if (response.status === 429 || errorMessage.includes('quota') || errorMessage.includes('exceeded') || errorMessage.includes('rate limit')) {
           throw new Error(
-            '⚠️ API Quota Exceeded\n\n' +
-            'The free tier limit has been reached. Options:\n\n' +
-            '1. Wait a few minutes and try again\n' +
+            '⚠️ API Rate Limit Reached\n\n' +
+            'The rate limit has been reached. Options:\n\n' +
+            '1. Wait a minute and try again\n' +
             '2. Try with fewer questions\n' +
-            '3. Use a different API key\n' +
-            '4. Upgrade to a paid plan at https://ai.google.dev/pricing\n\n' +
-            'Free tier limits:\n' +
-            '• 60 requests per minute\n' +
-            '• 1,500 requests per day\n\n' +
+            '3. Check your API key at https://openrouter.ai/keys\n' +
+            '4. Upgrade your plan for higher limits\n\n' +
+            'DeepSeek R1 Free tier is generous but has rate limits.\n\n' +
             'Current time: ' + new Date().toLocaleTimeString()
           );
         }
@@ -568,16 +573,16 @@ Provide exactly ${numQuestions} questions.`;
       }
 
       const data = await response.json();
-      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const generatedText = data.choices?.[0]?.message?.content;
 
       if (!generatedText) {
         throw new Error('No content generated from AI. Please try again.');
       }
 
       setGeneratedQuestions(generatedText);
-      alert('✅ Quiz generated successfully! Review and parse the questions below.');
+      alert('✅ Quiz generated successfully with DeepSeek R1! Review and parse the questions below.');
     } catch (error) {
-      console.error('Error generating with Gemini:', error);
+      console.error('Error generating with DeepSeek R1:', error);
       const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
       setError(errorMsg);
       
@@ -587,6 +592,9 @@ Provide exactly ${numQuestions} questions.`;
       setIsGenerating(false);
     }
   };
+
+  // Keep old function name for compatibility
+  const generateWithGemini = generateWithAI;
 
   const parseQuizQuestions = (text: string) => {
     const questions: Question[] = [];
