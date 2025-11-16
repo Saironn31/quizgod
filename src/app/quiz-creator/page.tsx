@@ -522,45 +522,49 @@ D) Option 4
 Mark the correct answer with an asterisk (*).
 Provide exactly ${numQuestions} questions.`;
 
-    // Try Gemini first
+    // Try Gemini 2.0 Flash Experimental via OpenRouter first
     try {
-      console.log('Trying Gemini API first...');
-      const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      console.log('Trying Gemini 2.0 Flash Experimental via OpenRouter...');
+      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
       
-      if (geminiKey && geminiKey !== 'your_api_key_here') {
+      if (openrouterKey && openrouterKey !== 'your_openrouter_api_key_here') {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          'https://openrouter.ai/api/v1/chat/completions',
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Authorization': `Bearer ${openrouterKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
+              'X-Title': 'QuizGod AI Quiz Generator',
+            },
             body: JSON.stringify({
-              contents: [{ parts: [{ text: basePrompt }] }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 4000,
-              }
+              model: 'google/gemini-2.0-flash-exp:free',
+              messages: [{ role: 'user', content: basePrompt }],
+              temperature: 0.7,
+              max_tokens: 4000,
             })
           }
         );
 
         if (response.ok) {
           const data = await response.json();
-          const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const generatedText = data.choices?.[0]?.message?.content;
           
           if (generatedText) {
-            console.log('✅ Successfully generated with Gemini');
+            console.log('✅ Successfully generated with Gemini 2.0 Flash Experimental');
             setGeneratedQuestions(generatedText);
-            alert('✅ Quiz generated successfully with Gemini! Review and parse the questions below.');
+            alert('✅ Quiz generated successfully with Gemini 2.0 Flash! Review and parse the questions below.');
             setIsGenerating(false);
             return;
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          console.log('Gemini failed, trying backup...', errorData);
+          console.log('Gemini 2.0 failed, trying backup...', errorData);
         }
       }
     } catch (geminiError) {
-      console.log('Gemini error, falling back to OpenRouter:', geminiError);
+      console.log('Gemini 2.0 error, falling back to DeepSeek R1:', geminiError);
     }
 
     // Fallback to OpenRouter DeepSeek R1
@@ -569,7 +573,7 @@ Provide exactly ${numQuestions} questions.`;
       const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
       
       if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
-        throw new Error("No AI API keys configured. Please add NEXT_PUBLIC_GEMINI_API_KEY or NEXT_PUBLIC_OPENROUTER_API_KEY to .env.local");
+        throw new Error("No OpenRouter API key configured. Please add NEXT_PUBLIC_OPENROUTER_API_KEY to .env.local");
       }
 
       const response = await fetch(
@@ -649,43 +653,42 @@ Provide exactly ${numQuestions} questions.`;
     // Build conversation context with document
     const systemMessage = `You are a helpful AI assistant analyzing a document. Here's the document content:\n\n${pdfText.slice(0, 10000)}\n\nAnswer questions about this document clearly and concisely.`;
 
-    // Try Gemini first
+    // Try Gemini 2.0 Flash Experimental via OpenRouter first
     try {
-      console.log('Trying Gemini for chat...');
-      const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      console.log('Trying Gemini 2.0 Flash Experimental for chat...');
+      const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
       
-      if (geminiKey && geminiKey !== 'your_api_key_here') {
-        // Build conversation history for Gemini
-        const geminiMessages = [
-          { text: systemMessage }
+      if (openrouterKey && openrouterKey !== 'your_openrouter_api_key_here') {
+        const messages = [
+          { role: 'system', content: systemMessage },
+          ...newMessages
         ];
-        
-        // Add conversation history
-        for (const msg of newMessages) {
-          geminiMessages.push({ text: `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}` });
-        }
 
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`,
+          'https://openrouter.ai/api/v1/chat/completions',
           {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Authorization': `Bearer ${openrouterKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://quizgod.vercel.app',
+              'X-Title': 'QuizGod AI Assistant',
+            },
             body: JSON.stringify({
-              contents: [{ parts: geminiMessages }],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1000,
-              }
+              model: 'google/gemini-2.0-flash-exp:free',
+              messages: messages,
+              temperature: 0.7,
+              max_tokens: 1000,
             })
           }
         );
 
         if (response.ok) {
           const data = await response.json();
-          const assistantMessage = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          const assistantMessage = data.choices?.[0]?.message?.content;
           
           if (assistantMessage) {
-            console.log('✅ Chat response from Gemini');
+            console.log('✅ Chat response from Gemini 2.0 Flash');
             setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
             
             // Scroll to bottom
@@ -699,20 +702,20 @@ Provide exactly ${numQuestions} questions.`;
             return;
           }
         } else {
-          console.log('Gemini chat failed, trying backup...');
+          console.log('Gemini 2.0 chat failed, trying backup...');
         }
       }
     } catch (geminiError) {
-      console.log('Gemini chat error, falling back to OpenRouter:', geminiError);
+      console.log('Gemini 2.0 chat error, falling back to DeepSeek R1:', geminiError);
     }
 
     // Fallback to OpenRouter DeepSeek R1
     try {
-      console.log('Falling back to OpenRouter for chat...');
+      console.log('Falling back to DeepSeek R1 for chat...');
       const openrouterKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
       
       if (!openrouterKey || openrouterKey === 'your_openrouter_api_key_here') {
-        throw new Error("No AI API keys configured");
+        throw new Error("No OpenRouter API key configured");
       }
 
       const conversationMessages = [
