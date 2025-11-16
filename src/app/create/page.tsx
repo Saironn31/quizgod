@@ -405,25 +405,6 @@ Provide exactly ${numQuestions} questions.`;
   // Keep old function name for compatibility
   const generateWithGemini = generateWithAI;
 
-      const data = await response.json();
-      const generatedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!generatedText) {
-        throw new Error('No content generated from AI. Please try again.');
-      }
-
-      setGeneratedQuestions(generatedText);
-      alert('✅ Quiz generated successfully! Review and parse the questions below.');
-    } catch (error) {
-      console.error('Error generating with Gemini:', error);
-      const errorMsg = error instanceof Error ? error.message : 'Failed to generate questions. Please try again.';
-      setError(errorMsg);
-      alert(errorMsg);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   const parseQuizQuestions = (text: string) => {
     const questions: Question[] = [];
     const questionBlocks = text.split(/\d+\.\s+/).filter(block => block.trim());
