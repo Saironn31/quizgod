@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
-import AdsterraAd from '@/components/AdsterraAd';
+import AdsterraNative from '@/components/AdsterraNative';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getAllUserQuizzes, 
@@ -278,15 +278,7 @@ export default function QuizzesPage() {
                     {/* Native Ad every 6 quizzes */}
                     {index > 0 && index % 6 === 0 && (
                       <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 flex justify-center">
-                        <AdsterraAd 
-                          atOptions={{
-                            key: 'YOUR_NATIVE_AD_KEY_HERE',
-                            format: 'iframe',
-                            height: 250,
-                            width: 300,
-                            params: {}
-                          }}
-                        />
+                        <AdsterraNative />
                       </div>
                     )}
                     <div className="bg-white dark:bg-gray-700 rounded-xl p-4 md:p-5 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group flex flex-col">

@@ -165,7 +165,7 @@ export default function HomePage() {
         <div className="relative z-10 mb-6">
           <AdsterraAd 
             atOptions={{
-              key: 'YOUR_BANNER_KEY_HERE',
+              key: 'e478b629ee3a3e02c8e9579be23fe46d',
               format: 'iframe',
               height: 90,
               width: 728,

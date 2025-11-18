@@ -28,6 +28,7 @@
 2. Choose **"Native Banner"** format
 3. Customize to match your site colors
 4. Copy your **Ad Code Key**
+5. Native ads are responsive - no size selection needed!
 
 ## Step 3: Add Your Ad Keys to the Site
 
@@ -53,8 +54,7 @@ File: `src/app/quizzes/page.tsx`
   atOptions={{
     key: 'YOUR_NATIVE_KEY_HERE',  // ← Replace with your key
     format: 'iframe',
-    height: 250,
-    width: 300
+    params: {}
   }}
 />
 ```
