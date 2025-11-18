@@ -23,7 +23,7 @@ export default function QuizzesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
 
   // Load preferences
   useEffect(() => {
@@ -358,18 +358,20 @@ export default function QuizzesPage() {
         </div>
       </div>
 
-      {/* Fixed Bottom Center Ad */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
-        <AdsterraAd 
-          atOptions={{
-            key: 'e478b629ee3a3e02c8e9579be23fe46d',
-            format: 'iframe',
-            height: 90,
-            width: 728,
-            params: {}
-          }}
-        />
-      </div>
+      {/* Fixed Bottom Center Ad - Only for non-premium users */}
+      {!userProfile?.isPremium && (
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+          <AdsterraAd 
+            atOptions={{
+              key: 'e478b629ee3a3e02c8e9579be23fe46d',
+              format: 'iframe',
+              height: 90,
+              width: 728,
+              params: {}
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

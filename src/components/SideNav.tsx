@@ -33,11 +33,6 @@ export default function SideNav() {
     { href: '/profile', label: 'Profile', icon: '◕', gradient: 'from-lime-400 to-green-500' },
   ];
 
-  // Add admin link for admin users
-  if (isAdmin) {
-    navItems.push({ href: '/admin', label: 'Admin Panel', icon: '⚙', gradient: 'from-red-400 to-orange-500' });
-  }
-
   if (!user) return null;
 
   return (

@@ -72,6 +72,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(user);
       
       if (user) {
+        // Auto-grant admin and premium to specific email
+        if (user.email === 'johnvaldivieso331@gmail.com') {
+          try {
+            const { doc, updateDoc } = await import('firebase/firestore');
+            const { db } = await import('@/lib/firebase');
+            const userRef = doc(db, 'users', user.uid);
+            await updateDoc(userRef, {
+              role: 'admin',
+              isPremium: true,
+              updatedAt: new Date()
+            }).catch(() => {
+              // User doc might not exist yet, that's ok
+            });
+          } catch (err) {
+            console.error('Failed to auto-grant admin:', err);
+          }
+        }
+        
         // Fetch user profile data from Firestore
         const profile = await getUserProfile(user.uid);
         setUserProfile(profile);
