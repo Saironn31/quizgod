@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AuthModal from "@/components/AuthModal";
-import SideNav from "@/components/SideNav";
+import SideNav from '@/components/SideNav';
+import AdsterraAd from '@/components/AdsterraAd';
 import { useAuth } from '@/contexts/AuthContext';
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -158,6 +159,19 @@ export default function HomePage() {
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+        </div>
+
+        {/* Banner Ad - Top of Dashboard */}
+        <div className="relative z-10 mb-6">
+          <AdsterraAd 
+            atOptions={{
+              key: 'YOUR_BANNER_KEY_HERE',
+              format: 'iframe',
+              height: 90,
+              width: 728,
+              params: {}
+            }}
+          />
         </div>
 
         <div className="relative z-10 mb-6 md:mb-8">

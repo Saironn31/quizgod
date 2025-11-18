@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
+import AdsterraAd from '@/components/AdsterraAd';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   getAllUserQuizzes, 
@@ -272,8 +273,23 @@ export default function QuizzesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {filteredQuizzes.map((quiz) => (
-                  <div key={quiz.id} className="bg-white dark:bg-gray-700 rounded-xl p-4 md:p-5 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group flex flex-col">
+                {filteredQuizzes.map((quiz, index) => (
+                  <React.Fragment key={quiz.id}>
+                    {/* Native Ad every 6 quizzes */}
+                    {index > 0 && index % 6 === 0 && (
+                      <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 flex justify-center">
+                        <AdsterraAd 
+                          atOptions={{
+                            key: 'YOUR_NATIVE_AD_KEY_HERE',
+                            format: 'iframe',
+                            height: 250,
+                            width: 300,
+                            params: {}
+                          }}
+                        />
+                      </div>
+                    )}
+                    <div className="bg-white dark:bg-gray-700 rounded-xl p-4 md:p-5 border border-purple-100 dark:border-gray-600 hover:shadow-lg transition-all duration-200 group flex flex-col">
                     <div className="flex justify-between items-start mb-3 md:mb-4">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-gray-200 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors line-clamp-2 break-words">
@@ -341,6 +357,7 @@ export default function QuizzesPage() {
                       </button>
                     </div>
                   </div>
+                  </React.Fragment>
                 ))}
               </div>
             )}
