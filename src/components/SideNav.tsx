@@ -3,11 +3,24 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { isUserAdmin } from '@/lib/firestore';
 
 export default function SideNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, userProfile } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user?.uid) {
+        const adminStatus = await isUserAdmin(user.uid);
+        setIsAdmin(adminStatus);
+      }
+    };
+    checkAdmin();
+  }, [user]);
 
   const navItems = [
     { href: '/', label: 'Home', icon: '◈', gradient: 'from-cyan-400 to-blue-500' },
@@ -19,6 +32,11 @@ export default function SideNav() {
     { href: '/friends', label: 'Friends', icon: '◎', gradient: 'from-fuchsia-400 to-purple-500' },
     { href: '/profile', label: 'Profile', icon: '◕', gradient: 'from-lime-400 to-green-500' },
   ];
+
+  // Add admin link for admin users
+  if (isAdmin) {
+    navItems.push({ href: '/admin', label: 'Admin Panel', icon: '⚙', gradient: 'from-red-400 to-orange-500' });
+  }
 
   if (!user) return null;
 

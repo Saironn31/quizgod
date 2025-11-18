@@ -15,7 +15,8 @@ import {
   getUserClasses,
   FirebaseClass,
   FirebaseQuiz,
-  createSubject
+  createSubject,
+  isUserPremium
 } from '@/lib/firestore';
 
 type Question = { question: string; options: string[]; correct: number };
@@ -31,6 +32,8 @@ export default function CreatePage() {
   
   // Mode selection
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
+  const [isPremium, setIsPremium] = useState(false);
+  const [checkingPremium, setCheckingPremium] = useState(true);
   
   // Common fields
   const [title, setTitle] = useState("");
@@ -86,6 +89,23 @@ export default function CreatePage() {
   // Load saved draft
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    
+    // Check premium status
+    const checkPremium = async () => {
+      if (user?.uid) {
+        try {
+          const premium = await isUserPremium(user.uid);
+          setIsPremium(premium);
+        } catch (error) {
+          console.error('Error checking premium:', error);
+        } finally {
+          setCheckingPremium(false);
+        }
+      } else {
+        setCheckingPremium(false);
+      }
+    };
+    checkPremium();
     
     try {
       const savedData = localStorage.getItem('create_quiz_draft_v3');
@@ -1075,14 +1095,25 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                   ✍️ Manual
                 </button>
                 <button
-                  onClick={() => setMode('ai')}
-                  className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                  onClick={() => {
+                    if (!isPremium && !checkingPremium) {
+                      alert('👑 AI Quiz Generator is a premium feature. Contact admin to upgrade your account.');
+                      return;
+                    }
+                    setMode('ai');
+                  }}
+                  className={`px-6 py-3 rounded-xl font-bold transition-all relative ${
                     mode === 'ai'
                       ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg'
                       : 'text-slate-300 hover:text-white'
                   }`}
                 >
                   🤖 AI Generator
+                  {!isPremium && !checkingPremium && (
+                    <span className="absolute -top-1 -right-1 text-xs bg-yellow-500 text-black px-1.5 py-0.5 rounded-full font-bold">
+                      PRO
+                    </span>
+                  )}
                 </button>
               </div>
             </div>

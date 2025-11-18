@@ -8,11 +8,12 @@ import {
   joinClass, 
   getUserClasses,
   FirebaseClass,
-  migrateLocalDataToFirestore
+  migrateLocalDataToFirestore,
+  isUserPremium
 } from '@/lib/firestore';
 
 export default function ClassesPage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [classes, setClasses] = useState<FirebaseClass[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
@@ -22,15 +23,31 @@ export default function ClassesPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+  const [checkingPremium, setCheckingPremium] = useState(true);
 
   useEffect(() => {
     if (!user?.email) {
       setLoading(false);
+      setCheckingPremium(false);
       return;
     }
+    checkPremiumStatus();
     loadUserClasses();
     migrateExistingData();
   }, [user]);
+
+  const checkPremiumStatus = async () => {
+    if (!user?.uid) return;
+    try {
+      const premium = await isUserPremium(user.uid);
+      setIsPremium(premium);
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+    } finally {
+      setCheckingPremium(false);
+    }
+  };
 
   const migrateExistingData = async () => {
     if (!user?.uid || !user?.email) return;
@@ -148,6 +165,62 @@ export default function ClassesPage() {
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
         </div>
         <div className="relative z-10 text-center px-4 animate-fade-in">
+          <div className="mb-8">
+            <div className="text-7xl mb-6 animate-bounce-slow">🔒</div>
+            <h1 className="text-5xl font-black mb-4">
+              <span className="gradient-text">Sign In Required</span>
+            </h1>
+            <p className="text-slate-300 text-xl">Please sign in to access Classes</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Premium gate
+  if (!checkingPremium && !isPremium) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <SideNav />
+        <div className="md:ml-64 min-h-screen p-6 md:p-12 flex items-center justify-center">
+          <div className="glass-card rounded-3xl p-12 max-w-2xl text-center">
+            <div className="text-6xl mb-6">👑</div>
+            <h1 className="text-4xl md:text-5xl font-black mb-4 gradient-text">Premium Feature</h1>
+            <p className="text-slate-300 text-lg mb-8">
+              Classes are a premium feature. Upgrade to premium to create and join classes, collaborate with classmates, and track your progress together.
+            </p>
+            <div className="bg-white/5 rounded-2xl p-6 mb-8">
+              <h3 className="text-xl font-bold text-white mb-4">Premium Benefits</h3>
+              <ul className="text-left space-y-3 text-slate-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">✓</span>
+                  <span>Create and manage unlimited classes</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">✓</span>
+                  <span>Join classes with unique codes</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">✓</span>
+                  <span>Access AI Quiz Generator</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">✓</span>
+                  <span>Class leaderboards and analytics</span>
+                </li>
+              </ul>
+            </div>
+            <p className="text-slate-400 text-sm">
+              Contact the administrator to upgrade your account to premium.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading or auth redirect
+  if (checkingPremium || loading) {
           <div className="mb-8 inline-block">
             <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-5xl font-black animate-bounce-soft shadow-glow">
               Q

@@ -228,12 +228,66 @@ export interface FirebaseUser {
   profilePicture?: string; // URL to profile picture
   bio?: string; // User biography
   friends?: string[]; // Array of user UIDs
+  isPremium?: boolean; // Premium subscription status
+  role?: 'user' | 'admin'; // User role
   preferences?: {
     theme: 'light' | 'dark';
   };
   createdAt: Date;
   updatedAt: Date;
 }
+
+// --- Premium & Admin Functions ---
+/**
+ * Check if user is admin
+ */
+export const isUserAdmin = async (uid: string): Promise<boolean> => {
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) return false;
+  return userSnap.data().role === 'admin';
+};
+
+/**
+ * Check if user has premium access
+ */
+export const isUserPremium = async (uid: string): Promise<boolean> => {
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  if (!userSnap.exists()) return false;
+  return userSnap.data().isPremium === true || userSnap.data().role === 'admin';
+};
+
+/**
+ * Update user premium status (admin only)
+ */
+export const setUserPremium = async (adminUid: string, targetUid: string, isPremium: boolean): Promise<void> => {
+  // Check if requester is admin
+  const isAdmin = await isUserAdmin(adminUid);
+  if (!isAdmin) {
+    throw new Error('Unauthorized: Only admins can modify premium status');
+  }
+  
+  const userRef = doc(db, 'users', targetUid);
+  await updateDoc(userRef, {
+    isPremium,
+    updatedAt: new Date()
+  });
+};
+
+/**
+ * Get all users (admin only)
+ */
+export const getAllUsers = async (adminUid: string): Promise<FirebaseUser[]> => {
+  const isAdmin = await isUserAdmin(adminUid);
+  if (!isAdmin) {
+    throw new Error('Unauthorized: Only admins can view all users');
+  }
+  
+  const usersQuery = query(collection(db, 'users'));
+  const snapshot = await getDocs(usersQuery);
+  return snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as FirebaseUser));
+};
 
 // --- Friend Request Functions ---
 /**
