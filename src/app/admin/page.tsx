@@ -97,7 +97,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-950">
       <SideNav />
-      <div className="md:ml-64 min-h-screen p-6 md:p-12">
+      <div className="md:ml-64 min-h-screen p-6 md:p-12 pb-32 md:pb-12">
         <div className="fixed inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-20 w-96 h-96 bg-red-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-orange-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
@@ -117,7 +117,7 @@ export default function AdminPage() {
         </div>
 
         <div className="relative z-10">
-          <div className="glass-card rounded-3xl p-6 md:p-8">
+          <div className="glass-card rounded-3xl p-6 md:p-8 animate-slide-up">
             <div className="mb-6">
               <input
                 type="text"
@@ -128,7 +128,7 @@ export default function AdminPage() {
               />
             </div>
 
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-4">
               <p className="text-slate-300">
                 Total Users: <span className="font-bold text-white">{users.length}</span>
                 {" | "}
