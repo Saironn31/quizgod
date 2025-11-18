@@ -139,120 +139,116 @@ const FriendsPage: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Friend Requests Section - 3 containers in row */}
+        {/* All 3 Sections in Same Row */}
         <div className="relative z-10 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Add Friends Container */}
           <div className="glass-card rounded-3xl p-6 animate-slide-up">
-            <div className="text-center">
+            <div className="text-center mb-6">
               <h2 className="text-xl md:text-2xl font-bold text-white mb-3">Add Friends</h2>
-              <p className="text-slate-300 text-sm md:text-base mb-6">Connect with friends</p>
+              <p className="text-slate-300 text-sm md:text-base mb-4">Connect with friends</p>
               <FriendRequestForm />
             </div>
           </div>
 
           {/* Pending Requests Container */}
-          <div className="glass-card rounded-3xl p-6 animate-slide-up lg:col-span-2">
-            <div className="mb-6">
-              <h3 className="text-xl md:text-2xl font-semibold text-white mb-4 text-center">Pending Requests</h3>
-              {requestsLoading && friendRequests.length === 0 ? (
-                <div className="flex items-center justify-center p-12 bg-white/5 rounded-2xl border border-white/10">
-                  <div className="text-center">
-                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4"></div>
-                    <p className="text-purple-200 text-lg">Loading requests...</p>
-                  </div>
+          <div className="glass-card rounded-3xl p-6 animate-slide-up">
+            <div className="text-center mb-6">
+              <h3 className="text-xl md:text-2xl font-semibold text-white mb-4">Pending Requests</h3>
+            </div>
+            {requestsLoading && friendRequests.length === 0 ? (
+              <div className="flex items-center justify-center p-8 bg-white/5 rounded-2xl border border-white/10">
+                <div className="text-center">
+                  <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-purple-500 border-t-transparent mb-3"></div>
+                  <p className="text-purple-200 text-sm">Loading...</p>
                 </div>
-              ) : friendRequests.filter(r => r.status === 'pending').length === 0 ? (
-                <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/30 p-12 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
-                    <span className="text-4xl">📭</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-white mb-3">All Caught Up!</h3>
-                  <p className="text-slate-300 text-base mb-2">No pending friend requests at the moment</p>
-                  <p className="text-slate-400 text-sm">Send requests using the form above</p>
+              </div>
+            ) : friendRequests.filter(r => r.status === 'pending').length === 0 ? (
+              <div className="bg-gradient-to-br from-slate-800/50 to-slate-700/50 rounded-2xl border border-slate-600/30 p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+                  <span className="text-3xl">📭</span>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
-                  {friendRequests.filter(r => r.status === 'pending').map(req => (
-                    <div key={req.id} className="bg-white/10 rounded-2xl border border-purple-400/30 p-6 backdrop-blur-sm hover:bg-white/15 transition-all">
-                      <div className="text-white font-medium mb-4 text-base md:text-lg text-center">
-                        {req.type === 'received' ? (
-                          <>
-                            <span className="text-purple-300">Request from:</span><br/>
-                            {requestProfiles[req.senderUid]?.username ? (
-                              <span
-                                className="underline cursor-pointer text-cyan-300 hover:text-cyan-400 font-semibold"
-                                onClick={() => { setSelectedFriend(requestProfiles[req.senderUid]); setShowProfileModal(true); }}
-                              >
-                                {requestProfiles[req.senderUid].username}
-                              </span>
-                            ) : req.senderUid}
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-purple-300">Sent to:</span><br/>
-                            <span className="text-cyan-300 font-semibold">
-                              {requestProfiles[req.receiverUid]?.username ? requestProfiles[req.receiverUid].username : req.receiverUid}
+                <h3 className="text-lg font-semibold text-white mb-2">All Caught Up!</h3>
+                <p className="text-slate-300 text-sm mb-1">No pending requests</p>
+                <p className="text-slate-400 text-xs">Use form to send requests</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {friendRequests.filter(r => r.status === 'pending').map(req => (
+                  <div key={req.id} className="bg-white/10 rounded-xl border border-purple-400/30 p-4 backdrop-blur-sm hover:bg-white/15 transition-all">
+                    <div className="text-white font-medium mb-3 text-sm text-center">
+                      {req.type === 'received' ? (
+                        <>
+                          <span className="text-purple-300">From:</span><br/>
+                          {requestProfiles[req.senderUid]?.username ? (
+                            <span
+                              className="underline cursor-pointer text-cyan-300 hover:text-cyan-400 font-semibold"
+                              onClick={() => { setSelectedFriend(requestProfiles[req.senderUid]); setShowProfileModal(true); }}
+                            >
+                              {requestProfiles[req.senderUid].username}
                             </span>
-                          </>
-                        )}
-                      </div>
-                      {req.type === 'received' && (
-                        <div className="flex gap-3 mt-4">
-                          <button 
-                            className="flex-1 px-4 py-3 text-base bg-green-600 hover:bg-green-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl" 
-                            onClick={async () => { await acceptFriendRequest(req.id); window.location.reload(); }}
-                          >
-                            ✓ Accept
-                          </button>
-                          <button 
-                            className="flex-1 px-4 py-3 text-base bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl" 
-                            onClick={async () => { await declineFriendRequest(req.id); window.location.reload(); }}
-                          >
-                            ✕ Decline
-                          </button>
-                        </div>
+                          ) : req.senderUid}
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-purple-300">To:</span><br/>
+                          <span className="text-cyan-300 font-semibold text-xs">
+                            {requestProfiles[req.receiverUid]?.username ? requestProfiles[req.receiverUid].username : req.receiverUid}
+                          </span>
+                        </>
                       )}
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    {req.type === 'received' && (
+                      <div className="flex gap-2 mt-3">
+                        <button 
+                          className="flex-1 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all font-medium" 
+                          onClick={async () => { await acceptFriendRequest(req.id); window.location.reload(); }}
+                        >
+                          ✓ Accept
+                        </button>
+                        <button 
+                          className="flex-1 px-3 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all font-medium" 
+                          onClick={async () => { await declineFriendRequest(req.id); window.location.reload(); }}
+                        >
+                          ✕ Decline
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Friends List Section */}
-        <div className="relative z-10 mb-8">
-          <div className="glass-card rounded-3xl p-6 md:p-8 animate-slide-up">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Your Friends</h2>
-              <p className="text-slate-300 text-base md:text-lg mb-6">Connect and chat with your friends</p>
-              
-              <div className="max-w-lg mx-auto">
+          {/* Your Friends Container */}
+          <div className="glass-card rounded-3xl p-6 animate-slide-up">
+            <div className="text-center mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-3">Your Friends</h2>
+              <div className="mb-4">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  placeholder="Search friends by name, username, or email"
-                  className="px-6 py-4 text-base rounded-2xl border border-purple-300/50 bg-white/10 backdrop-blur-sm text-white w-full focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder-slate-400 transition-all"
+                  placeholder="Search friends..."
+                  className="px-4 py-2 text-sm rounded-xl border border-purple-300/50 bg-white/10 backdrop-blur-sm text-white w-full focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder-slate-400 transition-all"
                 />
               </div>
             </div>
             {loading ? (
-              <div className="text-center py-16">
-                <div className="inline-block animate-spin rounded-full h-20 w-20 border-4 border-purple-500 border-t-transparent mb-6"></div>
-                <p className="text-purple-200 text-xl font-medium">Loading friends...</p>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4"></div>
+                <p className="text-purple-200 text-sm">Loading...</p>
               </div>
             ) : friends.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
-                  <span className="text-5xl">👥</span>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+                  <span className="text-3xl">👥</span>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">No Friends Yet</h3>
-                <p className="text-slate-300 text-base mb-4">Start building your friend network!</p>
-                <p className="text-slate-400 text-sm">Use the form above to send friend requests</p>
+                <h3 className="text-lg font-semibold text-white mb-2">No Friends Yet</h3>
+                <p className="text-slate-300 text-sm mb-2">Start building your network!</p>
+                <p className="text-slate-400 text-xs">Send friend requests</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {friends
                   .filter(friend => {
                     const term = searchTerm.toLowerCase();
@@ -263,34 +259,34 @@ const FriendsPage: React.FC = () => {
                     );
                   })
                   .map(friend => (
-                    <div key={friend.uid} className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-2xl border border-white/20 p-6 flex flex-col items-center shadow-xl transition-all hover:scale-[1.02] hover:bg-white/15 group">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                    <div key={friend.uid} className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-sm rounded-xl border border-white/20 p-4 flex flex-col items-center transition-all hover:bg-white/15">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-blue-500 flex items-center justify-center text-white text-lg font-bold mb-3">
                         {friend.name?.charAt(0).toUpperCase() || friend.username?.charAt(0).toUpperCase() || friend.email?.charAt(0).toUpperCase() || '?'}
                       </div>
                       
                       <div 
-                        className="text-lg font-semibold text-white text-center cursor-pointer hover:text-cyan-300 transition-colors mb-2 break-words max-w-full" 
+                        className="text-sm font-semibold text-white text-center cursor-pointer hover:text-cyan-300 transition-colors mb-1 truncate w-full" 
                         onClick={() => { setSelectedFriend(friend); setShowProfileModal(true); }}
                       >
                         {friend.name || friend.username || friend.email}
                       </div>
                       
-                      <div className="text-sm text-slate-300 mb-6 text-center truncate max-w-full">
+                      <div className="text-xs text-slate-300 mb-3 text-center truncate w-full">
                         @{friend.username || friend.email}
                       </div>
                       
-                      <div className="flex flex-col gap-3 w-full mt-auto">
+                      <div className="flex flex-col gap-2 w-full">
                         <button
-                          className="px-5 py-3 text-base bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-medium shadow-lg hover:from-green-600 hover:to-emerald-600 transition-all hover:shadow-xl w-full"
+                          className="px-4 py-2 text-sm bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all w-full"
                           onClick={() => setChatOverlayFriend(friend)}
                         >
                           💬 Chat
                         </button>
                         <button
-                          className="px-4 py-2 text-sm bg-gradient-to-r from-red-500/80 to-pink-500/80 text-white rounded-lg font-medium shadow hover:from-red-600 hover:to-pink-600 transition-all w-full"
+                          className="px-3 py-1.5 text-xs bg-gradient-to-r from-red-500/80 to-pink-500/80 text-white rounded-md font-medium hover:from-red-600 hover:to-pink-600 transition-all w-full"
                           onClick={async () => {
                             if (!user?.uid) return;
-                            if (confirm(`Remove ${friend.name || friend.username || friend.email} from your friends?`)) {
+                            if (confirm(`Remove ${friend.name || friend.username || friend.email}?`)) {
                               await removeFriend(user.uid, friend.uid);
                               setFriends(prev => prev.filter(f => f.uid !== friend.uid));
                             }
@@ -305,6 +301,7 @@ const FriendsPage: React.FC = () => {
             )}
           </div>
         </div>
+
         {/* ChatOverlay for friend chat at bottom right */}
         {chatOverlayFriend && (
           <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] h-[500px] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-purple-400/50 flex flex-col overflow-hidden animate-slide-up">
