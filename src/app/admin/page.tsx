@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import SideNav from '@/components/SideNav';
-import { getAllUsers, setUserPremium, isUserAdmin } from '@/lib/firestore';
+import { getAllUsers, setUserPremium, isUserAdmin, getUserQuizRecords, getUserClasses, getAllUserQuizzes } from '@/lib/firestore';
 import { useRouter } from 'next/navigation';
 
 interface User {
@@ -23,6 +23,9 @@ export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [userStats, setUserStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -66,6 +69,58 @@ export default function AdminPage() {
       alert('Failed to update premium status');
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const viewUserStats = async (targetUser: User) => {
+    setSelectedUser(targetUser);
+    setLoadingStats(true);
+    
+    try {
+      // Fetch all user data
+      const [quizRecords, classes, quizzes] = await Promise.all([
+        getUserQuizRecords(targetUser.uid),
+        getUserClasses(targetUser.email),
+        getAllUserQuizzes(targetUser.uid, targetUser.email)
+      ]);
+
+      // Calculate statistics
+      const totalQuizzesTaken = quizRecords.length;
+      const totalScore = quizRecords.reduce((sum, r) => sum + r.score, 0);
+      const totalPossible = quizRecords.reduce((sum, r) => sum + Math.max(r.score, 1), 0);
+      const avgScore = totalQuizzesTaken > 0 ? Math.round((totalScore / totalQuizzesTaken) * 100) : 0;
+      
+      // Get unique subjects from quiz records
+      const subjects = new Set<string>();
+      quizRecords.forEach(r => {
+        if ((r as any).subject) subjects.add((r as any).subject);
+      });
+
+      // Recent activity (last 10 quiz attempts)
+      const recentActivity = quizRecords
+        .sort((a, b) => {
+          const timeA = a.timestamp instanceof Date ? a.timestamp : new Date(0);
+          const timeB = b.timestamp instanceof Date ? b.timestamp : new Date(0);
+          return timeB.getTime() - timeA.getTime();
+        })
+        .slice(0, 10);
+
+      setUserStats({
+        totalQuizzesTaken,
+        avgScore,
+        totalQuizzesCreated: quizzes.length,
+        totalClasses: classes.length,
+        classesAsPresident: classes.filter(c => c.memberRoles[targetUser.email] === 'president').length,
+        totalSubjects: subjects.size,
+        recentActivity,
+        quizzes: quizzes.slice(0, 10), // Latest 10 created quizzes
+        classes
+      });
+    } catch (error) {
+      console.error('Failed to fetch user stats:', error);
+      alert('Failed to load user statistics');
+    } finally {
+      setLoadingStats(false);
     }
   };
 
@@ -176,19 +231,27 @@ export default function AdminPage() {
                         )}
                       </td>
                       <td className="p-4 text-center">
-                        {u.role !== 'admin' && (
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => togglePremium(u.uid, u.isPremium || false)}
-                            disabled={updating === u.uid}
-                            className={`px-4 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 ${
-                              u.isPremium
-                                ? 'bg-slate-600 hover:bg-slate-700 text-white'
-                                : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                            }`}
+                            onClick={() => viewUserStats(u)}
+                            className="px-3 py-2 rounded-lg font-semibold transition-all bg-blue-600 hover:bg-blue-700 text-white text-sm"
                           >
-                            {updating === u.uid ? '...' : u.isPremium ? 'Revoke Premium' : 'Grant Premium'}
+                            View Stats
                           </button>
-                        )}
+                          {u.role !== 'admin' && (
+                            <button
+                              onClick={() => togglePremium(u.uid, u.isPremium || false)}
+                              disabled={updating === u.uid}
+                              className={`px-3 py-2 rounded-lg font-semibold transition-all disabled:opacity-50 text-sm ${
+                                u.isPremium
+                                  ? 'bg-slate-600 hover:bg-slate-700 text-white'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                              }`}
+                            >
+                              {updating === u.uid ? '...' : u.isPremium ? 'Revoke' : 'Grant'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -204,6 +267,125 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* User Stats Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => setSelectedUser(null)}>
+          <div className="bg-slate-900 rounded-3xl p-6 md:p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/10" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-1">{selectedUser.name}</h2>
+                <p className="text-slate-400">@{selectedUser.username || selectedUser.email}</p>
+              </div>
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="text-slate-400 hover:text-white transition-colors text-2xl w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
+
+            {loadingStats ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mb-4"></div>
+                <p className="text-slate-300">Loading statistics...</p>
+              </div>
+            ) : userStats ? (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="glass-card rounded-xl p-4">
+                    <div className="text-slate-400 text-sm mb-1">Quizzes Taken</div>
+                    <div className="text-2xl font-bold text-white">{userStats.totalQuizzesTaken}</div>
+                  </div>
+                  <div className="glass-card rounded-xl p-4">
+                    <div className="text-slate-400 text-sm mb-1">Avg Score</div>
+                    <div className="text-2xl font-bold text-emerald-400">{userStats.avgScore}%</div>
+                  </div>
+                  <div className="glass-card rounded-xl p-4">
+                    <div className="text-slate-400 text-sm mb-1">Quizzes Created</div>
+                    <div className="text-2xl font-bold text-cyan-400">{userStats.totalQuizzesCreated}</div>
+                  </div>
+                  <div className="glass-card rounded-xl p-4">
+                    <div className="text-slate-400 text-sm mb-1">Classes</div>
+                    <div className="text-2xl font-bold text-violet-400">{userStats.totalClasses}</div>
+                  </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="glass-card rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Recent Quiz Activity</h3>
+                  {userStats.recentActivity.length > 0 ? (
+                    <div className="space-y-2">
+                      {userStats.recentActivity.map((activity: any, idx: number) => (
+                        <div key={idx} className="bg-white/5 rounded-lg p-3 flex items-center justify-between">
+                          <div>
+                            <div className="text-white font-medium text-sm">{activity.quizTitle || 'Untitled Quiz'}</div>
+                            <div className="text-slate-400 text-xs">
+                              {activity.timestamp instanceof Date ? activity.timestamp.toLocaleDateString() : 'N/A'}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-white font-bold">{activity.score} pts</div>
+                            <div className="text-xs text-slate-400">{activity.percentage || 0}%</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-center py-8">No quiz activity yet</p>
+                  )}
+                </div>
+
+                {/* Created Quizzes */}
+                <div className="glass-card rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Created Quizzes</h3>
+                  {userStats.quizzes.length > 0 ? (
+                    <div className="space-y-2">
+                      {userStats.quizzes.map((quiz: any, idx: number) => (
+                        <div key={idx} className="bg-white/5 rounded-lg p-3">
+                          <div className="text-white font-medium text-sm">{quiz.title}</div>
+                          <div className="text-slate-400 text-xs">
+                            {quiz.subject} • {quiz.questions?.length || 0} questions
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-center py-8">No quizzes created yet</p>
+                  )}
+                </div>
+
+                {/* Classes */}
+                <div className="glass-card rounded-xl p-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Classes</h3>
+                  {userStats.classes.length > 0 ? (
+                    <div className="space-y-2">
+                      {userStats.classes.map((cls: any, idx: number) => (
+                        <div key={idx} className="bg-white/5 rounded-lg p-3 flex items-center justify-between">
+                          <div>
+                            <div className="text-white font-medium text-sm">{cls.name}</div>
+                            <div className="text-slate-400 text-xs">{cls.members?.length || 0} members</div>
+                          </div>
+                          <div>
+                            {cls.memberRoles[selectedUser.email] === 'president' ? (
+                              <span className="px-2 py-1 bg-violet-500/20 text-violet-300 rounded text-xs font-semibold">President</span>
+                            ) : (
+                              <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs font-semibold">Member</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-400 text-center py-8">No classes joined yet</p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
