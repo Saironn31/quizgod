@@ -139,16 +139,21 @@ const FriendsPage: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* Friend Requests Section */}
-        <div className="relative z-10 mb-8">
-          <div className="glass-card rounded-3xl p-6 md:p-8 animate-slide-up">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">Add Friends</h2>
-              <p className="text-slate-300 text-base md:text-lg mb-6">Connect with friends to chat and compare quiz scores</p>
+        {/* Friend Requests Section - 3 containers in row */}
+        <div className="relative z-10 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Add Friends Container */}
+          <div className="glass-card rounded-3xl p-6 animate-slide-up">
+            <div className="text-center">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-3">Add Friends</h2>
+              <p className="text-slate-300 text-sm md:text-base mb-6">Connect with friends</p>
               <FriendRequestForm />
             </div>
-            <div className="mt-8">
-              <h3 className="text-xl md:text-2xl font-semibold text-white mb-6 text-center">Pending Requests</h3>
+          </div>
+
+          {/* Pending Requests Container */}
+          <div className="glass-card rounded-3xl p-6 animate-slide-up lg:col-span-2">
+            <div className="mb-6">
+              <h3 className="text-xl md:text-2xl font-semibold text-white mb-4 text-center">Pending Requests</h3>
               {requestsLoading && friendRequests.length === 0 ? (
                 <div className="flex items-center justify-center p-12 bg-white/5 rounded-2xl border border-white/10">
                   <div className="text-center">

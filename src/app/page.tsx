@@ -161,19 +161,6 @@ export default function HomePage() {
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
 
-        {/* Banner Ad - Top of Dashboard */}
-        <div className="relative z-10 mb-6">
-          <AdsterraAd 
-            atOptions={{
-              key: 'e478b629ee3a3e02c8e9579be23fe46d',
-              format: 'iframe',
-              height: 90,
-              width: 728,
-              params: {}
-            }}
-          />
-        </div>
-
         <div className="relative z-10 mb-6 md:mb-8">
           <div className="glass-card rounded-3xl p-6 md:p-12 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 border-2 border-white/10">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -277,6 +264,19 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Fixed Bottom Center Ad */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <AdsterraAd 
+          atOptions={{
+            key: 'e478b629ee3a3e02c8e9579be23fe46d',
+            format: 'iframe',
+            height: 90,
+            width: 728,
+            params: {}
+          }}
+        />
       </div>
 
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />

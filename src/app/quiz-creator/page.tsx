@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import ApiStatusBanner from '@/components/ApiStatusBanner';
+import AdsterraAd from '@/components/AdsterraAd';
 // Trigger redeploy
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
@@ -1707,6 +1708,19 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
             </div>
           )}
         </div>
+      </div>
+
+      {/* Fixed Bottom Center Ad */}
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <AdsterraAd 
+          atOptions={{
+            key: 'e478b629ee3a3e02c8e9579be23fe46d',
+            format: 'iframe',
+            height: 90,
+            width: 728,
+            params: {}
+          }}
+        />
       </div>
     </div>
   );
