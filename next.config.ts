@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app https://*.googleapis.com https://*.gstatic.com https://cdn.jsdelivr.net https://www.highperformanceformat.com https://pl28077859.effectivegatecpm.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https://*.vercel.app https://*.googleapis.com https://*.gstatic.com https://cdn.jsdelivr.net https://www.highperformanceformat.com https://*.highperformanceformat.com https://pl28077859.effectivegatecpm.com https://*.effectivegatecpm.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.googleapis.com https://*.firebaseapp.com https://*.googleusercontent.com https://*.firebasestorage.app https://*.effectivegatecpm.com https://*.highperformanceformat.com https://kettledroopingcontinuation.com https://professionaltrafficmonitor.com https://cdn.storageimagedisplay.com https://sneezedeplorebackache.com https://skinstackpeculiarity.com",
