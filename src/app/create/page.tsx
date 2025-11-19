@@ -44,6 +44,13 @@ export default function CreatePage() {
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([{ question: "", options: ["", "", "", ""], correct: 0 }]);
   
+  // Quiz settings
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [timerType, setTimerType] = useState<'none' | 'per-question' | 'whole-quiz'>('none');
+  const [timerDuration, setTimerDuration] = useState(30); // seconds per question or total
+  const [questionType, setQuestionType] = useState<'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer'>('multiple-choice');
+  const [isLiveMultiplayer, setIsLiveMultiplayer] = useState(false);
+  
   // AI mode fields
   const [numQuestions, setNumQuestions] = useState(5);
   const [customPrompt, setCustomPrompt] = useState("");
@@ -326,10 +333,18 @@ export default function CreatePage() {
     setError("");
 
     try {
-      const basePrompt = customPrompt || `Create ${numQuestions} multiple choice quiz questions about ${subject}.
-${pdfText ? `\n\nBased on this content:\n${pdfText.slice(0, 15000)}` : ''}
+      // Build difficulty context
+      const difficultyContext = {
+        'easy': 'Make questions straightforward and basic. Use clear, simple language. Avoid trick questions or ambiguous wording.',
+        'medium': 'Make questions moderately challenging. Require understanding but not deep analysis. Some options should be plausibly similar.',
+        'hard': 'Make questions challenging and require deep understanding. Use nuanced options where multiple answers could seem correct but only one is truly accurate. Include application and analysis-level questions.'
+      }[difficulty];
 
-Format each question EXACTLY like this:
+      // Build question type instructions
+      let questionTypeInstruction = '';
+      switch(questionType) {
+        case 'multiple-choice':
+          questionTypeInstruction = `Format each question EXACTLY like this:
 1. Question text here?
 A) Option 1
 B) Option 2*
@@ -337,7 +352,53 @@ C) Option 3
 D) Option 4
 
 Mark the correct answer with an asterisk (*).
-Provide exactly ${numQuestions} questions.`;
+IMPORTANT: Make sure all 4 options are distinct and plausible. Avoid obvious wrong answers. The correct answer should not stand out based on length or detail.`;
+          break;
+        case 'true-false':
+          questionTypeInstruction = `Format each question EXACTLY like this:
+1. Statement to evaluate
+TRUE*
+FALSE
+
+Mark the correct answer with an asterisk (*).
+IMPORTANT: Make clear, factual statements that are definitively true or false. Avoid ambiguous statements.`;
+          break;
+        case 'fill-blank':
+          questionTypeInstruction = `Format each question EXACTLY like this:
+1. The process of _____ is essential for photosynthesis.
+ANSWER: photosynthesis*
+
+Mark the answer with an asterisk (*).
+IMPORTANT: Use underscores (___) to indicate the blank. Make sure the answer is a single word or short phrase (2-3 words max).`;
+          break;
+        case 'short-answer':
+          questionTypeInstruction = `Format each question EXACTLY like this:
+1. Explain the main difference between mitosis and meiosis.
+ANSWER: Mitosis produces identical cells while meiosis produces genetically diverse cells*
+
+Mark the answer with an asterisk (*).
+IMPORTANT: Questions should require 1-2 sentence answers. Provide model answers that are concise but complete.`;
+          break;
+      }
+
+      const basePrompt = customPrompt || `Create ${numQuestions} ${difficulty} difficulty ${questionType.replace('-', ' ')} quiz questions about ${subject}.
+
+DIFFICULTY LEVEL: ${difficulty.toUpperCase()}
+${difficultyContext}
+
+${pdfText ? `\n\nBased on this content:\n${pdfText.slice(0, 15000)}` : ''}
+
+${questionTypeInstruction}
+
+Provide exactly ${numQuestions} questions.
+
+CRITICAL QUALITY REQUIREMENTS:
+1. Avoid making the correct answer obvious through wording patterns
+2. Don't make correct answers noticeably longer or more detailed
+3. All incorrect options should be plausible and related to the topic
+4. Questions should test understanding, not just memorization
+5. Vary question phrasing - don't start every question the same way
+6. For multiple choice: Ensure no two correct answers exist for any question`;
 
       const response = await fetch(
         'https://openrouter.ai/api/v1/chat/completions',
@@ -407,34 +468,76 @@ Provide exactly ${numQuestions} questions.`;
   const generateWithGemini = generateWithAI;
 
   const parseQuizQuestions = (text: string) => {
-    const questions: Question[] = [];
+    const questions: any[] = [];
     const questionBlocks = text.split(/\d+\.\s+/).filter(block => block.trim());
 
     for (const block of questionBlocks) {
       const lines = block.trim().split('\n').filter(line => line.trim());
-      if (lines.length < 5) continue;
+      if (lines.length < 2) continue;
 
       const questionText = lines[0].replace(/\?$/, '').trim();
-      const options = [];
-      let correctIndex = 0;
 
-      for (let i = 1; i < lines.length && options.length < 4; i++) {
-        const line = lines[i].trim();
-        const match = line.match(/^[A-D][\)\.]?\s*(.+?)(\*)?$/i);
-        if (match) {
-          options.push(match[1].trim().replace(/\*$/, ''));
-          if (match[2] || line.includes('*')) {
-            correctIndex = options.length - 1;
+      // Parse based on question type
+      if (questionType === 'multiple-choice') {
+        const options = [];
+        let correctIndex = 0;
+
+        for (let i = 1; i < lines.length && options.length < 4; i++) {
+          const line = lines[i].trim();
+          const match = line.match(/^[A-D][\)\.]?\s*(.+?)(\*)?$/i);
+          if (match) {
+            options.push(match[1].trim().replace(/\*$/, ''));
+            if (match[2] || line.includes('*')) {
+              correctIndex = options.length - 1;
+            }
           }
         }
-      }
 
-      if (questionText && options.length === 4) {
-        questions.push({
-          question: questionText,
-          options,
-          correct: correctIndex
-        });
+        if (questionText && options.length === 4) {
+          questions.push({
+            question: questionText,
+            options,
+            correct: correctIndex,
+            type: 'multiple-choice'
+          });
+        }
+      } else if (questionType === 'true-false') {
+        let correct = 0;
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim().toUpperCase();
+          if (line.includes('TRUE') && line.includes('*')) {
+            correct = 0;
+          } else if (line.includes('FALSE') && line.includes('*')) {
+            correct = 1;
+          }
+        }
+
+        if (questionText) {
+          questions.push({
+            question: questionText,
+            options: ['True', 'False'],
+            correct: correct,
+            type: 'true-false'
+          });
+        }
+      } else if (questionType === 'fill-blank' || questionType === 'short-answer') {
+        let answer = '';
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.toUpperCase().startsWith('ANSWER:')) {
+            answer = line.substring(7).trim().replace(/\*$/, '');
+            break;
+          }
+        }
+
+        if (questionText && answer) {
+          questions.push({
+            question: questionText,
+            options: [answer], // Store answer in options[0]
+            correct: 0,
+            type: questionType
+          });
+        }
       }
     }
 
@@ -480,7 +583,11 @@ Provide exactly ${numQuestions} questions.`;
         subject: subject,
         questions: questions,
         userId: user.uid,
-        isPersonal: !selectedClass || selectedClass === ""
+        isPersonal: !selectedClass || selectedClass === "",
+        difficulty: difficulty,
+        timerType: timerType,
+        timerDuration: timerType !== 'none' ? (timerType === 'whole-quiz' ? timerDuration * 60 : timerDuration) : undefined,
+        isLiveMultiplayer: isLiveMultiplayer && !!selectedClass
       };
       
       if (description.trim()) {
@@ -537,7 +644,11 @@ Provide exactly ${numQuestions} questions.`;
         subject: subject,
         questions: parsedQuestions,
         userId: user.uid,
-        isPersonal: !selectedClass || selectedClass === ""
+        isPersonal: !selectedClass || selectedClass === "",
+        difficulty: difficulty,
+        timerType: timerType,
+        timerDuration: timerType !== 'none' ? (timerType === 'whole-quiz' ? timerDuration * 60 : timerDuration) : undefined,
+        isLiveMultiplayer: isLiveMultiplayer && !!selectedClass
       };
       
       if (selectedClass) {
@@ -725,6 +836,82 @@ Provide exactly ${numQuestions} questions.`;
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Quiz Settings */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div>
+                      <label className="block text-xs md:text-sm font-semibold text-white mb-2">Difficulty Level</label>
+                      <select 
+                        className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200 hover:bg-white/[0.12] hover:border-white/30 active:scale-[0.99] cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white" 
+                        value={difficulty} 
+                        onChange={e => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+                      >
+                        <option value="easy">🟢 Easy</option>
+                        <option value="medium">🟡 Medium</option>
+                        <option value="hard">🔴 Hard</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs md:text-sm font-semibold text-white mb-2">Question Type</label>
+                      <select 
+                        className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200 hover:bg-white/[0.12] hover:border-white/30 active:scale-[0.99] cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white" 
+                        value={questionType} 
+                        onChange={e => setQuestionType(e.target.value as any)}
+                      >
+                        <option value="multiple-choice">Multiple Choice (4 options)</option>
+                        <option value="true-false">True/False</option>
+                        <option value="fill-blank">Fill in the Blank</option>
+                        <option value="short-answer">Short Answer</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs md:text-sm font-semibold text-white mb-2">Timer Setting</label>
+                      <select 
+                        className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200 hover:bg-white/[0.12] hover:border-white/30 active:scale-[0.99] cursor-pointer [&>option]:bg-slate-800 [&>option]:text-white" 
+                        value={timerType} 
+                        onChange={e => setTimerType(e.target.value as any)}
+                      >
+                        <option value="none">⏱️ No Timer</option>
+                        <option value="per-question">⏳ Timer per Question</option>
+                        <option value="whole-quiz">🕐 Timer for Whole Quiz</option>
+                      </select>
+                    </div>
+
+                    {timerType !== 'none' && (
+                      <div>
+                        <label className="block text-xs md:text-sm font-semibold text-white mb-2">
+                          {timerType === 'per-question' ? 'Seconds per Question' : 'Total Minutes for Quiz'}
+                        </label>
+                        <input 
+                          type="number"
+                          min={timerType === 'per-question' ? 10 : 1}
+                          max={timerType === 'per-question' ? 300 : 120}
+                          className="w-full p-2 md:p-3 text-sm md:text-base rounded-xl bg-white/10 backdrop-blur-sm border-2 border-white/20 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-200" 
+                          value={timerDuration} 
+                          onChange={e => setTimerDuration(parseInt(e.target.value) || 30)}
+                        />
+                      </div>
+                    )}
+
+                    {selectedClass && (
+                      <div className="md:col-span-2">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isLiveMultiplayer}
+                            onChange={e => setIsLiveMultiplayer(e.target.checked)}
+                            className="w-5 h-5 rounded border-2 border-white/20 bg-white/10 text-emerald-500 focus:ring-2 focus:ring-emerald-400 cursor-pointer"
+                          />
+                          <div>
+                            <span className="text-sm md:text-base font-semibold text-white">🎮 Live Multiplayer Mode</span>
+                            <p className="text-xs text-slate-400">Students can join and play together in real-time</p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
                   </div>
                 </div>
 

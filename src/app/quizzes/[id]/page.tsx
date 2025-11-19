@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
-import { getQuizById, FirebaseQuiz, saveQuizRecord } from '@/lib/firestore';
+import { getQuizById, FirebaseQuiz, saveQuizRecord, createLiveQuizSession, joinLiveQuizSession, getUserProfile } from '@/lib/firestore';
 import SideNav from '@/components/SideNav';
 import Link from 'next/link';
 
@@ -13,6 +13,7 @@ export default function QuizPlayerPage() {
   const [quiz, setQuiz] = useState<FirebaseQuiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
+  const [textAnswers, setTextAnswers] = useState<string[]>([]); // For fill-blank and short-answer
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -117,7 +118,15 @@ export default function QuizPlayerPage() {
         }
       } else {
         setSelectedAnswers(new Array(quizData.questions.length).fill(-1));
-        setTimeLeft(quizData.questions.length * 60);
+        setTextAnswers(new Array(quizData.questions.length).fill(''));
+        // Initialize timer based on quiz settings
+        if (quizData.timerType === 'whole-quiz' && quizData.timerDuration) {
+          setTimeLeft(quizData.timerDuration);
+        } else if (quizData.timerType === 'per-question' && quizData.timerDuration) {
+          setTimeLeft(quizData.timerDuration);
+        } else {
+          setTimeLeft(quizData.questions.length * 60);
+        }
       }
     } catch (error) {
       console.error("Error loading quiz:", error);
@@ -128,15 +137,26 @@ export default function QuizPlayerPage() {
   };
 
   useEffect(() => {
-    if (quizStarted && timeLeft > 0 && !showResults) {
+    if (quizStarted && timeLeft > 0 && !showResults && quiz) {
       const timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && quizStarted) {
-      handleFinishQuiz();
+    } else if (timeLeft === 0 && quizStarted && quiz) {
+      // Handle timer expiry based on timer type
+      if (quiz.timerType === 'per-question') {
+        // Auto-advance to next question
+        if (currentQuestionIndex < quiz.questions.length - 1) {
+          handleNextQuestion();
+        } else {
+          handleFinishQuiz();
+        }
+      } else if (quiz.timerType === 'whole-quiz') {
+        // Auto-submit quiz
+        handleFinishQuiz();
+      }
     }
-  }, [timeLeft, quizStarted, showResults]);
+  }, [timeLeft, quizStarted, showResults, quiz, currentQuestionIndex]);
 
   // Auto-save progress when question changes or time updates
   useEffect(() => {
@@ -186,6 +206,29 @@ export default function QuizPlayerPage() {
     const progress = {
       currentQuestionIndex,
       selectedAnswers: newAnswers,
+      textAnswers,
+      timeLeft,
+      quizStarted,
+      showResults,
+      score,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(progressKey, JSON.stringify(progress));
+  };
+
+  const handleTextAnswerChange = (text: string) => {
+    if (!quiz || !user) return;
+    
+    const newTextAnswers = [...textAnswers];
+    newTextAnswers[currentQuestionIndex] = text;
+    setTextAnswers(newTextAnswers);
+    
+    // Save progress to localStorage
+    const progressKey = `quiz_progress_${user.uid}_${params.id}`;
+    const progress = {
+      currentQuestionIndex,
+      selectedAnswers,
+      textAnswers: newTextAnswers,
       timeLeft,
       quizStarted,
       showResults,
@@ -198,6 +241,11 @@ export default function QuizPlayerPage() {
   const handleNextQuestion = () => {
     if (currentQuestionIndex < (quiz?.questions.length || 0) - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
+      
+      // Reset timer for per-question mode
+      if (quiz?.timerType === 'per-question' && quiz?.timerDuration) {
+        setTimeLeft(quiz.timerDuration);
+      }
     }
   };
 
@@ -212,14 +260,34 @@ export default function QuizPlayerPage() {
 
     let correctCount = 0;
     const mistakes: Array<{ question: string; selected: number; correct: number }> = [];
+    
     quiz.questions.forEach((question, index) => {
-      if (selectedAnswers[index] === question.correct) {
+      const questionType = question.type || 'multiple-choice';
+      let isCorrect = false;
+
+      if (questionType === 'multiple-choice' || questionType === 'true-false') {
+        const correctIdx = typeof question.correct === 'number' ? question.correct : question.correct[0];
+        isCorrect = selectedAnswers[index] === correctIdx;
+      } else if (questionType === 'fill-blank' || questionType === 'short-answer') {
+        const userAnswer = textAnswers[index]?.trim().toLowerCase() || '';
+        const correctAnswer = question.options[0]?.trim().toLowerCase() || '';
+        
+        // Flexible matching - consider correct if similar
+        if (questionType === 'fill-blank') {
+          isCorrect = userAnswer === correctAnswer;
+        } else {
+          // For short answer, allow partial match
+          isCorrect = userAnswer.includes(correctAnswer) || correctAnswer.includes(userAnswer);
+        }
+      }
+
+      if (isCorrect) {
         correctCount++;
       } else {
         mistakes.push({
           question: question.question,
           selected: selectedAnswers[index],
-          correct: question.correct
+          correct: typeof question.correct === 'number' ? question.correct : question.correct[0]
         });
       }
     });
@@ -295,11 +363,16 @@ export default function QuizPlayerPage() {
               <p className="text-lg">📊 Quiz Information:</p>
               <ul className="mt-2 space-y-1">
                 <li>• Questions: {quiz.questions.length}</li>
-                <li>• Time Limit: {formatTime(quiz.questions.length * 60)}</li>
-                <li>• Type: Multiple Choice</li>
+                <li>• Difficulty: {quiz.difficulty ? quiz.difficulty.charAt(0).toUpperCase() + quiz.difficulty.slice(1) : 'Not specified'}</li>
+                {quiz.timerType && quiz.timerType !== 'none' ? (
+                  <li>• Timer: {quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s per question` : `${Math.floor((quiz.timerDuration || 0) / 60)} minutes total`}</li>
+                ) : (
+                  <li>• Timer: No time limit</li>
+                )}
+                <li>• Type: {quiz.questions[0]?.type ? quiz.questions[0].type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Multiple Choice'}</li>
               </ul>
             </div>
-            <div className="flex gap-4 justify-center mt-6">
+            <div className="flex gap-4 justify-center mt-6 flex-wrap">
               <Link 
                 href="/quizzes" 
                 className="px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
@@ -310,8 +383,39 @@ export default function QuizPlayerPage() {
                 onClick={handleStartQuiz}
                 className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
               >
-                🚀 Start Quiz
+                🚀 Start Solo Quiz
               </button>
+              {quiz.classId && (
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    try {
+                      const userProfile = await getUserProfile(user.uid);
+                      const sessionId = await createLiveQuizSession(
+                        quiz.id,
+                        quiz.title,
+                        quiz.classId!,
+                        user.uid,
+                        userProfile?.name || user.email || 'Anonymous'
+                      );
+                      // Join the session as host
+                      await joinLiveQuizSession(
+                        sessionId,
+                        user.uid,
+                        userProfile?.name || user.email || 'Anonymous',
+                        user.email || ''
+                      );
+                      router.push(`/live-quiz/${sessionId}`);
+                    } catch (error) {
+                      console.error('Error creating live session:', error);
+                      alert('Failed to create live quiz session');
+                    }
+                  }}
+                  className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
+                  🎮 Start Live Multiplayer
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -384,11 +488,31 @@ export default function QuizPlayerPage() {
             </div>
             <div className="space-y-4">
               {quiz.questions.map((question, idx) => {
-                const correctIdx = question.correct;
-                const userIdx = selectedAnswers[idx];
-                const correctText = question.options[correctIdx];
-                const userText = userIdx !== -1 ? question.options[userIdx] : "No answer";
-                const isCorrect = userIdx === correctIdx;
+                const questionType = question.type || 'multiple-choice';
+                let isCorrect = false;
+                let correctText = '';
+                let userText = '';
+
+                if (questionType === 'multiple-choice' || questionType === 'true-false') {
+                  const correctIdx = typeof question.correct === 'number' ? question.correct : question.correct[0];
+                  const userIdx = selectedAnswers[idx];
+                  correctText = question.options[correctIdx];
+                  userText = userIdx !== -1 ? question.options[userIdx] : "No answer";
+                  isCorrect = userIdx === correctIdx;
+                } else if (questionType === 'fill-blank' || questionType === 'short-answer') {
+                  correctText = question.options[0] || '';
+                  userText = textAnswers[idx] || "No answer";
+                  
+                  const userLower = userText.trim().toLowerCase();
+                  const correctLower = correctText.trim().toLowerCase();
+                  
+                  if (questionType === 'fill-blank') {
+                    isCorrect = userLower === correctLower;
+                  } else {
+                    isCorrect = userLower.includes(correctLower) || correctLower.includes(userLower);
+                  }
+                }
+
                 return (
                   <div key={idx} className={`rounded-xl p-4 md:p-5 border transition-all hover:scale-[1.01] ${
                     isCorrect 
@@ -435,9 +559,17 @@ export default function QuizPlayerPage() {
               onClick={() => {
                 setCurrentQuestionIndex(0);
                 setSelectedAnswers(new Array(quiz.questions.length).fill(-1));
+                setTextAnswers(new Array(quiz.questions.length).fill(''));
                 setShowResults(false);
                 setScore(0);
-                setTimeLeft(quiz.questions.length * 60);
+                // Reset timer based on quiz settings
+                if (quiz.timerType === 'whole-quiz' && quiz.timerDuration) {
+                  setTimeLeft(quiz.timerDuration);
+                } else if (quiz.timerType === 'per-question' && quiz.timerDuration) {
+                  setTimeLeft(quiz.timerDuration);
+                } else {
+                  setTimeLeft(quiz.questions.length * 60);
+                }
                 setQuizStarted(true);
               }}
               className="px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:scale-105 transition-all"
@@ -486,10 +618,16 @@ export default function QuizPlayerPage() {
                 <h1 className="text-2xl font-bold">{quiz.title}</h1>
                 <p className="text-purple-200">Subject: {quiz.subject}</p>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold">⏱️ {formatTime(timeLeft)}</div>
-                <div className="text-sm text-purple-200">Time Remaining</div>
-              </div>
+              {quiz.timerType && quiz.timerType !== 'none' && (
+                <div className="text-right">
+                  <div className={`text-2xl font-bold ${timeLeft <= 10 && quiz.timerType === 'per-question' ? 'text-red-400 animate-pulse' : ''} ${timeLeft <= 60 && quiz.timerType === 'whole-quiz' ? 'text-red-400 animate-pulse' : ''}`}>
+                    ⏱️ {formatTime(timeLeft)}
+                  </div>
+                  <div className="text-sm text-purple-200">
+                    {quiz.timerType === 'per-question' ? 'Per Question' : 'Total Time'}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Progress Bar */}
@@ -513,26 +651,85 @@ export default function QuizPlayerPage() {
                   {currentQuestion.question}
                 </h2>
 
-                <div className="space-y-4">
-                  {currentQuestion.options.map((option, index) => (
+                {/* Multiple Choice */}
+                {(!currentQuestion.type || currentQuestion.type === 'multiple-choice') && (
+                  <div className="space-y-4">
+                    {currentQuestion.options.map((option, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleAnswerSelect(index)}
+                        className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
+                          selectedAnswers[currentQuestionIndex] === index
+                            ? 'bg-blue-600 border-2 border-blue-400'
+                            : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-4 font-semibold">
+                            {String.fromCharCode(65 + index)}
+                          </span>
+                          <span>{option}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* True/False */}
+                {currentQuestion.type === 'true-false' && (
+                  <div className="grid grid-cols-2 gap-4">
                     <button
-                      key={index}
-                      onClick={() => handleAnswerSelect(index)}
-                      className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
-                        selectedAnswers[currentQuestionIndex] === index
-                          ? 'bg-blue-600 border-2 border-blue-400'
+                      onClick={() => handleAnswerSelect(0)}
+                      className={`p-6 rounded-xl text-center text-xl font-bold transition-all duration-200 ${
+                        selectedAnswers[currentQuestionIndex] === 0
+                          ? 'bg-green-600 border-2 border-green-400 scale-105'
                           : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
                       }`}
                     >
-                      <div className="flex items-center">
-                        <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-4 font-semibold">
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <span>{option}</span>
-                      </div>
+                      <div className="text-4xl mb-2">✓</div>
+                      <div>TRUE</div>
                     </button>
-                  ))}
-                </div>
+                    <button
+                      onClick={() => handleAnswerSelect(1)}
+                      className={`p-6 rounded-xl text-center text-xl font-bold transition-all duration-200 ${
+                        selectedAnswers[currentQuestionIndex] === 1
+                          ? 'bg-red-600 border-2 border-red-400 scale-105'
+                          : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
+                      }`}
+                    >
+                      <div className="text-4xl mb-2">✗</div>
+                      <div>FALSE</div>
+                    </button>
+                  </div>
+                )}
+
+                {/* Fill in the Blank */}
+                {currentQuestion.type === 'fill-blank' && (
+                  <div>
+                    <input
+                      type="text"
+                      value={textAnswers[currentQuestionIndex] || ''}
+                      onChange={(e) => handleTextAnswerChange(e.target.value)}
+                      placeholder="Type your answer here..."
+                      className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg"
+                    />
+                    <p className="text-sm text-purple-200 mt-2">💡 Hint: Be specific with your answer</p>
+                  </div>
+                )}
+
+                {/* Short Answer */}
+                {currentQuestion.type === 'short-answer' && (
+                  <div>
+                    <textarea
+                      value={textAnswers[currentQuestionIndex] || ''}
+                      onChange={(e) => handleTextAnswerChange(e.target.value)}
+                      placeholder="Write your answer here (1-2 sentences)..."
+                      rows={4}
+                      className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg resize-none"
+                    />
+                    <p className="text-sm text-purple-200 mt-2">💡 Tip: Write a clear and concise answer</p>
+                  </div>
+                )}
 
                 {/* Navigation */}
                 <div className="flex justify-between mt-8">
@@ -555,7 +752,11 @@ export default function QuizPlayerPage() {
                     ) : (
                       <button
                         onClick={handleNextQuestion}
-                        disabled={selectedAnswers[currentQuestionIndex] === -1}
+                        disabled={
+                          (currentQuestion.type === 'fill-blank' || currentQuestion.type === 'short-answer')
+                            ? !textAnswers[currentQuestionIndex]?.trim()
+                            : selectedAnswers[currentQuestionIndex] === -1
+                        }
                         className="px-6 py-3 bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
                       >
                         Next →
@@ -571,21 +772,27 @@ export default function QuizPlayerPage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
                 <h3 className="text-sm font-semibold mb-3">Quick Navigation:</h3>
                 <div className="flex flex-wrap gap-2">
-                  {quiz.questions.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setCurrentQuestionIndex(index)}
-                      className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
-                        index === currentQuestionIndex
-                          ? 'bg-blue-600 border-2 border-blue-400'
-                          : selectedAnswers[index] !== -1
-                          ? 'bg-green-600/50 hover:bg-green-600'
-                          : 'bg-white/20 hover:bg-white/30'
-                      }`}
-                    >
-                      {index + 1}
-                    </button>
-                  ))}
+                  {quiz.questions.map((q, index) => {
+                    const isAnswered = (q.type === 'fill-blank' || q.type === 'short-answer')
+                      ? !!textAnswers[index]?.trim()
+                      : selectedAnswers[index] !== -1;
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentQuestionIndex(index)}
+                        className={`w-10 h-10 rounded-lg text-sm font-semibold transition-all ${
+                          index === currentQuestionIndex
+                            ? 'bg-blue-600 border-2 border-blue-400'
+                            : isAnswered
+                            ? 'bg-green-600/50 hover:bg-green-600'
+                            : 'bg-white/20 hover:bg-white/30'
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -426,11 +426,17 @@ export interface FirebaseQuiz {
   questions: Array<{
     question: string;
     options: string[];
-    correct: number;
+    correct: number | number[]; // Single correct answer or multiple correct answers
+    type?: 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer'; // Question type
+    explanation?: string; // AI-generated explanation for the answer
   }>;
   userId: string;
   classId?: string; // Optional - belongs to class if set
   isPersonal: boolean;
+  difficulty?: 'easy' | 'medium' | 'hard'; // Quiz difficulty
+  timerType?: 'none' | 'per-question' | 'whole-quiz'; // Timer setting
+  timerDuration?: number; // Duration in seconds
+  isLiveMultiplayer?: boolean; // Live multiplayer mode
   createdAt: Date;
   updatedAt: Date;
 }
@@ -1376,4 +1382,268 @@ export const addClassMembersAsFriends = async (currentUid: string, classId: stri
   });
   await batch.commit();
   return memberUids;
+};
+
+// Live Quiz Session Types and Functions
+export interface LiveQuizPlayer {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  score: number;
+  currentQuestionIndex: number;
+  answers: (number | string)[]; // Support both numeric and text answers
+  joinedAt: Date;
+  lastActivity: Date;
+}
+
+export interface LiveQuizSession {
+  id?: string;
+  quizId: string;
+  quizTitle: string;
+  classId: string;
+  hostUserId: string;
+  hostUserName: string;
+  players: LiveQuizPlayer[];
+  currentQuestionIndex: number;
+  status: 'waiting' | 'in-progress' | 'finished';
+  createdAt: Date;
+  startedAt?: Date;
+  finishedAt?: Date;
+}
+
+/**
+ * Create a new live quiz session
+ */
+export const createLiveQuizSession = async (
+  quizId: string,
+  quizTitle: string,
+  classId: string,
+  hostUserId: string,
+  hostUserName: string
+): Promise<string> => {
+  const sessionData: Omit<LiveQuizSession, 'id'> = {
+    quizId,
+    quizTitle,
+    classId,
+    hostUserId,
+    hostUserName,
+    players: [],
+    currentQuestionIndex: 0,
+    status: 'waiting',
+    createdAt: new Date()
+  };
+  
+  const sessionRef = await addDoc(collection(db, 'liveQuizSessions'), sessionData);
+  return sessionRef.id;
+};
+
+/**
+ * Join a live quiz session
+ */
+export const joinLiveQuizSession = async (
+  sessionId: string,
+  userId: string,
+  userName: string,
+  userEmail: string
+): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  const sessionSnap = await getDoc(sessionRef);
+  
+  if (!sessionSnap.exists()) {
+    throw new Error('Session not found');
+  }
+  
+  const sessionData = sessionSnap.data() as LiveQuizSession;
+  
+  // Check if user already joined
+  if (sessionData.players.some(p => p.userId === userId)) {
+    throw new Error('Already joined this session');
+  }
+  
+  // Check if session is still in waiting status
+  if (sessionData.status !== 'waiting') {
+    throw new Error('Session already started or finished');
+  }
+  
+  const newPlayer: LiveQuizPlayer = {
+    userId,
+    userName,
+    userEmail,
+    score: 0,
+    currentQuestionIndex: 0,
+    answers: [],
+    joinedAt: new Date(),
+    lastActivity: new Date()
+  };
+  
+  await updateDoc(sessionRef, {
+    players: arrayUnion(newPlayer)
+  });
+};
+
+/**
+ * Start a live quiz session (host only)
+ */
+export const startLiveQuizSession = async (sessionId: string): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  await updateDoc(sessionRef, {
+    status: 'in-progress',
+    startedAt: new Date()
+  });
+};
+
+/**
+ * Update current question index (host only)
+ */
+export const updateLiveQuizQuestion = async (
+  sessionId: string,
+  questionIndex: number
+): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  await updateDoc(sessionRef, {
+    currentQuestionIndex: questionIndex
+  });
+};
+
+/**
+ * Submit answer for a live quiz
+ */
+export const submitLiveQuizAnswer = async (
+  sessionId: string,
+  userId: string,
+  questionIndex: number,
+  answer: number | string,
+  isCorrect: boolean
+): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  const sessionSnap = await getDoc(sessionRef);
+  
+  if (!sessionSnap.exists()) {
+    throw new Error('Session not found');
+  }
+  
+  const sessionData = sessionSnap.data() as LiveQuizSession;
+  const updatedPlayers = sessionData.players.map(player => {
+    if (player.userId === userId) {
+      const newAnswers = [...player.answers];
+      newAnswers[questionIndex] = answer;
+      
+      return {
+        ...player,
+        answers: newAnswers,
+        score: isCorrect ? player.score + 1 : player.score,
+        currentQuestionIndex: questionIndex + 1,
+        lastActivity: new Date()
+      };
+    }
+    return player;
+  });
+  
+  await updateDoc(sessionRef, {
+    players: updatedPlayers
+  });
+};
+
+/**
+ * Finish a live quiz session
+ */
+export const finishLiveQuizSession = async (sessionId: string): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  await updateDoc(sessionRef, {
+    status: 'finished',
+    finishedAt: new Date()
+  });
+};
+
+/**
+ * Get live quiz session by ID
+ */
+export const getLiveQuizSession = async (sessionId: string): Promise<LiveQuizSession | null> => {
+  try {
+    const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+    const sessionSnap = await getDoc(sessionRef);
+    
+    if (sessionSnap.exists()) {
+      const data = sessionSnap.data();
+      return {
+        id: sessionSnap.id,
+        ...convertTimestamps(data)
+      } as LiveQuizSession;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting live quiz session:', error);
+    return null;
+  }
+};
+
+/**
+ * Get active live quiz sessions for a class
+ */
+export const getClassLiveQuizSessions = async (classId: string): Promise<LiveQuizSession[]> => {
+  try {
+    const sessionsQuery = query(
+      collection(db, 'liveQuizSessions'),
+      where('classId', '==', classId),
+      where('status', 'in', ['waiting', 'in-progress'])
+    );
+    const querySnapshot = await getDocs(sessionsQuery);
+    
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...convertTimestamps(doc.data())
+    } as LiveQuizSession));
+  } catch (error) {
+    console.error('Error getting class live quiz sessions:', error);
+    return [];
+  }
+};
+
+/**
+ * Subscribe to live quiz session updates
+ */
+export const subscribeToLiveQuizSession = (
+  sessionId: string,
+  callback: (session: LiveQuizSession | null) => void
+) => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  
+  return onSnapshot(sessionRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      callback({
+        id: docSnap.id,
+        ...convertTimestamps(data)
+      } as LiveQuizSession);
+    } else {
+      callback(null);
+    }
+  });
+};
+
+/**
+ * Delete/leave a live quiz session
+ */
+export const leaveLiveQuizSession = async (
+  sessionId: string,
+  userId: string
+): Promise<void> => {
+  const sessionRef = doc(db, 'liveQuizSessions', sessionId);
+  const sessionSnap = await getDoc(sessionRef);
+  
+  if (!sessionSnap.exists()) {
+    throw new Error('Session not found');
+  }
+  
+  const sessionData = sessionSnap.data() as LiveQuizSession;
+  const updatedPlayers = sessionData.players.filter(p => p.userId !== userId);
+  
+  // If host leaves and session is waiting, delete the session
+  if (userId === sessionData.hostUserId && sessionData.status === 'waiting') {
+    await deleteDoc(sessionRef);
+  } else {
+    await updateDoc(sessionRef, {
+      players: updatedPlayers
+    });
+  }
 };

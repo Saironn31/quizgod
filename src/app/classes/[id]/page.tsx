@@ -11,7 +11,11 @@ import {
   FirebaseQuiz,
   getClassQuizRecords,
   getClassMemberQuizRecords,
-  deleteClassWithQuizzes
+  deleteClassWithQuizzes,
+  getClassLiveQuizSessions,
+  LiveQuizSession,
+  joinLiveQuizSession,
+  getUserProfile
 } from '@/lib/firestore';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -22,10 +26,72 @@ import ClassChat from '@/components/ClassChat';
 import ClassAnalyticsTab from './ClassAnalyticsTab';
 import MemberAnalyticsTab from './MemberAnalyticsTab';
 
-function OverviewTab({ classData, subjects, quizzes }: { classData: FirebaseClass, subjects: FirebaseSubject[], quizzes: FirebaseQuiz[] }) {
+function OverviewTab({ classData, subjects, quizzes, liveSessions, user, router }: { 
+  classData: FirebaseClass, 
+  subjects: FirebaseSubject[], 
+  quizzes: FirebaseQuiz[],
+  liveSessions: LiveQuizSession[],
+  user: User | null,
+  router: any
+}) {
   if (!classData) return null;
   return (
     <div className="space-y-8">
+      {/* Live Quiz Sessions */}
+      {liveSessions.length > 0 && (
+        <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-md border-2 border-purple-400/50 rounded-xl p-6">
+          <h3 className="text-2xl font-bold mb-4 text-white flex items-center gap-2">
+            <span className="animate-pulse">🔴</span> Live Quiz Sessions
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {liveSessions.map((session) => (
+              <div
+                key={session.id}
+                className="bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg p-4 hover:bg-white/20 transition-all"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-bold text-white">{session.quizTitle}</h4>
+                    <p className="text-sm text-purple-200">👑 Host: {session.hostUserName}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                    session.status === 'waiting'
+                      ? 'bg-yellow-500/30 text-yellow-200'
+                      : 'bg-green-500/30 text-green-200'
+                  }`}>
+                    {session.status === 'waiting' ? '⏳ Waiting' : '▶️ In Progress'}
+                  </span>
+                </div>
+                <div className="text-sm text-slate-300 mb-3">
+                  👥 {session.players.length} player(s) joined
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    try {
+                      const userProfile = await getUserProfile(user.uid);
+                      await joinLiveQuizSession(
+                        session.id!,
+                        user.uid,
+                        userProfile?.name || user.email || 'Anonymous',
+                        user.email || ''
+                      );
+                      router.push(`/live-quiz/${session.id}`);
+                    } catch (error: any) {
+                      console.error('Error joining session:', error);
+                      alert(error.message || 'Failed to join session');
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all font-semibold"
+                >
+                  🎮 Join Session
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-6 text-center">
           <div className="text-3xl mb-2">👥</div>
@@ -431,6 +497,7 @@ export default function ClassDetailPage() {
   // Add classStats and memberStats state
   const [classStats, setClassStats] = useState({ quizzesTaken: 0, avgScore: 0 });
   const [memberStats, setMemberStats] = useState<{ [email: string]: { quizzesTaken: number; avgScore: number } }>({});
+  const [liveSessions, setLiveSessions] = useState<LiveQuizSession[]>([]);
 
   useEffect(() => {
     if (!user?.email) {
@@ -439,7 +506,22 @@ export default function ClassDetailPage() {
     }
     loadClassData();
     loadAnalytics();
+    loadLiveSessions();
+    
+    // Poll for live sessions every 5 seconds
+    const interval = setInterval(loadLiveSessions, 5000);
+    return () => clearInterval(interval);
   }, [params.id, user]);
+
+  const loadLiveSessions = async () => {
+    if (!params.id) return;
+    try {
+      const sessions = await getClassLiveQuizSessions(params.id as string);
+      setLiveSessions(sessions);
+    } catch (error) {
+      console.error('Error loading live sessions:', error);
+    }
+  };
 
   const loadClassData = async () => {
     if (!params.id || !user?.uid || !user?.email) return;
@@ -662,7 +744,7 @@ export default function ClassDetailPage() {
         </div>
         {/* Content */}
         {activeTab === 'overview' && (
-          <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} />
+          <OverviewTab classData={classData} subjects={subjects} quizzes={quizzes} liveSessions={liveSessions} user={user} router={router} />
         )}
         {activeTab === 'subjects' && (
           <SubjectsTab
