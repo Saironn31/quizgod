@@ -2,6 +2,18 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Extend Window interface for FastSpring
+declare global {
+  interface Window {
+    fastspring?: {
+      builder: {
+        push: (config: any) => void;
+        checkout: () => void;
+      };
+    };
+  }
+}
+
 interface PremiumUpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -24,27 +36,34 @@ export default function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeM
     setError('');
 
     try {
-      const response = await fetch('/api/checkout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Check if FastSpring is loaded
+      if (!window.fastspring) {
+        throw new Error('Payment system is loading. Please try again in a moment.');
+      }
+
+      // Configure FastSpring checkout with user data
+      window.fastspring.builder.push({
+        email: user.email,
+        contact: {
           email: user.email,
+        },
+        payload: {
           userId: user.uid,
-        }),
+          email: user.email,
+        },
+        // Callback after successful purchase
+        afterMarketplaceClose: function(orderReference: any) {
+          if (orderReference) {
+            // Payment completed, redirect to success page
+            window.location.href = `/payment/success?order=${orderReference}`;
+          }
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
-      }
-
-      // Redirect to Stripe Checkout
-      if (data.url) {
-        window.location.href = data.url;
-      }
+      // Open FastSpring checkout popup
+      window.fastspring.builder.checkout();
+      
+      setLoading(false);
     } catch (err: any) {
       console.error('Upgrade error:', err);
       setError(err.message || 'Failed to start checkout process');
@@ -74,9 +93,9 @@ export default function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeM
         {/* Pricing */}
         <div className="glass-card rounded-2xl p-6 mb-6">
           <div className="text-center mb-4">
-            <div className="text-5xl font-bold text-white mb-2">₱4.99</div>
+            <div className="text-5xl font-bold text-white mb-2">$4.99</div>
             <div className="text-slate-400">One-time payment • Lifetime access</div>
-            <div className="text-xs text-slate-500 mt-2">Pay via GCash, PayMaya, Card, or GrabPay</div>
+            <div className="text-xs text-slate-500 mt-2">Secure global payment • All currencies supported</div>
           </div>
         </div>
 
@@ -160,7 +179,7 @@ export default function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeM
 
         {/* Security Note */}
         <p className="text-center text-slate-400 text-xs mt-4">
-          🔒 Secure payment powered by PayMongo • Philippines-based payment processing
+          🔒 Secure payment powered by FastSpring • Merchant of Record
         </p>
       </div>
     </div>
