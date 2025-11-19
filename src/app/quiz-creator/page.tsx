@@ -4,6 +4,7 @@ import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import ApiStatusBanner from '@/components/ApiStatusBanner';
 import AdsterraAd from '@/components/AdsterraAd';
+import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
 // Trigger redeploy
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
@@ -32,6 +33,7 @@ export default function CreatePage() {
   
   // Mode selection
   const [mode, setMode] = useState<'manual' | 'ai'>('manual');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [checkingPremium, setCheckingPremium] = useState(true);
   
@@ -1097,7 +1099,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                 <button
                   onClick={() => {
                     if (!isPremium && !checkingPremium) {
-                      alert('👑 AI Quiz Generator is a premium feature. Contact admin to upgrade your account.');
+                      setShowUpgradeModal(true);
                       return;
                     }
                     setMode('ai');
@@ -1755,6 +1757,9 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
           />
         </div>
       )}
+
+      {/* Premium Upgrade Modal */}
+      <PremiumUpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
     </div>
   );
 }

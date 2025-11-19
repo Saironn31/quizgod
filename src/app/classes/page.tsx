@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
+import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   createClass, 
@@ -17,6 +18,7 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState<FirebaseClass[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [newClassName, setNewClassName] = useState("");
   const [newClassDescription, setNewClassDescription] = useState("");
   const [joinCode, setJoinCode] = useState("");
@@ -208,13 +210,25 @@ export default function ClassesPage() {
                   <span className="text-emerald-400 text-xl">✓</span>
                   <span>Class leaderboards and analytics</span>
                 </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400 text-xl">✓</span>
+                  <span>No ads on your account</span>
+                </li>
               </ul>
             </div>
-            <p className="text-slate-400 text-sm">
-              Contact the administrator to upgrade your account to premium.
+            <button
+              onClick={() => setShowUpgradeModal(true)}
+              className="px-8 py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/50 transition-all"
+            >
+              Upgrade to Premium
+            </button>
+            <p className="text-slate-400 text-sm mt-4">
+              Or contact the administrator for assistance.
             </p>
           </div>
         </div>
+
+        <PremiumUpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
       </div>
     );
   }
