@@ -1,9 +1,9 @@
 "use client";
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function PaymentSuccess() {
+function SuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('session_id');
@@ -67,5 +67,17 @@ export default function PaymentSuccess() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <SuccessContent />
+    </Suspense>
   );
 }

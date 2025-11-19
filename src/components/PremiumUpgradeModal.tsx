@@ -74,8 +74,9 @@ export default function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeM
         {/* Pricing */}
         <div className="glass-card rounded-2xl p-6 mb-6">
           <div className="text-center mb-4">
-            <div className="text-5xl font-bold text-white mb-2">$9.99</div>
+            <div className="text-5xl font-bold text-white mb-2">₱4.99</div>
             <div className="text-slate-400">One-time payment • Lifetime access</div>
+            <div className="text-xs text-slate-500 mt-2">Pay via GCash, PayMaya, Card, or GrabPay</div>
           </div>
         </div>
 
@@ -159,7 +160,7 @@ export default function PremiumUpgradeModal({ isOpen, onClose }: PremiumUpgradeM
 
         {/* Security Note */}
         <p className="text-center text-slate-400 text-xs mt-4">
-          🔒 Secure payment powered by Stripe • Money-back guarantee
+          🔒 Secure payment powered by PayMongo • Philippines-based payment processing
         </p>
       </div>
     </div>
