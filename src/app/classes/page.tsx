@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import SideNav from '@/components/SideNav';
-import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   createClass, 
@@ -228,7 +228,7 @@ export default function ClassesPage() {
           </div>
         </div>
 
-        <PremiumUpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+
       </div>
     );
   }

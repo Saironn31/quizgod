@@ -4,7 +4,7 @@ import Link from "next/link";
 import SideNav from '@/components/SideNav';
 import ApiStatusBanner from '@/components/ApiStatusBanner';
 import AdsterraAd from '@/components/AdsterraAd';
-import PremiumUpgradeModal from '@/components/PremiumUpgradeModal';
+
 // Trigger redeploy
 import { useAuth } from '@/contexts/AuthContext';
 import { useDocumentProcessing } from '@/contexts/DocumentProcessingContext';
@@ -1759,7 +1759,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
       )}
 
       {/* Premium Upgrade Modal */}
-      <PremiumUpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+
     </div>
   );
 }

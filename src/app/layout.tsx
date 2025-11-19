@@ -35,16 +35,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="google-adsense-account" content="ca-pub-6371037672090963" />
-        
-        {/* FastSpring Payment Integration */}
-        <script
-          id="fsc-api"
-          src="https://sbl.onfastspring.com/sbl/1.0.6/fastspring-builder.min.js"
-          type="text/javascript"
-          data-storefront="quizgod.test.onfastspring.com/popup-quizgod"
-          async
-        />
-        
         <script
           dangerouslySetInnerHTML={{
             __html: `
