@@ -20,7 +20,12 @@ import {
   isUserPremium
 } from '@/lib/firestore';
 
-type Question = { question: string; options: string[]; correct: number };
+type Question = { 
+  question: string; 
+  options: string[]; 
+  correct: number;
+  type?: 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer';
+};
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {
   source?: 'personal' | 'class';
@@ -51,6 +56,22 @@ export default function CreatePage() {
   // Manual mode fields
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<Question[]>([{ question: "", options: ["", "", "", ""], correct: 0 }]);
+  
+  // Quiz settings
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  const [timerType, setTimerType] = useState<'none' | 'per-question' | 'whole-quiz'>('none');
+  const [timerDuration, setTimerDuration] = useState<number>(60);
+  const [questionTypes, setQuestionTypes] = useState<{
+    'multiple-choice': number;
+    'true-false': number;
+    'fill-blank': number;
+    'short-answer': number;
+  }>({
+    'multiple-choice': 5,
+    'true-false': 0,
+    'fill-blank': 0,
+    'short-answer': 0
+  });
   
   // AI mode fields
   const [numQuestions, setNumQuestions] = useState(5);
@@ -589,38 +610,75 @@ export default function CreatePage() {
       return;
     }
 
+    // Calculate total questions
+    const totalQuestions = questionTypes['multiple-choice'] + questionTypes['true-false'] + 
+                          questionTypes['fill-blank'] + questionTypes['short-answer'];
+    
+    if (totalQuestions === 0) {
+      alert("Please specify at least one question to generate");
+      return;
+    }
+
     setIsGenerating(true);
     setError("");
 
-    const basePrompt = `You are a quiz generator. Create ${numQuestions} multiple choice questions about ${subject} based on the following content.
+    // Build question type instructions
+    let typeInstructions = '';
+    const types = [];
+    
+    if (questionTypes['multiple-choice'] > 0) {
+      types.push(`${questionTypes['multiple-choice']} multiple-choice questions (4 options each, mark correct with *)`);
+    }
+    if (questionTypes['true-false'] > 0) {
+      types.push(`${questionTypes['true-false']} true/false questions (options: True/False, mark correct with *)`);
+    }
+    if (questionTypes['fill-blank'] > 0) {
+      types.push(`${questionTypes['fill-blank']} fill-in-the-blank questions (provide the correct answer)`);
+    }
+    if (questionTypes['short-answer'] > 0) {
+      types.push(`${questionTypes['short-answer']} short-answer questions (provide a model answer)`);
+    }
+
+    const basePrompt = `You are a quiz generator. Create a quiz about ${subject} with difficulty level: ${difficulty.toUpperCase()}.
+
+Based on the following content, generate EXACTLY:
+${types.join('\n')}
 
 Content:
 ${pdfText.slice(0, 15000)}
 
 MANDATORY FORMAT - Follow this EXACTLY:
 
+For MULTIPLE CHOICE questions:
 1. What is the question text?
 A) First option
 B) Second option*
 C) Third option
 D) Fourth option
 
-2. What is another question?
-A) Option one
-B) Option two
-C) Option three*
-D) Option four
+For TRUE/FALSE questions:
+2. Is this statement correct?
+A) True*
+B) False
+
+For FILL-IN-THE-BLANK questions:
+3. The capital of France is _____.
+ANSWER: Paris
+
+For SHORT ANSWER questions:
+4. Explain the concept briefly.
+ANSWER: A detailed model answer explaining the concept thoroughly.
 
 CRITICAL RULES:
 1. Start output with "1." immediately - NO introduction text
-2. Each question MUST have EXACTLY ONE asterisk (*) marking the correct answer
-3. Put asterisk directly after the correct answer text like this: "Correct answer*"
-4. Every question needs 4 options: A) B) C) D)
-5. End after the last question - NO conclusion text
+2. For multiple-choice and true/false: EXACTLY ONE asterisk (*) marking the correct answer
+3. For fill-blank and short-answer: Use "ANSWER:" followed by the correct answer
+4. Number questions sequentially: 1, 2, 3, etc.
+5. Generate EXACTLY the number specified for each type
+6. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
+7. End after the last question - NO conclusion text
 
-The asterisk (*) is MANDATORY for marking correct answers. Without it, the quiz cannot work.
-
-Generate ${numQuestions} questions NOW:`;
+Generate the questions NOW:`;
 
 
 
@@ -856,45 +914,67 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
     for (const block of questionBlocks) {
       const lines = block.trim().split('\n').filter(line => line.trim());
-      if (lines.length < 5) continue;
+      if (lines.length === 0) continue;
 
       const questionText = lines[0].replace(/\?$/, '').trim();
-      const options = [];
-      let correctIndex = -1; // Start with -1 to detect if no asterisk found
-      let foundAsterisk = false;
-
-      for (let i = 1; i < lines.length && options.length < 4; i++) {
-        const line = lines[i].trim();
-        // Match patterns like "A) text*", "A. text*", "A text*", or just "text*"
-        const match = line.match(/^[A-D][\)\.\:]?\s*(.+?)$/i);
-        if (match) {
-          const optionText = match[1].trim();
-          // Check if this option has an asterisk (correct answer marker)
-          const hasAsterisk = optionText.includes('*');
-          // Remove asterisk from the option text
-          const cleanText = optionText.replace(/\*+/g, '').trim();
-          
-          options.push(cleanText);
-          
-          if (hasAsterisk && !foundAsterisk) {
-            correctIndex = options.length - 1;
-            foundAsterisk = true;
-          }
-        }
-      }
-
-      // If no asterisk was found, log warning and default to first option
-      if (questionText && options.length === 4) {
-        if (correctIndex === -1) {
-          console.warn(`No correct answer marked for question: "${questionText}". Defaulting to option A.`);
-          correctIndex = 0;
-        }
+      
+      // Check if it's a fill-blank or short-answer question (has ANSWER: format)
+      const answerMatch = block.match(/ANSWER:\s*(.+?)(?=\n\d+\.|$)/i);
+      
+      if (answerMatch) {
+        // Fill-in-the-blank or Short Answer question
+        const answer = answerMatch[1].trim();
+        const questionType: 'fill-blank' | 'short-answer' = 
+          questionText.includes('_') ? 'fill-blank' : 'short-answer';
         
         questions.push({
           question: questionText,
-          options,
-          correct: correctIndex
+          options: [answer],
+          correct: 0,
+          type: questionType
         });
+      } else {
+        // Multiple choice or True/False question
+        const options = [];
+        let correctIndex = -1;
+        let foundAsterisk = false;
+
+        for (let i = 1; i < lines.length && options.length < 4; i++) {
+          const line = lines[i].trim();
+          // Match patterns like "A) text*", "A. text*", "A text*", or just "text*"
+          const match = line.match(/^[A-D][\)\.\:]?\s*(.+?)$/i);
+          if (match) {
+            const optionText = match[1].trim();
+            const hasAsterisk = optionText.includes('*');
+            const cleanText = optionText.replace(/\*+/g, '').trim();
+            
+            options.push(cleanText);
+            
+            if (hasAsterisk && !foundAsterisk) {
+              correctIndex = options.length - 1;
+              foundAsterisk = true;
+            }
+          }
+        }
+
+        if (questionText && options.length >= 2) {
+          if (correctIndex === -1) {
+            console.warn(`No correct answer marked for question: "${questionText}". Defaulting to option A.`);
+            correctIndex = 0;
+          }
+          
+          // Determine if it's True/False or Multiple Choice
+          const isTrueFalse = options.length === 2 && 
+            options.some(opt => opt.toLowerCase() === 'true') && 
+            options.some(opt => opt.toLowerCase() === 'false');
+          
+          questions.push({
+            question: questionText,
+            options,
+            correct: correctIndex,
+            type: isTrueFalse ? 'true-false' : 'multiple-choice'
+          });
+        }
       }
     }
 
@@ -940,7 +1020,10 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
         subject: subject,
         questions: questions,
         userId: user.uid,
-        isPersonal: !selectedClass || selectedClass === ""
+        isPersonal: !selectedClass || selectedClass === "",
+        difficulty: difficulty,
+        timerType: timerType,
+        timerDuration: timerType === 'whole-quiz' ? timerDuration * 60 : timerDuration
       };
       
       if (description.trim()) {
@@ -997,7 +1080,10 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
         subject: subject,
         questions: parsedQuestions,
         userId: user.uid,
-        isPersonal: !selectedClass || selectedClass === ""
+        isPersonal: !selectedClass || selectedClass === "",
+        difficulty: difficulty,
+        timerType: timerType,
+        timerDuration: timerType === 'whole-quiz' ? timerDuration * 60 : timerDuration
       };
       
       if (selectedClass) {
@@ -1233,6 +1319,69 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                       />
                     </div>
 
+                    {/* Quiz Settings */}
+                    <div className="glass-card rounded-2xl p-4 md:p-6 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+                      <h3 className="text-lg md:text-xl font-bold text-white mb-4 flex items-center gap-2">
+                        <span>⚙️</span>
+                        Quiz Settings
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Difficulty Level */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
+                            🎯 Difficulty Level
+                          </label>
+                          <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+                            className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                          >
+                            <option value="easy" className="bg-slate-800">🟢 Easy</option>
+                            <option value="medium" className="bg-slate-800">🟡 Medium</option>
+                            <option value="hard" className="bg-slate-800">🔴 Hard</option>
+                          </select>
+                        </div>
+
+                        {/* Timer Type */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-2">
+                            ⏱️ Timer Type
+                          </label>
+                          <select
+                            value={timerType}
+                            onChange={(e) => setTimerType(e.target.value as 'none' | 'per-question' | 'whole-quiz')}
+                            className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                          >
+                            <option value="none" className="bg-slate-800">No Timer</option>
+                            <option value="per-question" className="bg-slate-800">Per Question</option>
+                            <option value="whole-quiz" className="bg-slate-800">Whole Quiz</option>
+                          </select>
+                        </div>
+
+                        {/* Timer Duration - Only show if timer is enabled */}
+                        {timerType !== 'none' && (
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-300 mb-2">
+                              ⏲️ Timer Duration
+                            </label>
+                            <input
+                              type="number"
+                              min="10"
+                              max={timerType === 'whole-quiz' ? "180" : "300"}
+                              value={timerDuration}
+                              onChange={(e) => setTimerDuration(parseInt(e.target.value) || 60)}
+                              className="w-full p-3 border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                              placeholder={timerType === 'whole-quiz' ? "Minutes for entire quiz" : "Seconds per question"}
+                            />
+                            <p className="text-xs text-slate-400 mt-1">
+                              {timerType === 'whole-quiz' ? '⏰ Minutes for entire quiz' : '⏰ Seconds per question'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     {/* Questions */}
                     <div className="space-y-4 md:space-y-6">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -1260,6 +1409,40 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                           </div>
                           
                           <div className="space-y-3 md:space-y-4">
+                            {/* Question Type Selector */}
+                            <div>
+                              <label className="block text-xs text-slate-300 mb-2">Question Type</label>
+                              <select
+                                value={q.type || 'multiple-choice'}
+                                onChange={(e) => {
+                                  const newType = e.target.value as 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer';
+                                  // Adjust options based on type
+                                  let newOptions = [...q.options];
+                                  let newCorrect = q.correct;
+                                  
+                                  if (newType === 'true-false') {
+                                    newOptions = ['True', 'False'];
+                                    newCorrect = 0;
+                                  } else if (newType === 'fill-blank' || newType === 'short-answer') {
+                                    newOptions = [''];
+                                    newCorrect = 0;
+                                  } else if (newOptions.length < 4) {
+                                    newOptions = ['', '', '', ''];
+                                    newCorrect = 0;
+                                  }
+                                  
+                                  updateQuestion(i, { type: newType, options: newOptions, correct: newCorrect });
+                                }}
+                                className="w-full p-2 text-sm border border-white/30 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                              >
+                                <option value="multiple-choice" className="bg-slate-800">📝 Multiple Choice</option>
+                                <option value="true-false" className="bg-slate-800">✓✗ True/False</option>
+                                <option value="fill-blank" className="bg-slate-800">📋 Fill in the Blank</option>
+                                <option value="short-answer" className="bg-slate-800">✍️ Short Answer</option>
+                              </select>
+                            </div>
+
+                            {/* Question Text */}
                             <input 
                               className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
                               placeholder="Enter your question..." 
@@ -1267,29 +1450,82 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                               onChange={e => updateQuestion(i, { question: e.target.value })}
                             />
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
-                              {q.options.map((option, oi) => (
-                                <div key={oi} className="flex items-center gap-2 md:gap-3">
+                            {/* Dynamic Options based on Question Type */}
+                            {(q.type === 'multiple-choice' || !q.type) && (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
+                                {q.options.slice(0, 4).map((option, oi) => (
+                                  <div key={oi} className="flex items-center gap-2 md:gap-3">
+                                    <input 
+                                      type="radio" 
+                                      name={`correct-${i}`} 
+                                      checked={q.correct === oi} 
+                                      onChange={() => updateQuestion(i, { correct: oi })}
+                                      className="text-purple-500 focus:ring-purple-400 shrink-0"
+                                    />
+                                    <input 
+                                      className="flex-1 min-w-0 p-2 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                      placeholder={`Option ${oi + 1}`} 
+                                      value={option} 
+                                      onChange={e => { 
+                                        const opts = [...q.options]; 
+                                        opts[oi] = e.target.value; 
+                                        updateQuestion(i, { options: opts }); 
+                                      }} 
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {q.type === 'true-false' && (
+                              <div className="flex gap-4">
+                                <label className="flex items-center gap-2 cursor-pointer bg-white/5 px-4 py-3 rounded-lg border-2 border-white/20 hover:border-green-400 transition-all">
                                   <input 
                                     type="radio" 
                                     name={`correct-${i}`} 
-                                    checked={q.correct === oi} 
-                                    onChange={() => updateQuestion(i, { correct: oi })}
-                                    className="text-purple-500 focus:ring-purple-400 shrink-0"
+                                    checked={q.correct === 0} 
+                                    onChange={() => updateQuestion(i, { correct: 0, options: ['True', 'False'] })}
+                                    className="text-green-500 focus:ring-green-400"
                                   />
+                                  <span className="text-white font-semibold">✓ True</span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer bg-white/5 px-4 py-3 rounded-lg border-2 border-white/20 hover:border-red-400 transition-all">
                                   <input 
-                                    className="flex-1 min-w-0 p-2 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded focus:outline-none focus:ring-2 focus:ring-purple-400" 
-                                    placeholder={`Option ${oi + 1}`} 
-                                    value={option} 
-                                    onChange={e => { 
-                                      const opts = [...q.options]; 
-                                      opts[oi] = e.target.value; 
-                                      updateQuestion(i, { options: opts }); 
-                                    }} 
+                                    type="radio" 
+                                    name={`correct-${i}`} 
+                                    checked={q.correct === 1} 
+                                    onChange={() => updateQuestion(i, { correct: 1, options: ['True', 'False'] })}
+                                    className="text-red-500 focus:ring-red-400"
                                   />
-                                </div>
-                              ))}
-                            </div>
+                                  <span className="text-white font-semibold">✗ False</span>
+                                </label>
+                              </div>
+                            )}
+
+                            {q.type === 'fill-blank' && (
+                              <div>
+                                <label className="block text-xs text-slate-300 mb-2">Correct Answer</label>
+                                <input 
+                                  className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                  placeholder="Enter the correct answer..." 
+                                  value={q.options[0] || ''} 
+                                  onChange={e => updateQuestion(i, { options: [e.target.value], correct: 0 })}
+                                />
+                              </div>
+                            )}
+
+                            {q.type === 'short-answer' && (
+                              <div>
+                                <label className="block text-xs text-slate-300 mb-2">Model Answer</label>
+                                <textarea 
+                                  className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                  placeholder="Enter the model/expected answer..." 
+                                  rows={3}
+                                  value={q.options[0] || ''} 
+                                  onChange={e => updateQuestion(i, { options: [e.target.value], correct: 0 })}
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1443,22 +1679,132 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                           )}
                         </div>
 
-                        {/* Number of Questions */}
+                        {/* Difficulty Level */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-yellow-500 to-red-500 flex items-center justify-center text-xl">
+                              🎯
+                            </div>
+                            <label className="text-base font-bold text-white">Difficulty Level</label>
+                          </div>
+                          <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value as 'easy' | 'medium' | 'hard')}
+                            className="w-full p-3 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          >
+                            <option value="easy" className="bg-slate-800">🟢 Easy</option>
+                            <option value="medium" className="bg-slate-800">🟡 Medium</option>
+                            <option value="hard" className="bg-slate-800">🔴 Hard</option>
+                          </select>
+                        </div>
+
+                        {/* Timer Settings */}
+                        <div>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-xl">
+                              ⏱️
+                            </div>
+                            <label className="text-base font-bold text-white">Timer Type</label>
+                          </div>
+                          <select
+                            value={timerType}
+                            onChange={(e) => setTimerType(e.target.value as 'none' | 'per-question' | 'whole-quiz')}
+                            className="w-full p-3 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
+                          >
+                            <option value="none" className="bg-slate-800">No Timer</option>
+                            <option value="per-question" className="bg-slate-800">Per Question</option>
+                            <option value="whole-quiz" className="bg-slate-800">Whole Quiz</option>
+                          </select>
+                          
+                          {timerType !== 'none' && (
+                            <div>
+                              <label className="block text-sm text-slate-300 mb-2">
+                                ⏲️ Duration {timerType === 'whole-quiz' ? '(minutes)' : '(seconds)'}
+                              </label>
+                              <input
+                                type="number"
+                                min="10"
+                                max={timerType === 'whole-quiz' ? "180" : "300"}
+                                value={timerDuration}
+                                onChange={(e) => setTimerDuration(parseInt(e.target.value) || 60)}
+                                className="w-full p-3 text-lg font-bold border border-white/20 bg-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Question Types with Quantities */}
                         <div>
                           <div className="flex items-center gap-3 mb-3">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl">
                               🔢
                             </div>
-                            <label className="text-base font-bold text-white">Number of Questions</label>
+                            <label className="text-base font-bold text-white">Question Types</label>
                           </div>
-                          <input
-                            type="number"
-                            min="1"
-                            max="50"
-                            value={numQuestions}
-                            onChange={(e) => setNumQuestions(parseInt(e.target.value) || 5)}
-                            className="w-full p-3 text-lg font-bold border border-white/20 bg-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center"
-                          />
+                          
+                          <div className="space-y-3">
+                            {/* Multiple Choice */}
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                              <label className="block text-sm text-slate-300 mb-2">📝 Multiple Choice</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={questionTypes['multiple-choice']}
+                                onChange={(e) => setQuestionTypes({...questionTypes, 'multiple-choice': parseInt(e.target.value) || 0})}
+                                className="w-full p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-center"
+                              />
+                            </div>
+
+                            {/* True/False */}
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                              <label className="block text-sm text-slate-300 mb-2">✓✗ True/False</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={questionTypes['true-false']}
+                                onChange={(e) => setQuestionTypes({...questionTypes, 'true-false': parseInt(e.target.value) || 0})}
+                                className="w-full p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-center"
+                              />
+                            </div>
+
+                            {/* Fill in the Blank */}
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                              <label className="block text-sm text-slate-300 mb-2">📋 Fill in the Blank</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={questionTypes['fill-blank']}
+                                onChange={(e) => setQuestionTypes({...questionTypes, 'fill-blank': parseInt(e.target.value) || 0})}
+                                className="w-full p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-center"
+                              />
+                            </div>
+
+                            {/* Short Answer */}
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                              <label className="block text-sm text-slate-300 mb-2">✍️ Short Answer</label>
+                              <input
+                                type="number"
+                                min="0"
+                                max="50"
+                                value={questionTypes['short-answer']}
+                                onChange={(e) => setQuestionTypes({...questionTypes, 'short-answer': parseInt(e.target.value) || 0})}
+                                className="w-full p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-center"
+                              />
+                            </div>
+
+                            {/* Total Questions Display */}
+                            <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-3 border-2 border-purple-400/30">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-semibold text-slate-300">Total Questions:</span>
+                                <span className="text-2xl font-bold text-white">
+                                  {questionTypes['multiple-choice'] + questionTypes['true-false'] + questionTypes['fill-blank'] + questionTypes['short-answer']}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Generate Button */}
