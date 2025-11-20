@@ -394,7 +394,6 @@ export default function HomePage() {
       </div>
       
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
-      </div>
     );
   }
 
