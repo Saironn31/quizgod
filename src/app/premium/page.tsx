@@ -16,13 +16,12 @@ export default function PremiumPage() {
   useEffect(() => {
     console.log('🔧 Initializing Paddle with config:', {
       environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
-      seller: process.env.NEXT_PUBLIC_PADDLE_SELLER_ID,
-      sellerNumber: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID)
+      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
     });
 
     initializePaddle({
       environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
-      seller: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
+      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
       eventCallback: (data) => {
         console.log('🎯 Paddle event received:', {
           name: data.name,
