@@ -2,17 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import NavBar from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 
 export default function TermsPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<'terms' | 'privacy' | 'refund'>('terms');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <NavBar />
-      <div className="flex">
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
+    <div className="min-h-screen bg-slate-950">
+      <SideNav />
+      <div className="md:ml-64 min-h-screen">
+        <div className="p-4 md:p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
