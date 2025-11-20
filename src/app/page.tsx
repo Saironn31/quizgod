@@ -180,32 +180,116 @@ export default function HomePage() {
           </div>
 
           {/* Pricing Preview */}
-          <div className="max-w-4xl mx-auto mt-16 text-center">
-            <h2 className="text-3xl font-bold text-white mb-6">Simple, Transparent Pricing</h2>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-                <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
-                <div className="text-4xl font-black text-white mb-4">$0</div>
-                <ul className="text-slate-300 space-y-2 text-sm text-left">
-                  <li>✓ 5 quizzes/month</li>
-                  <li>✓ 3 AI generations/month</li>
-                  <li>✓ Basic features</li>
+          <div className="max-w-5xl mx-auto mt-16">
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold text-white mb-4">Pricing</h2>
+              <p className="text-slate-300 text-lg">Simple, transparent pricing for everyone</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-white/20">
+                <div className="text-center mb-6">
+                  <h3 className="text-3xl font-bold text-white mb-4">Free Plan</h3>
+                  <div className="flex items-baseline justify-center gap-2 mb-2">
+                    <span className="text-6xl font-black text-white">$0</span>
+                    <span className="text-slate-400 text-xl">USD</span>
+                  </div>
+                  <p className="text-slate-400">Forever free</p>
+                </div>
+                <ul className="space-y-3 text-slate-300">
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>5 quiz creations per month</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>3 AI quiz generations per month</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Access to public quizzes</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Basic storage (100MB)</span>
+                  </li>
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl p-8 border-2 border-purple-400/50">
-                <h3 className="text-2xl font-bold text-white mb-2">Premium</h3>
-                <div className="text-4xl font-black text-white mb-4">$5<span className="text-xl">/month</span></div>
-                <ul className="text-white space-y-2 text-sm text-left font-semibold">
-                  <li>✓ Unlimited everything</li>
-                  <li>✓ Advanced features</li>
-                  <li>✓ Priority support</li>
+              <div className="bg-gradient-to-br from-purple-500/30 to-blue-500/30 backdrop-blur-sm rounded-2xl p-8 border-2 border-purple-400/60 relative">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                  🔥 MOST POPULAR
+                </div>
+                <div className="text-center mb-6 mt-2">
+                  <h3 className="text-3xl font-bold text-white mb-4">Premium Plan</h3>
+                  <div className="flex items-baseline justify-center gap-2 mb-2">
+                    <span className="text-6xl font-black text-white">$5</span>
+                    <span className="text-white text-xl">USD/month</span>
+                  </div>
+                  <p className="text-green-400 font-semibold">or $50 USD/year (Save 17%)</p>
+                </div>
+                <ul className="space-y-3 text-white font-medium">
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Unlimited AI quiz generation</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Unlimited quiz creation</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>All advanced question types</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Live multiplayer quizzes</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Progress tracking & analytics</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Priority support</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="text-green-400 text-xl mt-0.5">✓</span>
+                    <span>Unlimited cloud storage</span>
+                  </li>
                 </ul>
               </div>
             </div>
           </div>
 
+          {/* Company & Contact Info */}
+          <div className="max-w-4xl mx-auto mt-16 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">Company & Contact Information</h2>
+            <div className="grid md:grid-cols-2 gap-8 text-slate-300">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-3">Company Details</h3>
+                <div className="space-y-2">
+                  <p><span className="text-white font-semibold">Company Name:</span> QuizGod</p>
+                  <p><span className="text-white font-semibold">Website:</span> https://quizgod-swart.vercel.app</p>
+                  <p><span className="text-white font-semibold">Security:</span> ✅ SSL/HTTPS Enabled</p>
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-3">Support & Legal</h3>
+                <div className="space-y-2">
+                  <p><span className="text-white font-semibold">Email:</span> quizgod25@gmail.com</p>
+                  <p><span className="text-white font-semibold">Policies:</span></p>
+                  <div className="ml-4 space-y-1">
+                    <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Terms of Service</a></p>
+                    <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Privacy Policy</a></p>
+                    <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Refund Policy</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Footer Links */}
-          <div className="max-w-4xl mx-auto mt-16 pt-8 border-t border-white/10 text-center">
+          <div className="max-w-4xl mx-auto mt-12 pt-8 border-t border-white/10 text-center">
+            <p className="text-slate-400 text-sm mb-4">© 2025 QuizGod. All rights reserved.</p>
             <div className="flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
               <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
               <a href="/terms" className="hover:text-white transition-colors">Privacy Policy</a>
