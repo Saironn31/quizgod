@@ -233,18 +233,3 @@ export default function SideNav() {
     </>
   );
 }
-              >
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white font-bold text-xl scale-90"
-                >
-                ⊗
-              </div>
-              <span className="text-xs font-semibold text-red-400 text-center">
-                Logout
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
