@@ -17,14 +17,20 @@ export default function PremiumPage() {
     initializePaddle({
       environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
       token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
+      seller: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
       eventCallback: (data) => {
         console.log('Paddle event:', data);
+        if (data.name === 'checkout.error') {
+          console.error('Paddle checkout error:', data.data);
+        }
       }
     }).then((paddleInstance: Paddle | undefined) => {
       if (paddleInstance) {
         setPaddle(paddleInstance);
-        console.log('Paddle initialized successfully');
+        console.log('Paddle initialized successfully with seller:', process.env.NEXT_PUBLIC_PADDLE_SELLER_ID);
       }
+    }).catch((error) => {
+      console.error('Failed to initialize Paddle:', error);
     });
   }, []);
 
@@ -45,25 +51,37 @@ export default function PremiumPage() {
       ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
       : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
 
-    paddle.Checkout.open({
-      items: [{ priceId: priceId!, quantity: 1 }],
-      customData: {
-        userId: user.uid,
-        userEmail: user.email || ''
-      },
-      ...(user.email && {
-        customer: {
-          email: user.email
-        }
-      }),
-      settings: {
-        displayMode: 'overlay',
-        theme: 'dark',
-        locale: 'en'
-      }
+    console.log('Opening checkout with:', {
+      priceId,
+      selectedPlan,
+      userId: user.uid,
+      email: user.email
     });
 
-    setLoading(false);
+    try {
+      paddle.Checkout.open({
+        items: [{ priceId: priceId!, quantity: 1 }],
+        customData: {
+          userId: user.uid,
+          userEmail: user.email || ''
+        },
+        ...(user.email && {
+          customer: {
+            email: user.email
+          }
+        }),
+        settings: {
+          displayMode: 'overlay',
+          theme: 'dark',
+          locale: 'en'
+        }
+      });
+    } catch (error) {
+      console.error('Checkout error:', error);
+      alert('Failed to open checkout. Please try again or contact support.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const plans = {
