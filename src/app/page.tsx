@@ -113,79 +113,80 @@ export default function HomePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 relative overflow-hidden flex items-center justify-center">
-        {/* Animated background */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/20 rounded-full filter blur-3xl animate-float"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-500/20 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-pink-500/10 rounded-full filter blur-3xl animate-float" style={{animationDelay: '2s'}}></div>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <SideNav />
+        
+        {/* Main Content with proper spacing for SideNav */}
+        <div className="md:ml-64 min-h-screen">
+          <div className="p-6 md:p-12 pb-24 md:pb-12">
+            {/* Landing Page Content */}
+            <div className="max-w-6xl mx-auto space-y-12">
+              
+              {/* Hero Section */}
+              <div className="text-center animate-fade-in">
+                <div className="mb-8 inline-block">
+                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-5xl font-black animate-bounce-soft shadow-glow">
+                    Q
+                  </div>
+                </div>
+                
+                <h1 className="text-5xl md:text-7xl font-black mb-6">
+                  <span className="gradient-text">QuizGod</span>
+                </h1>
+                
+                <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-2xl mx-auto">
+                  AI-powered quiz platform for students and educators. Create unlimited quizzes, track progress, and learn smarter.
+                </p>
 
-        <div className="relative z-10 text-center px-4 animate-fade-in">
-          <div className="mb-8 inline-block">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 via-violet-500 to-pink-500 flex items-center justify-center text-white text-5xl font-black animate-bounce-soft shadow-glow">
-              Q
-            </div>
-          </div>
-          
-          <h1 className="text-6xl md:text-8xl font-black mb-6">
-            <span className="gradient-text">QuizGod</span>
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto">
-            AI-powered quiz platform for students and educators. Create unlimited quizzes, track progress, and learn smarter.
-          </p>
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-glow"
+                >
+                  Start Learning Free
+                </button>
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-            <button
-              onClick={() => setShowAuth(true)}
-              className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-glow"
-            >
-              Start Learning Free
-            </button>
-          </div>
+              {/* Product Description & Features */}
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">🤖</div>
+                  <h3 className="text-xl font-bold text-white mb-2">AI Quiz Generation</h3>
+                  <p className="text-slate-300 text-sm">Upload documents and let AI create quizzes automatically. Supports PDFs, text files, and more.</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">⚡</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Custom Quiz Creator</h3>
+                  <p className="text-slate-300 text-sm">Create quizzes manually with multiple question types, timers, and difficulty levels.</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">👥</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Live Multiplayer</h3>
+                  <p className="text-slate-300 text-sm">Host real-time quiz sessions with students. Track scores and engagement instantly.</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">📊</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Progress Analytics</h3>
+                  <p className="text-slate-300 text-sm">Detailed insights into performance, streaks, and learning patterns.</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">🎯</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Multiple Question Types</h3>
+                  <p className="text-slate-300 text-sm">Multiple choice, true/false, fill-in-blank, and short answer questions.</p>
+                </div>
+                <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+                  <div className="text-4xl mb-4">🏫</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Class Management</h3>
+                  <p className="text-slate-300 text-sm">Create classes, manage students, assign quizzes, and track class performance.</p>
+                </div>
+              </div>
 
-          {/* Product Description & Features */}
-          <div className="max-w-6xl mx-auto mt-20 grid md:grid-cols-3 gap-6">
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">🤖</div>
-              <h3 className="text-xl font-bold text-white mb-2">AI Quiz Generation</h3>
-              <p className="text-slate-300 text-sm">Upload documents and let AI create quizzes automatically. Supports PDFs, text files, and more.</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">⚡</div>
-              <h3 className="text-xl font-bold text-white mb-2">Custom Quiz Creator</h3>
-              <p className="text-slate-300 text-sm">Create quizzes manually with multiple question types, timers, and difficulty levels.</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">👥</div>
-              <h3 className="text-xl font-bold text-white mb-2">Live Multiplayer</h3>
-              <p className="text-slate-300 text-sm">Host real-time quiz sessions with students. Track scores and engagement instantly.</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">📊</div>
-              <h3 className="text-xl font-bold text-white mb-2">Progress Analytics</h3>
-              <p className="text-slate-300 text-sm">Detailed insights into performance, streaks, and learning patterns.</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">🎯</div>
-              <h3 className="text-xl font-bold text-white mb-2">Multiple Question Types</h3>
-              <p className="text-slate-300 text-sm">Multiple choice, true/false, fill-in-blank, and short answer questions.</p>
-            </div>
-            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
-              <div className="text-4xl mb-4">🏫</div>
-              <h3 className="text-xl font-bold text-white mb-2">Class Management</h3>
-              <p className="text-slate-300 text-sm">Create classes, manage students, assign quizzes, and track class performance.</p>
-            </div>
-          </div>
-
-          {/* Pricing Preview */}
-          <div className="max-w-5xl mx-auto mt-16">
-            <div className="text-center mb-8">
-              <h2 className="text-4xl font-bold text-white mb-4">Pricing</h2>
-              <p className="text-slate-300 text-lg">Simple, transparent pricing for everyone</p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-8">
+              {/* Pricing Preview */}
+              <div className="space-y-8">
+                <div className="text-center">
+                  <h2 className="text-4xl font-bold text-white mb-4">Pricing</h2>
+                  <p className="text-slate-300 text-lg">Simple, transparent pricing for everyone</p>
+                </div>
+                <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border-2 border-white/20">
                 <div className="text-center mb-6">
                   <h3 className="text-3xl font-bold text-white mb-4">Free Plan</h3>
@@ -261,7 +262,7 @@ export default function HomePage() {
           </div>
 
           {/* Company & Contact Info */}
-          <div className="max-w-4xl mx-auto mt-16 bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
             <h2 className="text-2xl font-bold text-white mb-6 text-center">Company & Contact Information</h2>
             <div className="grid md:grid-cols-2 gap-8 text-slate-300">
               <div>
@@ -288,7 +289,7 @@ export default function HomePage() {
           </div>
 
           {/* Enhanced Footer */}
-          <footer className="max-w-7xl mx-auto mt-16 pt-12 pb-8 border-t border-white/20">
+          <footer className="pt-12 pb-8 border-t border-white/20">
             <div className="grid md:grid-cols-4 gap-8 mb-8">
               {/* Company Info */}
               <div>
@@ -390,9 +391,10 @@ export default function HomePage() {
             </div>
           </footer>
         </div>
-
-        <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
       </div>
+      
+      <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
+    </div>
     );
   }
 
