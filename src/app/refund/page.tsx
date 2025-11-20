@@ -1,13 +1,14 @@
 'use client';
 
-import SideNav from '@/components/NavBar';
+import SideNav from '@/components/SideNav';
 
 export default function RefundPolicy() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen bg-slate-950">
       <SideNav />
       
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 mb-8">
           <h1 className="text-4xl font-bold text-white mb-4">Refund Policy</h1>
@@ -342,6 +343,7 @@ export default function RefundPolicy() {
           >
             ← Back to Home
           </a>
+        </div>
         </div>
       </div>
     </div>
