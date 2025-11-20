@@ -1,71 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SideNav from '@/components/SideNav';
-import { initializePaddle, type Paddle } from '@paddle/paddle-js';
 
 export default function PremiumPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
-  const [paddle, setPaddle] = useState<Paddle>();
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    console.log('🔧 Initializing Paddle with config:', {
-      environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
-      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
-    });
-
-    initializePaddle({
-      environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
-      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
-      eventCallback: (data) => {
-        console.log('🎯 Paddle event received:', {
-          name: data.name,
-          type: data.type,
-          data: data.data,
-          detail: data.detail,
-          code: data.code,
-          fullData: data
-        });
-        
-        if (data.name === 'checkout.error' || data.type === 'checkout.error') {
-          console.error('❌ Paddle checkout error:', {
-            error: data,
-            detail: data.detail,
-            code: data.code,
-            message: data.data || data.detail || 'Unknown error'
-          });
-          alert(`Checkout Error: ${data.detail || data.code || 'Unknown error'}\n\nPlease check console for details.`);
-        }
-        
-        if (data.name === 'checkout.completed') {
-          console.log('✅ Checkout completed successfully:', data);
-        }
-        
-        // Log all events for debugging
-        if (!data.name && !data.type) {
-          console.warn('⚠️ Received event with no name or type:', data);
-        }
-      }
-    }).then((paddleInstance: Paddle | undefined) => {
-      if (paddleInstance) {
-        setPaddle(paddleInstance);
-        console.log('✅ Paddle initialized successfully');
-      } else {
-        console.error('❌ Paddle initialization returned undefined');
-      }
-    }).catch((error) => {
-      console.error('❌ Failed to initialize Paddle:', {
-        error,
-        message: error?.message,
-        stack: error?.stack
-      });
-    });
-  }, []);
 
   const handleUpgrade = () => {
     console.log('🚀 handleUpgrade called');
@@ -82,57 +26,25 @@ export default function PremiumPage() {
       displayName: user.displayName
     });
 
-    if (!paddle) {
-      console.error('❌ Paddle instance not ready');
-      alert('Payment system is loading, please try again in a moment');
-      return;
-    }
-
-    console.log('✅ Paddle instance ready');
     setLoading(true);
 
-    const priceId = selectedPlan === 'monthly' 
-      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
-      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
+    // Use hosted checkout URLs
+    const checkoutUrl = selectedPlan === 'monthly' 
+      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_CHECKOUT_URL 
+      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_CHECKOUT_URL;
 
-    const checkoutConfig = {
-      items: [{ priceId: priceId!, quantity: 1 }],
-      customData: {
-        userId: user.uid,
-        userEmail: user.email || ''
-      },
-      ...(user.email && {
-        customer: {
-          email: user.email
-        }
-      }),
-      settings: {
-        displayMode: 'overlay',
-        theme: 'dark',
-        locale: 'en'
-      }
-    };
-
-    console.log('🛒 Opening checkout with config:', {
-      priceId,
+    console.log('🛒 Redirecting to Paddle hosted checkout:', {
       selectedPlan,
-      fullConfig: checkoutConfig
+      checkoutUrl
     });
 
-    try {
-      paddle.Checkout.open(checkoutConfig);
-      console.log('✅ Checkout.open() called successfully');
-    } catch (error) {
-      console.error('❌ Checkout error:', {
-        error,
-        message: error?.message,
-        stack: error?.stack,
-        type: typeof error
-      });
-      alert('Failed to open checkout. Please try again or contact support.');
-    } finally {
-      setLoading(false);
-    }
+    // Add user data as query parameters
+    const urlWithParams = `${checkoutUrl}?customer_email=${encodeURIComponent(user.email || '')}&passthrough=${encodeURIComponent(JSON.stringify({ userId: user.uid, userEmail: user.email }))}`;
+
+    console.log('✅ Opening checkout URL:', urlWithParams);
+
+    // Redirect to Paddle hosted checkout
+    window.location.href = urlWithParams;
   };
 
   const plans = {
