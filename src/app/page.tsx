@@ -260,6 +260,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+          </div>
 
           {/* Company & Contact Info */}
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
@@ -390,6 +391,7 @@ export default function HomePage() {
               </div>
             </div>
           </footer>
+          </div>
         </div>
         
         <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
