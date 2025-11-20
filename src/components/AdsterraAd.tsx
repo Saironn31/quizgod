@@ -13,32 +13,46 @@ interface AdsterraAdProps {
 
 export default function AdsterraAd({ atOptions }: AdsterraAdProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const scriptAdded = useRef(false);
 
   useEffect(() => {
-    if (containerRef.current && !scriptAdded.current && atOptions.key) {
+    // Clear previous content
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+    }
+
+    if (containerRef.current && atOptions.key) {
+      // Create container div with unique ID
+      const adContainer = document.createElement('div');
+      adContainer.id = `adsterra-${atOptions.key}-${Date.now()}`;
+      
       // Create the config script
       const configScript = document.createElement('script');
       configScript.type = 'text/javascript';
-      configScript.innerHTML = `
-        atOptions = ${JSON.stringify(atOptions)};
-      `;
+      configScript.innerHTML = `atOptions = ${JSON.stringify(atOptions)};`;
       
       // Create the ad script
       const adScript = document.createElement('script');
       adScript.type = 'text/javascript';
       adScript.src = `//www.topcreativeformat.com/${atOptions.key}/invoke.js`;
       adScript.async = true;
+      adScript.onerror = () => console.error('Failed to load Adsterra ad');
       
-      containerRef.current.appendChild(configScript);
-      containerRef.current.appendChild(adScript);
-      scriptAdded.current = true;
+      adContainer.appendChild(configScript);
+      adContainer.appendChild(adScript);
+      containerRef.current.appendChild(adContainer);
     }
+
+    // Cleanup function
+    return () => {
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+    };
   }, [atOptions]);
 
   return (
     <div className="my-4 flex justify-center">
-      <div ref={containerRef}></div>
+      <div ref={containerRef} style={{ minHeight: atOptions.height || 90, minWidth: atOptions.width || 728 }}></div>
     </div>
   );
 }
