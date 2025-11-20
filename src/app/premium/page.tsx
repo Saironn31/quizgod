@@ -1,23 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SideNav from '@/components/SideNav';
+import { initializePaddle, type Paddle } from '@paddle/paddle-js';
 
 export default function PremiumPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
+  const [paddle, setPaddle] = useState<Paddle>();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    initializePaddle({
+      environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
+      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
+      eventCallback: (data) => {
+        console.log('Paddle event:', data);
+      }
+    }).then((paddleInstance: Paddle | undefined) => {
+      if (paddleInstance) {
+        setPaddle(paddleInstance);
+        console.log('Paddle initialized successfully');
+      }
+    });
+  }, []);
 
   const handleUpgrade = () => {
     if (!user) {
       alert('Please log in to upgrade to premium');
       return;
     }
-    
-    // Payment processing will be implemented later
-    alert('Payment processing coming soon! 🚀');
+
+    if (!paddle) {
+      alert('Payment system is loading, please try again in a moment');
+      return;
+    }
+
+    setLoading(true);
+
+    const priceId = selectedPlan === 'monthly' 
+      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
+      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
+
+    paddle.Checkout.open({
+      items: [{ priceId: priceId!, quantity: 1 }],
+      customData: {
+        userId: user.uid,
+        userEmail: user.email || ''
+      },
+      ...(user.email && {
+        customer: {
+          email: user.email
+        }
+      }),
+      settings: {
+        displayMode: 'overlay',
+        theme: 'dark',
+        locale: 'en'
+      }
+    });
+
+    setLoading(false);
   };
 
   const plans = {
@@ -167,9 +213,10 @@ export default function PremiumPage() {
 
             <button
               onClick={handleUpgrade}
-              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105"
+              disabled={loading || !paddle}
+              className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              🚀 Upgrade to Premium
+              {loading ? '⏳ Loading...' : !paddle ? '⏳ Initializing...' : '🚀 Upgrade to Premium'}
             </button>
           </div>
         </div>
