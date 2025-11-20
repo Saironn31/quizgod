@@ -64,33 +64,70 @@ export default function TermsPage() {
           {activeSection === 'terms' && (
             <div className="prose prose-invert max-w-none">
               <div className="mb-8">
-                <p className="text-sm text-slate-400 mb-4">Last Updated: November 20, 2025</p>
+                <p className="text-sm text-slate-400 mb-2">Last Updated: November 20, 2025</p>
+                <p className="text-sm text-slate-400 mb-4">Company: QuizGod | Contact: quizgod25@gmail.com</p>
                 <h2 className="text-3xl font-bold text-white mb-6">Terms of Service</h2>
+                <p className="text-slate-300 leading-relaxed mb-6">
+                  These Terms of Service ("Terms") govern your access to and use of QuizGod, operated by QuizGod ("we," "us," or "our"). By using our service, you agree to these terms.
+                </p>
               </div>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">1. Acceptance of Terms</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">1. About QuizGod</h3>
+                <p className="text-slate-300 leading-relaxed mb-4">
+                  <strong className="text-white">Service Provider:</strong> QuizGod<br />
+                  <strong className="text-white">Contact Email:</strong> quizgod25@gmail.com<br />
+                  <strong className="text-white">Website:</strong> https://quizgod-swart.vercel.app
+                </p>
+                <p className="text-slate-300 leading-relaxed mb-4">
+                  QuizGod is an AI-powered quiz creation and learning platform that helps students and educators create, share, and take interactive quizzes.
+                </p>
+              </section>
+
+              <section className="mb-8">
+                <h3 className="text-2xl font-bold text-white mb-4">2. Acceptance of Terms</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   By accessing and using QuizGod ("the Service"), you accept and agree to be bound by the terms and provisions of this agreement. If you do not agree to these terms, please do not use the Service.
                 </p>
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">2. Description of Service</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">3. Description of Service & Pricing</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
-                  QuizGod is an online platform that enables users to create, share, and take quizzes. The Service includes both free and premium subscription tiers with varying features and capabilities.
+                  QuizGod offers two service tiers:
                 </p>
-                <ul className="list-disc list-inside text-slate-300 space-y-2 ml-4">
-                  <li>AI-powered quiz generation from documents</li>
-                  <li>Manual quiz creation tools</li>
-                  <li>Quiz sharing and collaboration features</li>
-                  <li>Progress tracking and analytics</li>
-                  <li>Live multiplayer quiz sessions</li>
-                </ul>
+                <div className="bg-white/5 rounded-xl p-6 mb-4">
+                  <h4 className="text-xl font-bold text-white mb-3">Free Tier</h4>
+                  <ul className="list-disc list-inside text-slate-300 space-y-2 ml-4">
+                    <li>Basic quiz creation (5 quizzes per month)</li>
+                    <li>AI quiz generation (3 per month)</li>
+                    <li>Access to public quizzes</li>
+                    <li>Basic storage (100MB)</li>
+                  </ul>
+                </div>
+                <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-xl p-6 border-2 border-purple-400/50">
+                  <h4 className="text-xl font-bold text-white mb-3">Premium Tier</h4>
+                  <p className="text-slate-300 mb-3">
+                    <strong className="text-white">$5.00 USD/month</strong> or <strong className="text-white">$50.00 USD/year</strong> (17% savings)
+                  </p>
+                  <ul className="list-disc list-inside text-slate-300 space-y-2 ml-4">
+                    <li>Unlimited AI quiz generation</li>
+                    <li>Unlimited quiz creation</li>
+                    <li>Advanced question types (Multiple choice, True/False, Fill-in-blank, Short answer)</li>
+                    <li>Custom timer settings</li>
+                    <li>Live multiplayer quizzes</li>
+                    <li>Progress tracking & analytics</li>
+                    <li>Custom quiz themes</li>
+                    <li>Export quiz results</li>
+                    <li>Priority support</li>
+                    <li>Unlimited cloud storage</li>
+                    <li>Early access to new features</li>
+                  </ul>
+                </div>
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">3. User Accounts</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">4. User Accounts</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   To access certain features, you must create an account. You agree to:
                 </p>
@@ -104,7 +141,7 @@ export default function TermsPage() {
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">4. Acceptable Use</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">5. Acceptable Use</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   You agree NOT to use the Service to:
                 </p>
@@ -121,7 +158,7 @@ export default function TermsPage() {
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">5. Content Ownership</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">6. Content Ownership</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   <strong className="text-white">Your Content:</strong> You retain ownership of all quizzes and content you create. By uploading content, you grant QuizGod a license to store, display, and distribute your content as necessary to provide the Service.
                 </p>
@@ -131,7 +168,7 @@ export default function TermsPage() {
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">6. Premium Subscriptions</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">7. Premium Subscriptions</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   Premium subscriptions provide access to additional features. Subscriptions are:
                 </p>
@@ -144,7 +181,7 @@ export default function TermsPage() {
               </section>
 
               <section className="mb-8">
-                <h3 className="text-2xl font-bold text-white mb-4">7. Termination</h3>
+                <h3 className="text-2xl font-bold text-white mb-4">8. Termination</h3>
                 <p className="text-slate-300 leading-relaxed mb-4">
                   We reserve the right to suspend or terminate your account if you violate these terms. You may also delete your account at any time through your account settings.
                 </p>

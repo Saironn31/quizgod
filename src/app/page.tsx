@@ -133,16 +133,85 @@ export default function HomePage() {
           </h1>
           
           <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-2xl mx-auto">
-            The most advanced quiz platform for modern learners
+            AI-powered quiz platform for students and educators. Create unlimited quizzes, track progress, and learn smarter.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <button
               onClick={() => setShowAuth(true)}
               className="px-8 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 to-violet-500 text-white font-bold text-lg hover:scale-105 transition-all duration-300 shadow-glow"
             >
-              Start Learning
+              Start Learning Free
             </button>
+          </div>
+
+          {/* Product Description & Features */}
+          <div className="max-w-6xl mx-auto mt-20 grid md:grid-cols-3 gap-6">
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">🤖</div>
+              <h3 className="text-xl font-bold text-white mb-2">AI Quiz Generation</h3>
+              <p className="text-slate-300 text-sm">Upload documents and let AI create quizzes automatically. Supports PDFs, text files, and more.</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold text-white mb-2">Custom Quiz Creator</h3>
+              <p className="text-slate-300 text-sm">Create quizzes manually with multiple question types, timers, and difficulty levels.</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">👥</div>
+              <h3 className="text-xl font-bold text-white mb-2">Live Multiplayer</h3>
+              <p className="text-slate-300 text-sm">Host real-time quiz sessions with students. Track scores and engagement instantly.</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">📊</div>
+              <h3 className="text-xl font-bold text-white mb-2">Progress Analytics</h3>
+              <p className="text-slate-300 text-sm">Detailed insights into performance, streaks, and learning patterns.</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">🎯</div>
+              <h3 className="text-xl font-bold text-white mb-2">Multiple Question Types</h3>
+              <p className="text-slate-300 text-sm">Multiple choice, true/false, fill-in-blank, and short answer questions.</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10">
+              <div className="text-4xl mb-4">🏫</div>
+              <h3 className="text-xl font-bold text-white mb-2">Class Management</h3>
+              <p className="text-slate-300 text-sm">Create classes, manage students, assign quizzes, and track class performance.</p>
+            </div>
+          </div>
+
+          {/* Pricing Preview */}
+          <div className="max-w-4xl mx-auto mt-16 text-center">
+            <h2 className="text-3xl font-bold text-white mb-6">Simple, Transparent Pricing</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
+                <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
+                <div className="text-4xl font-black text-white mb-4">$0</div>
+                <ul className="text-slate-300 space-y-2 text-sm text-left">
+                  <li>✓ 5 quizzes/month</li>
+                  <li>✓ 3 AI generations/month</li>
+                  <li>✓ Basic features</li>
+                </ul>
+              </div>
+              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm rounded-2xl p-8 border-2 border-purple-400/50">
+                <h3 className="text-2xl font-bold text-white mb-2">Premium</h3>
+                <div className="text-4xl font-black text-white mb-4">$5<span className="text-xl">/month</span></div>
+                <ul className="text-white space-y-2 text-sm text-left font-semibold">
+                  <li>✓ Unlimited everything</li>
+                  <li>✓ Advanced features</li>
+                  <li>✓ Priority support</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Links */}
+          <div className="max-w-4xl mx-auto mt-16 pt-8 border-t border-white/10 text-center">
+            <div className="flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
+              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="/terms" className="hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-white transition-colors">Refund Policy</a>
+              <a href="mailto:quizgod25@gmail.com" className="hover:text-white transition-colors">Contact: quizgod25@gmail.com</a>
+            </div>
           </div>
         </div>
 
@@ -280,6 +349,70 @@ export default function HomePage() {
           />
         </div>
       )}
+
+      {/* Footer with Required Information */}
+      <footer className="mt-16 border-t border-white/10 bg-slate-900/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+            {/* About */}
+            <div>
+              <h3 className="text-white font-bold text-lg mb-4">QuizGod</h3>
+              <p className="text-slate-400 text-sm mb-4">
+                AI-powered quiz platform for students and educators. Create, share, and take interactive quizzes with advanced features.
+              </p>
+              <p className="text-slate-500 text-xs">
+                © 2025 QuizGod. All rights reserved.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/premium" className="text-slate-400 hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link href="/premium" className="text-slate-400 hover:text-white transition-colors">Features</Link></li>
+                <li><Link href="/quiz-creator" className="text-slate-400 hover:text-white transition-colors">Quiz Creator</Link></li>
+                <li><Link href="/subjects" className="text-slate-400 hover:text-white transition-colors">Subjects</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/terms" className="text-slate-400 hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link href="/terms" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-slate-400 hover:text-white transition-colors">Refund Policy</Link></li>
+              </ul>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h4 className="text-white font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-sm">
+                <li><a href="mailto:quizgod25@gmail.com" className="text-slate-400 hover:text-white transition-colors">quizgod25@gmail.com</a></li>
+                <li className="text-slate-400">Free: Basic features</li>
+                <li className="text-slate-400">Premium: $5/month</li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Key Features */}
+          <div className="border-t border-white/10 pt-6">
+            <h4 className="text-white font-semibold mb-3 text-sm">Key Features</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-slate-400">
+              <div>✓ AI Quiz Generation</div>
+              <div>✓ Custom Quiz Creator</div>
+              <div>✓ Live Multiplayer</div>
+              <div>✓ Progress Tracking</div>
+              <div>✓ Multiple Question Types</div>
+              <div>✓ Timer & Difficulty Settings</div>
+              <div>✓ Class Management</div>
+              <div>✓ Analytics Dashboard</div>
+            </div>
+          </div>
+        </div>
+      </footer>
 
       <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
     </div>
