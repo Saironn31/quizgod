@@ -179,59 +179,8 @@ export default function ClassesPage() {
     );
   }
 
-  // Premium gate
-  if (!checkingPremium && !isPremium) {
-    return (
-      <div className="min-h-screen bg-slate-950">
-        <SideNav />
-        <div className="md:ml-64 min-h-screen p-6 md:p-12 flex items-center justify-center">
-          <div className="glass-card rounded-3xl p-12 max-w-2xl text-center">
-            <div className="text-6xl mb-6">👑</div>
-            <h1 className="text-4xl md:text-5xl font-black mb-4 gradient-text">Premium Feature</h1>
-            <p className="text-slate-300 text-lg mb-8">
-              Classes are a premium feature. Upgrade to premium to create and join classes, collaborate with classmates, and track your progress together.
-            </p>
-            <div className="bg-white/5 rounded-2xl p-6 mb-8">
-              <h3 className="text-xl font-bold text-white mb-4">Premium Benefits</h3>
-              <ul className="text-left space-y-3 text-slate-300">
-                <li className="flex items-start gap-3">
-                  <span className="text-emerald-400 text-xl">✓</span>
-                  <span>Create and manage unlimited classes</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-emerald-400 text-xl">✓</span>
-                  <span>Join classes with unique codes</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-emerald-400 text-xl">✓</span>
-                  <span>Access AI Quiz Generator</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-emerald-400 text-xl">✓</span>
-                  <span>Class leaderboards and analytics</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-emerald-400 text-xl">✓</span>
-                  <span>No ads on your account</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              className="px-8 py-4 rounded-xl font-bold text-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg hover:shadow-purple-500/50 transition-all"
-            >
-              Upgrade to Premium
-            </button>
-            <p className="text-slate-400 text-sm mt-4">
-              Or contact the administrator for assistance.
-            </p>
-          </div>
-        </div>
-
-
-      </div>
-    );
-  }
+  // Premium gate - Show within the main layout
+  const showPremiumGate = !checkingPremium && !isPremium;
 
   // Show loading or auth redirect
   if (checkingPremium || loading) {
@@ -264,6 +213,69 @@ export default function ClassesPage() {
           <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
           <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
         </div>
+        
+        {showPremiumGate ? (
+          // Premium Upgrade Content in Main Area
+          <div className="relative z-10">
+            <div className="glass-card rounded-3xl p-8 md:p-12 max-w-3xl mx-auto text-center">
+              <div className="w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce-soft">
+                👑
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                Upgrade to <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Premium</span>
+              </h1>
+              <p className="text-xl text-slate-300 mb-8">
+                Classes are a premium feature. Create and join classes, collaborate with classmates, and track your progress together.
+              </p>
+              
+              <div className="bg-white/5 rounded-2xl p-6 mb-8 border border-white/10">
+                <h3 className="text-xl font-bold text-white mb-4">✨ Premium Benefits</h3>
+                <div className="grid md:grid-cols-2 gap-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📚</span>
+                    <div>
+                      <p className="text-white font-semibold">Unlimited Classes</p>
+                      <p className="text-sm text-slate-400">Create and manage as many classes as you need</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🚀</span>
+                    <div>
+                      <p className="text-white font-semibold">AI Quiz Generator</p>
+                      <p className="text-sm text-slate-400">Generate quizzes instantly from documents</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">📊</span>
+                    <div>
+                      <p className="text-white font-semibold">Class Leaderboards</p>
+                      <p className="text-sm text-slate-400">Track student performance and rankings</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">🔒</span>
+                    <div>
+                      <p className="text-white font-semibold">Priority Support</p>
+                      <p className="text-sm text-slate-400">Get help whenever you need it</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => window.location.href = '/premium'}
+                className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold text-lg transition-all shadow-lg hover:scale-105"
+              >
+                🚀 Upgrade to Premium
+              </button>
+
+              <p className="text-slate-400 text-sm mt-6">
+                Starting at just $5/month • Cancel anytime
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="relative z-10 mb-8">
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-2 border-white/10">
             <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
@@ -376,47 +388,11 @@ export default function ClassesPage() {
             )}
           </div>
         </div>
+          </>
+        )}
       </div>
 
-      {/* Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-900 to-purple-900 rounded-2xl p-8 max-w-md w-full border-2 border-purple-500/50 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
-                👑
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-2">Upgrade to Premium</h3>
-              <p className="text-slate-300">Unlock classes and collaboration features</p>
-            </div>
-            
-            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-              <p className="text-white font-semibold mb-2">✨ Premium includes:</p>
-              <ul className="text-slate-300 text-sm space-y-1">
-                <li>• Unlimited Classes</li>
-                <li>• AI Quiz Generator</li>
-                <li>• Class Leaderboards</li>
-                <li>• Priority Support</li>
-              </ul>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-all"
-              >
-                Maybe Later
-              </button>
-              <button
-                onClick={() => window.location.href = '/premium'}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold transition-all shadow-lg"
-              >
-                Upgrade Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Upgrade Modal - Remove since we show in main content */}
     </div>
   );
 }

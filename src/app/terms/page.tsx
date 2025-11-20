@@ -2,13 +2,17 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import NavBar from '@/components/NavBar';
 
 export default function TermsPage() {
   const router = useRouter();
   const [activeSection, setActiveSection] = useState<'terms' | 'privacy' | 'refund'>('terms');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <NavBar />
+      <div className="flex">
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -499,6 +503,8 @@ export default function TermsPage() {
           >
             ← Back
           </button>
+        </div>
+      </div>
         </div>
       </div>
     </div>

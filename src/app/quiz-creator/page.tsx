@@ -1185,7 +1185,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                 <button
                   onClick={() => {
                     if (!isPremium && !checkingPremium) {
-                      setShowUpgradeModal(true);
+                      setMode('ai'); // Set mode to 'ai' to show premium content
                       return;
                     }
                     setMode('ai');
@@ -1546,6 +1546,74 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
                 {/* AI Mode */}
                 {mode === 'ai' && (
+                  <>
+                    {!isPremium && !checkingPremium ? (
+                      // Premium Upgrade Content in Main Area
+                      <div className="glass-card rounded-3xl p-8 md:p-12 text-center max-w-3xl mx-auto">
+                        <div className="w-24 h-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-5xl mx-auto mb-6 animate-bounce-soft">
+                          ⭐
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                          Upgrade to <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">Premium</span>
+                        </h2>
+                        <p className="text-xl text-slate-300 mb-8">
+                          AI Quiz Generator is available for Premium users
+                        </p>
+                        
+                        <div className="bg-white/5 rounded-2xl p-6 mb-8 border border-white/10">
+                          <h3 className="text-xl font-bold text-white mb-4">✨ Premium Benefits</h3>
+                          <div className="grid md:grid-cols-2 gap-4 text-left">
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">🚀</span>
+                              <div>
+                                <p className="text-white font-semibold">Unlimited AI Generation</p>
+                                <p className="text-sm text-slate-400">Generate as many quizzes as you need</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">🎯</span>
+                              <div>
+                                <p className="text-white font-semibold">Advanced Question Types</p>
+                                <p className="text-sm text-slate-400">Multiple choice, true/false, fill-blank & more</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">📊</span>
+                              <div>
+                                <p className="text-white font-semibold">Detailed Analytics</p>
+                                <p className="text-sm text-slate-400">Track performance and progress</p>
+                              </div>
+                            </div>
+                            <div className="flex items-start gap-3">
+                              <span className="text-2xl">🔒</span>
+                              <div>
+                                <p className="text-white font-semibold">Priority Support</p>
+                                <p className="text-sm text-slate-400">Get help when you need it</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                          <button
+                            onClick={() => setMode('manual')}
+                            className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-all"
+                          >
+                            Use Manual Mode
+                          </button>
+                          <button
+                            onClick={() => window.location.href = '/premium'}
+                            className="px-8 py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold text-lg transition-all shadow-lg hover:scale-105"
+                          >
+                            🚀 Upgrade to Premium
+                          </button>
+                        </div>
+
+                        <p className="text-slate-400 text-sm mt-6">
+                          Starting at just $5/month • Cancel anytime
+                        </p>
+                      </div>
+                    ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left Column - Quiz Settings in One Container */}
                     <div className="lg:col-span-1">
@@ -2051,10 +2119,12 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                 )}
               </>
             )}
-          </div>
+                  </>
+                )}
+        </div>
 
           {/* Right Column - Generated Questions Preview (only in AI mode) */}
-          {mode === 'ai' && generatedQuestions && (
+          {mode === 'ai' && isPremium && generatedQuestions && (
             <div className="glass-card rounded-3xl p-4 md:p-6 animate-slide-up lg:sticky lg:top-4 lg:self-start">
               <div className="bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-400/30 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-4">
@@ -2101,46 +2171,6 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
               params: {}
             }}
           />
-        </div>
-      )}
-
-      {/* Premium Upgrade Modal */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-slate-900 to-purple-900 rounded-2xl p-8 max-w-md w-full border-2 border-purple-500/50 shadow-2xl">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
-                ⭐
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-2">Premium Feature</h3>
-              <p className="text-slate-300">AI Quiz Generator is available for Premium users</p>
-            </div>
-            
-            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
-              <p className="text-white font-semibold mb-2">✨ Premium includes:</p>
-              <ul className="text-slate-300 text-sm space-y-1">
-                <li>• Unlimited AI Quiz Generation</li>
-                <li>• Advanced Question Types</li>
-                <li>• Priority Support</li>
-                <li>• And much more!</li>
-              </ul>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowUpgradeModal(false)}
-                className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-all"
-              >
-                Maybe Later
-              </button>
-              <button
-                onClick={() => window.location.href = '/premium'}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold transition-all shadow-lg"
-              >
-                Upgrade Now
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
