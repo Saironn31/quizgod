@@ -240,10 +240,10 @@ export default function PremiumPage() {
 
             <div className="bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10">
               <h3 className="text-xl font-bold text-white mb-2">
-                Is there a free trial?
+                How do I upgrade?
               </h3>
               <p className="text-slate-300">
-                You're already using the free version! Upgrade anytime to unlock all features.
+                Contact us at quizgod25@gmail.com to upgrade your account to premium.
               </p>
             </div>
 
