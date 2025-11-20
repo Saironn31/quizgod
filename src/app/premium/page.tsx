@@ -194,10 +194,10 @@ export default function PremiumPage() {
 
             <button
               onClick={handleUpgrade}
-              disabled={loading || !paddle}
+              disabled={loading}
               className="w-full py-4 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? '⏳ Loading...' : !paddle ? '⏳ Initializing...' : '🚀 Upgrade to Premium'}
+              {loading ? '⏳ Redirecting to checkout...' : '🚀 Upgrade to Premium'}
             </button>
           </div>
         </div>
