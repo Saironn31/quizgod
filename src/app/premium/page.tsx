@@ -27,19 +27,29 @@ export default function PremiumPage() {
         console.log('🎯 Paddle event received:', {
           name: data.name,
           type: data.type,
+          data: data.data,
+          detail: data.detail,
+          code: data.code,
           fullData: data
         });
         
-        if (data.name === 'checkout.error') {
+        if (data.name === 'checkout.error' || data.type === 'checkout.error') {
           console.error('❌ Paddle checkout error:', {
             error: data,
             detail: data.detail,
-            code: data.code
+            code: data.code,
+            message: data.data || data.detail || 'Unknown error'
           });
+          alert(`Checkout Error: ${data.detail || data.code || 'Unknown error'}\n\nPlease check console for details.`);
         }
         
         if (data.name === 'checkout.completed') {
           console.log('✅ Checkout completed successfully:', data);
+        }
+        
+        // Log all events for debugging
+        if (!data.name && !data.type) {
+          console.warn('⚠️ Received event with no name or type:', data);
         }
       }
     }).then((paddleInstance: Paddle | undefined) => {
