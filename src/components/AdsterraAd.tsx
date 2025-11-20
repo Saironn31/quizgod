@@ -33,7 +33,7 @@ export default function AdsterraAd({ atOptions }: AdsterraAdProps) {
       // Create the ad script
       const adScript = document.createElement('script');
       adScript.type = 'text/javascript';
-      adScript.src = `//www.topcreativeformat.com/${atOptions.key}/invoke.js`;
+      adScript.src = `//www.highperformanceformat.com/${atOptions.key}/invoke.js`;
       adScript.async = true;
       adScript.onerror = () => console.error('Failed to load Adsterra ad');
       

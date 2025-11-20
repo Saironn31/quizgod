@@ -11,21 +11,20 @@ export default function AdsterraNative() {
     }
 
     if (containerRef.current) {
-      const adId = `container-native-${Date.now()}`;
+      // Create the exact container structure from Adsterra
+      const adContainer = document.createElement('div');
+      adContainer.id = 'container-400ff7b83cddd25498abd1bd7e49928e';
       
-      // Create container with ID
-      const adDiv = document.createElement('div');
-      adDiv.id = adId;
-      
-      // Create script
+      // Create script with exact attributes from Adsterra
       const script = document.createElement('script');
-      script.src = '//pl28077859.effectivegatecpm.com/400ff7b83cddd25498abd1bd7e49928e/invoke.js';
       script.async = true;
       script.setAttribute('data-cfasync', 'false');
+      script.src = '//pl28077859.effectivegatecpm.com/400ff7b83cddd25498abd1bd7e49928e/invoke.js';
       script.onerror = () => console.error('Failed to load Adsterra native ad');
       
-      containerRef.current.appendChild(adDiv);
+      // Append in correct order: script first, then container
       containerRef.current.appendChild(script);
+      containerRef.current.appendChild(adContainer);
     }
 
     // Cleanup function
@@ -38,7 +37,7 @@ export default function AdsterraNative() {
 
   return (
     <div className="my-4 flex justify-center">
-      <div ref={containerRef} style={{ minHeight: 250, width: '100%' }}></div>
+      <div ref={containerRef} style={{ minHeight: 250, width: '100%', maxWidth: 728 }}></div>
     </div>
   );
 }
