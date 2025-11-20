@@ -14,69 +14,112 @@ export default function PremiumPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    console.log('🔧 Initializing Paddle with config:', {
+      environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT,
+      seller: process.env.NEXT_PUBLIC_PADDLE_SELLER_ID,
+      sellerNumber: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID)
+    });
+
     initializePaddle({
       environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
       seller: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
       eventCallback: (data) => {
-        console.log('Paddle event:', data);
+        console.log('🎯 Paddle event received:', {
+          name: data.name,
+          type: data.type,
+          fullData: data
+        });
+        
         if (data.name === 'checkout.error') {
-          console.error('Paddle checkout error:', data.data);
+          console.error('❌ Paddle checkout error:', {
+            error: data,
+            detail: data.detail,
+            code: data.code
+          });
+        }
+        
+        if (data.name === 'checkout.completed') {
+          console.log('✅ Checkout completed successfully:', data);
         }
       }
     }).then((paddleInstance: Paddle | undefined) => {
       if (paddleInstance) {
         setPaddle(paddleInstance);
-        console.log('Paddle initialized successfully');
+        console.log('✅ Paddle initialized successfully');
+      } else {
+        console.error('❌ Paddle initialization returned undefined');
       }
     }).catch((error) => {
-      console.error('Failed to initialize Paddle:', error);
+      console.error('❌ Failed to initialize Paddle:', {
+        error,
+        message: error?.message,
+        stack: error?.stack
+      });
     });
   }, []);
 
   const handleUpgrade = () => {
+    console.log('🚀 handleUpgrade called');
+    
     if (!user) {
+      console.error('❌ No user found');
       alert('Please log in to upgrade to premium');
       return;
     }
 
+    console.log('👤 User info:', {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName
+    });
+
     if (!paddle) {
+      console.error('❌ Paddle instance not ready');
       alert('Payment system is loading, please try again in a moment');
       return;
     }
 
+    console.log('✅ Paddle instance ready');
     setLoading(true);
 
     const priceId = selectedPlan === 'monthly' 
       ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
       : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
 
-    console.log('Opening checkout with:', {
+    const checkoutConfig = {
+      items: [{ priceId: priceId!, quantity: 1 }],
+      customData: {
+        userId: user.uid,
+        userEmail: user.email || ''
+      },
+      ...(user.email && {
+        customer: {
+          email: user.email
+        }
+      }),
+      settings: {
+        displayMode: 'overlay',
+        theme: 'dark',
+        locale: 'en'
+      }
+    };
+
+    console.log('🛒 Opening checkout with config:', {
       priceId,
       selectedPlan,
-      userId: user.uid,
-      email: user.email
+      fullConfig: checkoutConfig
     });
 
     try {
-      paddle.Checkout.open({
-        items: [{ priceId: priceId!, quantity: 1 }],
-        customData: {
-          userId: user.uid,
-          userEmail: user.email || ''
-        },
-        ...(user.email && {
-          customer: {
-            email: user.email
-          }
-        }),
-        settings: {
-          displayMode: 'overlay',
-          theme: 'dark',
-          locale: 'en'
-        }
-      });
+      paddle.Checkout.open(checkoutConfig);
+      console.log('✅ Checkout.open() called successfully');
     } catch (error) {
-      console.error('Checkout error:', error);
+      console.error('❌ Checkout error:', {
+        error,
+        message: error?.message,
+        stack: error?.stack,
+        type: typeof error
+      });
       alert('Failed to open checkout. Please try again or contact support.');
     } finally {
       setLoading(false);
