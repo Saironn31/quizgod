@@ -377,6 +377,46 @@ export default function ClassesPage() {
           </div>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-slate-900 to-purple-900 rounded-2xl p-8 max-w-md w-full border-2 border-purple-500/50 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-4">
+                👑
+              </div>
+              <h3 className="text-3xl font-bold text-white mb-2">Upgrade to Premium</h3>
+              <p className="text-slate-300">Unlock classes and collaboration features</p>
+            </div>
+            
+            <div className="bg-white/5 rounded-xl p-4 mb-6 border border-white/10">
+              <p className="text-white font-semibold mb-2">✨ Premium includes:</p>
+              <ul className="text-slate-300 text-sm space-y-1">
+                <li>• Unlimited Classes</li>
+                <li>• AI Quiz Generator</li>
+                <li>• Class Leaderboards</li>
+                <li>• Priority Support</li>
+              </ul>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-all"
+              >
+                Maybe Later
+              </button>
+              <button
+                onClick={() => window.location.href = '/premium'}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-xl font-bold transition-all shadow-lg"
+              >
+                Upgrade Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

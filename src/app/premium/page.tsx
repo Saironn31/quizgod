@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import NavBar from '@/components/NavBar';
 
 export default function PremiumPage() {
   const { user } = useAuth();
@@ -55,7 +56,11 @@ export default function PremiumPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+      <NavBar />
+      <div className="flex">
+        {/* Main Content */}
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -262,6 +267,8 @@ export default function PremiumPage() {
           >
             ← Back
           </button>
+        </div>
+      </div>
         </div>
       </div>
     </div>

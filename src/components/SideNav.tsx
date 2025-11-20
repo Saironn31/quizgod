@@ -91,6 +91,16 @@ export default function SideNav() {
 
         {/* User Section */}
         <div className="p-4 border-t border-white/10">
+          {/* Terms & Policies Link */}
+          <div className="mb-3 text-center">
+            <Link
+              href="/terms"
+              className="text-xs text-slate-400 hover:text-slate-300 transition-colors underline"
+            >
+              Terms & Policies
+            </Link>
+          </div>
+          
           <button
             onClick={async () => {
               await logout();
@@ -144,6 +154,19 @@ export default function SideNav() {
                 </Link>
               );
             })}
+            
+            {/* Terms & Policies Link */}
+            <Link
+              href="/terms"
+              className="flex flex-col items-center gap-2 px-4 py-2 rounded-xl min-w-[80px] hover:bg-white/5 transition-all duration-300 hover-grow active:scale-95"
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white font-bold text-xl scale-90">
+                📜
+              </div>
+              <span className="text-xs font-semibold text-slate-300 text-center">
+                Terms
+              </span>
+            </Link>
             
             {/* Logout button */}
             <button
