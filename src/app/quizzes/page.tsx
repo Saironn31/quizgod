@@ -258,7 +258,7 @@ export default function QuizzesPage() {
                     <h3 className="text-xl font-semibold text-white mb-2">No quizzes yet</h3>
                     <p className="text-purple-200 mb-4">Create your first quiz to get started!</p>
                     <Link 
-                      href="/create" 
+                      href="/quiz-creator" 
                       className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-indigo-600 transition-all duration-200 shadow-lg"
                     >
                       ➕ Create Your First Quiz
