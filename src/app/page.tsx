@@ -516,7 +516,7 @@ export default function HomePage() {
 
       {/* Fixed Bottom Center Ad - Only for non-premium users */}
       {!userProfile?.isPremium && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[728px] px-4 hidden md:block">
           <AdsterraAd 
             atOptions={{
               key: 'e478b629ee3a3e02c8e9579be23fe46d',

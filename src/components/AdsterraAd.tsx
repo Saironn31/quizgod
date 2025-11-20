@@ -51,8 +51,15 @@ export default function AdsterraAd({ atOptions }: AdsterraAdProps) {
   }, [atOptions]);
 
   return (
-    <div className="my-4 flex justify-center">
-      <div ref={containerRef} style={{ minHeight: atOptions.height || 90, minWidth: atOptions.width || 728 }}></div>
+    <div className="my-4 flex justify-center overflow-hidden">
+      <div 
+        ref={containerRef} 
+        className="w-full max-w-full"
+        style={{ 
+          maxHeight: atOptions.height || 90,
+          maxWidth: atOptions.width || 728
+        }}
+      ></div>
     </div>
   );
 }
