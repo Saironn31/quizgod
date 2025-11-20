@@ -60,24 +60,23 @@ export default function RefundPolicy() {
             </div>
           </section>
 
-          {/* 7-Day Money-Back Guarantee */}
+          {/* 14-Day Money-Back Guarantee */}
           <section className="bg-green-500/10 rounded-lg p-6 border border-green-400/30">
-            <h2 className="text-2xl font-bold text-white mb-4">3. 7-Day Money-Back Guarantee</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">3. 14-Day Money-Back Guarantee</h2>
             <div className="text-slate-300 space-y-3">
               <p>
-                We offer a <strong>7-day money-back guarantee</strong> for new Premium subscriptions (both monthly 
-                and annual plans). If you're not satisfied with QuizGod Premium, you can request a full refund 
-                within 7 days of your initial purchase.
+                In accordance with Paddle's Buyer Terms and our commitment to customer satisfaction, we offer a 
+                <strong> 14-day money-back guarantee</strong> for all Premium subscriptions (both monthly and annual plans). 
+                Customers can cancel their agreement and return the product within 14 days of purchase for a full refund.
               </p>
               
               <div className="mt-4">
                 <h3 className="text-xl font-semibold text-white mb-2">Eligibility Requirements:</h3>
                 <ul className="list-disc ml-6 space-y-2">
-                  <li>Request must be made within 7 calendar days of the initial subscription purchase</li>
-                  <li>Applies to first-time Premium subscribers only</li>
+                  <li>Request must be made within 14 calendar days of the initial subscription purchase</li>
+                  <li>Applies to all Premium subscriptions (first-time purchases and upgrades)</li>
                   <li>Does NOT apply to subscription renewals (monthly or annual)</li>
-                  <li>Account must not have been previously refunded for the same plan</li>
-                  <li>Refund must be requested via email to quizgod25@gmail.com</li>
+                  <li>Refund must be requested via email to quizgod25@gmail.com or through Paddle support</li>
                 </ul>
               </div>
 
@@ -88,6 +87,14 @@ export default function RefundPolicy() {
                   <li>Refund processed within 5-10 business days to your original payment method</li>
                   <li>Premium access revoked immediately upon refund approval</li>
                 </ul>
+              </div>
+
+              <div className="mt-4 bg-blue-500/10 rounded p-4 border border-blue-400/30">
+                <p className="text-sm">
+                  <strong>Why We Offer 14 Days:</strong> This policy follows Paddle's buyer protection framework 
+                  and serves as an effective measure to avoid chargebacks and the fees that these incur. We believe 
+                  in giving customers adequate time to evaluate our Premium features risk-free.
+                </p>
               </div>
             </div>
           </section>
