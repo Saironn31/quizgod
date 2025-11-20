@@ -279,8 +279,8 @@ export default function HomePage() {
                   <p><span className="text-white font-semibold">Policies:</span></p>
                   <div className="ml-4 space-y-1">
                     <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Terms of Service</a></p>
-                    <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Privacy Policy</a></p>
-                    <p>• <a href="/terms" className="text-purple-400 hover:text-purple-300">Refund Policy</a></p>
+                    <p>• <a href="/privacy" className="text-purple-400 hover:text-purple-300">Privacy Policy</a></p>
+                    <p>• <a href="/refund" className="text-purple-400 hover:text-purple-300">Refund Policy</a></p>
                   </div>
                 </div>
               </div>
@@ -319,8 +319,8 @@ export default function HomePage() {
                 <h4 className="text-white font-semibold mb-4">Legal</h4>
                 <ul className="space-y-2 text-sm text-slate-400">
                   <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
-                  <li><a href="/terms" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                  <li><a href="/terms" className="hover:text-white transition-colors">Refund Policy</a></li>
+                  <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                  <li><a href="/refund" className="hover:text-white transition-colors">Refund Policy</a></li>
                   <li><a href="/terms" className="hover:text-white transition-colors">Cookie Policy</a></li>
                 </ul>
               </div>
@@ -377,7 +377,13 @@ export default function HomePage() {
                   <span>© 2025 QuizGod.</span>
                   <span>All rights reserved.</span>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <a href="/terms" className="hover:text-white transition-colors">Terms</a>
+                  <span>•</span>
+                  <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
+                  <span>•</span>
+                  <a href="/refund" className="hover:text-white transition-colors">Refunds</a>
+                  <span>•</span>
                   <span>Made with ❤️ for learners worldwide</span>
                 </div>
               </div>
