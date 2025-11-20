@@ -287,16 +287,102 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Footer Links */}
-          <div className="max-w-4xl mx-auto mt-12 pt-8 border-t border-white/10 text-center">
-            <p className="text-slate-400 text-sm mb-4">© 2025 QuizGod. All rights reserved.</p>
-            <div className="flex flex-wrap justify-center gap-6 text-slate-400 text-sm">
-              <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="/terms" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="/terms" className="hover:text-white transition-colors">Refund Policy</a>
-              <a href="mailto:quizgod25@gmail.com" className="hover:text-white transition-colors">Contact: quizgod25@gmail.com</a>
+          {/* Enhanced Footer */}
+          <footer className="max-w-7xl mx-auto mt-16 pt-12 pb-8 border-t border-white/20">
+            <div className="grid md:grid-cols-4 gap-8 mb-8">
+              {/* Company Info */}
+              <div>
+                <h3 className="text-xl font-bold text-white mb-4">QuizGod</h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  AI-powered quiz platform for students and educators. Create, share, and master knowledge.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-slate-400">
+                  <span className="text-green-400">✓</span>
+                  <span>SSL/HTTPS Secured</span>
+                </div>
+              </div>
+
+              {/* Product */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Product</h4>
+                <ul className="space-y-2 text-sm text-slate-400">
+                  <li><a href="/features" className="hover:text-white transition-colors">Features</a></li>
+                  <li><a href="/premium" className="hover:text-white transition-colors">Pricing</a></li>
+                  <li><a href="/ai-quiz" className="hover:text-white transition-colors">AI Quiz Generator</a></li>
+                  <li><a href="/create" className="hover:text-white transition-colors">Create Quiz</a></li>
+                  <li><a href="/quizzes" className="hover:text-white transition-colors">Browse Quizzes</a></li>
+                </ul>
+              </div>
+
+              {/* Legal */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Legal</h4>
+                <ul className="space-y-2 text-sm text-slate-400">
+                  <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
+                  <li><a href="/terms" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                  <li><a href="/terms" className="hover:text-white transition-colors">Refund Policy</a></li>
+                  <li><a href="/terms" className="hover:text-white transition-colors">Cookie Policy</a></li>
+                </ul>
+              </div>
+
+              {/* Support */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Support</h4>
+                <ul className="space-y-2 text-sm text-slate-400">
+                  <li>
+                    <a href="mailto:quizgod25@gmail.com" className="hover:text-white transition-colors flex items-center gap-2">
+                      <span>📧</span>
+                      <span>quizgod25@gmail.com</span>
+                    </a>
+                  </li>
+                  <li className="pt-2">
+                    <div className="text-xs text-slate-500">Business Hours</div>
+                    <div className="text-sm">Mon-Fri: 9AM-6PM EST</div>
+                  </li>
+                  <li className="pt-2">
+                    <div className="text-xs text-slate-500">Response Time</div>
+                    <div className="text-sm">Usually within 24 hours</div>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </div>
+
+            {/* Payment Methods */}
+            <div className="border-t border-white/10 pt-6 mb-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="text-center md:text-left">
+                  <p className="text-xs text-slate-500 mb-2">Secure Payments Powered By</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white font-bold text-lg">Paddle</span>
+                    <span className="text-slate-400 text-xs">| Merchant of Record</span>
+                  </div>
+                </div>
+                <div className="text-center md:text-right">
+                  <p className="text-xs text-slate-500 mb-2">Accepted Payment Methods</p>
+                  <div className="flex items-center gap-2 text-sm text-slate-400">
+                    <span>💳 Credit Cards</span>
+                    <span>•</span>
+                    <span>🏦 Debit Cards</span>
+                    <span>•</span>
+                    <span>💰 PayPal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Bar */}
+            <div className="border-t border-white/10 pt-6">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span>© 2025 QuizGod.</span>
+                  <span>All rights reserved.</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span>Made with ❤️ for learners worldwide</span>
+                </div>
+              </div>
+            </div>
+          </footer>
         </div>
 
         <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
