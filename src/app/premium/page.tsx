@@ -16,7 +16,7 @@ export default function PremiumPage() {
   useEffect(() => {
     initializePaddle({
       environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT as 'sandbox' | 'production',
-      token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN!,
+      seller: Number(process.env.NEXT_PUBLIC_PADDLE_SELLER_ID),
       eventCallback: (data) => {
         console.log('Paddle event:', data);
         if (data.name === 'checkout.error') {
