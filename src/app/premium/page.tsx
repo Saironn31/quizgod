@@ -1,15 +1,43 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import SideNav from '@/components/SideNav';
+
+// Declare Paddle type
+declare global {
+  interface Window {
+    Paddle: any;
+  }
+}
 
 export default function PremiumPage() {
   const { user } = useAuth();
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(false);
+  const [paddleReady, setPaddleReady] = useState(false);
+
+  // Initialize Paddle
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.Paddle) {
+      window.Paddle.Environment.set(process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT || 'sandbox');
+      window.Paddle.Initialize({
+        token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
+        eventCallback: function(data: any) {
+          console.log('Paddle Event:', data);
+          if (data.name === 'checkout.completed') {
+            console.log('✅ Checkout completed successfully!');
+            // Redirect to success page or show success message
+            router.push('/premium?success=true');
+          }
+        }
+      });
+      setPaddleReady(true);
+      console.log('✅ Paddle initialized');
+    }
+  }, [router]);
 
   const handleUpgrade = () => {
     console.log('🚀 handleUpgrade called');
@@ -17,6 +45,12 @@ export default function PremiumPage() {
     if (!user) {
       console.error('❌ No user found');
       alert('Please log in to upgrade to premium');
+      return;
+    }
+
+    if (!paddleReady) {
+      console.error('❌ Paddle not ready yet');
+      alert('Payment system is loading, please try again in a moment');
       return;
     }
 
@@ -28,23 +62,43 @@ export default function PremiumPage() {
 
     setLoading(true);
 
-    // Use hosted checkout URLs
-    const checkoutUrl = selectedPlan === 'monthly' 
-      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_CHECKOUT_URL 
-      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_CHECKOUT_URL;
+    // Get the price ID based on selected plan
+    const priceId = selectedPlan === 'monthly' 
+      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
+      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
 
-    console.log('🛒 Redirecting to Paddle hosted checkout:', {
+    console.log('🛒 Opening Paddle overlay checkout:', {
       selectedPlan,
-      checkoutUrl
+      priceId
     });
 
-    // Add user data as query parameters
-    const urlWithParams = `${checkoutUrl}?customer_email=${encodeURIComponent(user.email || '')}&passthrough=${encodeURIComponent(JSON.stringify({ userId: user.uid, userEmail: user.email }))}`;
-
-    console.log('✅ Opening checkout URL:', urlWithParams);
-
-    // Redirect to Paddle hosted checkout
-    window.location.href = urlWithParams;
+    try {
+      // Open Paddle overlay checkout
+      window.Paddle.Checkout.open({
+        items: [{ priceId: priceId, quantity: 1 }],
+        customer: {
+          email: user.email || undefined,
+        },
+        customData: {
+          userId: user.uid,
+          userEmail: user.email,
+        },
+        successCallback: (data: any) => {
+          console.log('✅ Payment successful:', data);
+          setLoading(false);
+          alert('Payment successful! Your premium features will be activated shortly.');
+          router.push('/profile');
+        },
+        closeCallback: () => {
+          console.log('🚪 Checkout closed');
+          setLoading(false);
+        }
+      });
+    } catch (error) {
+      console.error('❌ Paddle checkout error:', error);
+      alert('Failed to open checkout. Please try again.');
+      setLoading(false);
+    }
   };
 
   const plans = {

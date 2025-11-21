@@ -35,6 +35,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="google-adsense-account" content="ca-pub-6371037672090963" />
+        <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
         <script
           dangerouslySetInnerHTML={{
             __html: `
