@@ -1054,6 +1054,14 @@ export const deleteQuiz = async (quizId: string) => {
   await deleteDoc(doc(db, 'quizzes', quizId));
 };
 
+export const updateQuiz = async (quizId: string, updates: Partial<FirebaseQuiz>) => {
+  const quizRef = doc(db, 'quizzes', quizId);
+  await updateDoc(quizRef, {
+    ...updates,
+    updatedAt: new Date()
+  });
+};
+
 export const getQuizById = async (quizId: string): Promise<FirebaseQuiz | null> => {
   try {
     const quizDoc = await getDoc(doc(db, 'quizzes', quizId));

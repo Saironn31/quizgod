@@ -2,14 +2,14 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
-import { getQuizById, FirebaseQuiz, saveQuizRecord, createLiveQuizSession, joinLiveQuizSession, getUserProfile } from '@/lib/firestore';
+import { getQuizById, FirebaseQuiz, saveQuizRecord, createLiveQuizSession, joinLiveQuizSession, getUserProfile, updateQuiz } from '@/lib/firestore';
 import SideNav from '@/components/SideNav';
 import Link from 'next/link';
 
 export default function QuizPlayerPage() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [quiz, setQuiz] = useState<FirebaseQuiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
@@ -19,6 +19,11 @@ export default function QuizPlayerPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const [quizStarted, setQuizStarted] = useState(false);
   const [loading, setLoading] = useState(true);
+  
+  // Edit mode states
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedQuestions, setEditedQuestions] = useState<any[]>([]);
+  const [saving, setSaving] = useState(false);
 
   // Load quiz progress from localStorage
   const loadQuizProgress = () => {
@@ -318,6 +323,75 @@ export default function QuizPlayerPage() {
     }
   };
 
+  const handleEnterEditMode = () => {
+    if (!quiz || !userProfile?.isPremium) {
+      if (!userProfile?.isPremium) {
+        alert('Edit mode is a premium feature. Please upgrade to edit quizzes.');
+        router.push('/premium');
+      }
+      return;
+    }
+    
+    if (quiz.userId !== user?.uid) {
+      alert('You can only edit quizzes you created.');
+      return;
+    }
+    
+    setIsEditMode(true);
+    setEditedQuestions(JSON.parse(JSON.stringify(quiz.questions)));
+  };
+
+  const handleCancelEdit = () => {
+    if (confirm('Discard all changes?')) {
+      setIsEditMode(false);
+      setEditedQuestions([]);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!quiz || !user?.uid) return;
+    
+    // Validate edited questions
+    for (let i = 0; i < editedQuestions.length; i++) {
+      const q = editedQuestions[i];
+      if (!q.question.trim()) {
+        alert(`Question ${i + 1} cannot be empty`);
+        return;
+      }
+      if (q.type !== 'fill-blank' && q.type !== 'short-answer') {
+        if (q.options.some((opt: string) => !opt.trim())) {
+          alert(`All options for question ${i + 1} must be filled`);
+          return;
+        }
+      }
+    }
+    
+    try {
+      setSaving(true);
+      await updateQuiz(quiz.id, { questions: editedQuestions });
+      
+      // Update local state
+      setQuiz({ ...quiz, questions: editedQuestions });
+      setIsEditMode(false);
+      alert('Quiz updated successfully!');
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      alert('Failed to update quiz. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateEditedQuestion = (index: number, field: string, value: any) => {
+    const updated = [...editedQuestions];
+    if (field === 'option') {
+      updated[index].options[value.index] = value.text;
+    } else {
+      updated[index][field] = value;
+    }
+    setEditedQuestions(updated);
+  };
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -381,6 +455,16 @@ export default function QuizPlayerPage() {
               >
                 ← Back to Quizzes
               </Link>
+              {quiz.userId === user?.uid && (
+                <button
+                  onClick={handleEnterEditMode}
+                  className="px-6 py-3 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors font-semibold flex items-center gap-2"
+                  title={userProfile?.isPremium ? 'Edit Quiz' : 'Premium Feature'}
+                >
+                  ✏️ Edit Quiz
+                  {!userProfile?.isPremium && <span className="text-xs bg-purple-500 px-2 py-0.5 rounded">Premium</span>}
+                </button>
+              )}
               <button
                 onClick={handleStartQuiz}
                 className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
@@ -418,6 +502,105 @@ export default function QuizPlayerPage() {
                   🎮 Start Live Multiplayer
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Edit Mode Screen
+  if (isEditMode) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <SideNav />
+        <div className="md:ml-64 min-h-screen p-4 md:p-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 mb-6">
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-3xl font-bold text-white">✏️ Edit Quiz: {quiz.title}</h1>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={saving}
+                    className="px-4 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={saving}
+                    className="px-4 py-2 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:opacity-50"
+                  >
+                    {saving ? '💾 Saving...' : '💾 Save Changes'}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                {editedQuestions.map((question, qIndex) => {
+                  const questionType = question.type || 'multiple-choice';
+                  
+                  return (
+                    <div key={qIndex} className="bg-white/5 rounded-xl p-6 border border-white/10">
+                      <div className="flex items-start justify-between mb-4">
+                        <label className="text-sm text-purple-200 font-semibold">Question {qIndex + 1}</label>
+                        <span className="text-xs px-3 py-1 bg-purple-500/30 rounded-full text-purple-200">
+                          {questionType.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                        </span>
+                      </div>
+                      
+                      <textarea
+                        value={question.question}
+                        onChange={(e) => updateEditedQuestion(qIndex, 'question', e.target.value)}
+                        className="w-full px-4 py-3 rounded-lg bg-white/10 text-white border border-white/20 focus:border-purple-400 focus:outline-none mb-4"
+                        rows={2}
+                        placeholder="Enter question text"
+                      />
+                      
+                      {questionType === 'fill-blank' || questionType === 'short-answer' ? (
+                        <div>
+                          <label className="text-sm text-purple-200 mb-2 block">Correct Answer:</label>
+                          <input
+                            type="text"
+                            value={question.options[0] || ''}
+                            onChange={(e) => updateEditedQuestion(qIndex, 'option', { index: 0, text: e.target.value })}
+                            className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:border-purple-400 focus:outline-none"
+                            placeholder="Enter correct answer"
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <label className="text-sm text-purple-200">Options:</label>
+                          {question.options.map((option: string, oIndex: number) => (
+                            <div key={oIndex} className="flex items-center gap-3">
+                              <input
+                                type="radio"
+                                checked={question.correct === oIndex}
+                                onChange={() => updateEditedQuestion(qIndex, 'correct', oIndex)}
+                                className="w-5 h-5 cursor-pointer"
+                              />
+                              <span className="text-white font-semibold min-w-[24px]">
+                                {String.fromCharCode(65 + oIndex)})
+                              </span>
+                              <input
+                                type="text"
+                                value={option}
+                                onChange={(e) => updateEditedQuestion(qIndex, 'option', { index: oIndex, text: e.target.value })}
+                                className="flex-1 px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:border-purple-400 focus:outline-none"
+                                placeholder={`Option ${String.fromCharCode(65 + oIndex)}`}
+                              />
+                            </div>
+                          ))}
+                          <p className="text-xs text-purple-300 mt-2">
+                            💡 Select the correct answer by clicking the radio button
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
