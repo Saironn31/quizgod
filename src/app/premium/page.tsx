@@ -38,6 +38,14 @@ export default function PremiumPage() {
       checkoutUrl
     });
 
+    // Check if checkout URL is available
+    if (!checkoutUrl) {
+      console.error('❌ Checkout URL is undefined. Please restart the dev server.');
+      alert('Payment system configuration error. Please refresh the page or contact support.');
+      setLoading(false);
+      return;
+    }
+
     // Add user data as query parameters
     const urlWithParams = `${checkoutUrl}?customer_email=${encodeURIComponent(user.email || '')}&passthrough=${encodeURIComponent(JSON.stringify({ userId: user.uid, userEmail: user.email }))}`;
 
