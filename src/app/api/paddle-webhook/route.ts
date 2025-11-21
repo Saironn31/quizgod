@@ -9,8 +9,10 @@ type PaddleEvent = {
     status: string;
     customer_id: string;
     custom_data?: {
-      userId: string;
-      userEmail: string;
+      userId?: string;
+      userEmail?: string;
+      passthrough?: string;
+      customer_email?: string;
     };
     items?: Array<{
       price_id: string;
@@ -31,11 +33,15 @@ export async function POST(req: NextRequest) {
     // Try to get userId from custom_data
     let userId = data.custom_data?.userId;
     
-    // If not found, try to parse from customer email or other fields
-    if (!userId && data.customer_id) {
-      // Log what we received to help debug
-      console.log('Custom data received:', data.custom_data);
-      console.log('Customer ID:', data.customer_id);
+    // If not found, try to parse from passthrough (JSON string)
+    if (!userId && data.custom_data?.passthrough) {
+      try {
+        const passthrough = JSON.parse(data.custom_data.passthrough);
+        userId = passthrough.userId;
+        console.log('Parsed userId from passthrough:', userId);
+      } catch (e) {
+        console.error('Failed to parse passthrough:', e);
+      }
     }
 
     if (!userId) {
