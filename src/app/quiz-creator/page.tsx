@@ -637,6 +637,8 @@ export default function CreatePage() {
 Based on the following content, generate EXACTLY:
 ${types.join('\n')}
 
+TOTAL QUESTIONS REQUIRED: ${totalQuestions}
+
 Content:
 ${pdfText.slice(0, 15000)}
 
@@ -663,10 +665,13 @@ CRITICAL RULES:
 2. For multiple-choice and true/false: EXACTLY ONE asterisk (*) marking the correct answer
 3. For fill-blank: Use "ANSWER:" followed by ONLY 1-3 WORDS (no full sentences or long phrases)
 4. Number questions sequentially: 1, 2, 3, etc.
-5. Generate EXACTLY the number specified for each type
-6. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
-7. End after the last question - NO conclusion text
-8. Fill-in-the-blank answers will be checked case-insensitively, so focus on the core term/concept
+5. Generate EXACTLY ${totalQuestions} questions total (${types.join(', ')})
+6. DO NOT generate more or fewer than ${totalQuestions} questions
+7. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
+8. End after the last question - NO conclusion text
+9. Fill-in-the-blank answers will be checked case-insensitively, so focus on the core term/concept
+
+IMPORTANT: You must generate exactly ${totalQuestions} questions. No more, no less.
 
 Generate the questions NOW:`;
 
@@ -969,6 +974,39 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
     return questions;
   };
 
+  // Validate parsed questions against requested count
+  const validateQuestionCount = (parsedQuestions: Question[], requestedTypes: typeof questionTypes) => {
+    const totalRequested = Object.values(requestedTypes).reduce((sum, count) => sum + count, 0);
+    const totalParsed = parsedQuestions.length;
+
+    // Count by type
+    const parsedCounts = {
+      'multiple-choice': parsedQuestions.filter(q => q.type === 'multiple-choice').length,
+      'true-false': parsedQuestions.filter(q => q.type === 'true-false').length,
+      'fill-blank': parsedQuestions.filter(q => q.type === 'fill-blank').length,
+    };
+
+    const warnings = [];
+    
+    if (totalParsed !== totalRequested) {
+      warnings.push(`⚠️ Expected ${totalRequested} questions but parsed ${totalParsed}`);
+    }
+
+    if (requestedTypes['multiple-choice'] > 0 && parsedCounts['multiple-choice'] !== requestedTypes['multiple-choice']) {
+      warnings.push(`⚠️ Multiple Choice: Expected ${requestedTypes['multiple-choice']}, got ${parsedCounts['multiple-choice']}`);
+    }
+
+    if (requestedTypes['true-false'] > 0 && parsedCounts['true-false'] !== requestedTypes['true-false']) {
+      warnings.push(`⚠️ True/False: Expected ${requestedTypes['true-false']}, got ${parsedCounts['true-false']}`);
+    }
+
+    if (requestedTypes['fill-blank'] > 0 && parsedCounts['fill-blank'] !== requestedTypes['fill-blank']) {
+      warnings.push(`⚠️ Fill-in-Blank: Expected ${requestedTypes['fill-blank']}, got ${parsedCounts['fill-blank']}`);
+    }
+
+    return warnings;
+  };
+
   // Submit handlers
   const handleManualSubmit = async () => {
     if (!user?.uid) {
@@ -1060,7 +1098,21 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
       if (parsedQuestions.length === 0) {
         alert("No valid questions found. Please check the format.");
+        setSaving(false);
         return;
+      }
+
+      // Validate question count
+      const warnings = validateQuestionCount(parsedQuestions, questionTypes);
+      if (warnings.length > 0) {
+        const warningMessage = warnings.join('\n');
+        const proceed = confirm(
+          `${warningMessage}\n\nParsed ${parsedQuestions.length} questions total.\n\nDo you want to continue creating the quiz with the parsed questions?`
+        );
+        if (!proceed) {
+          setSaving(false);
+          return;
+        }
       }
       
       const quizData: Omit<FirebaseQuiz, 'id' | 'createdAt' | 'updatedAt'> = {
