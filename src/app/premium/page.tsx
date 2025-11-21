@@ -28,6 +28,13 @@ export default function PremiumPage() {
 
     setLoading(true);
 
+    // Debug: Log all environment variables
+    console.log('🔍 Environment check:', {
+      monthly: process.env.NEXT_PUBLIC_PADDLE_MONTHLY_CHECKOUT_URL,
+      yearly: process.env.NEXT_PUBLIC_PADDLE_YEARLY_CHECKOUT_URL,
+      allEnvKeys: Object.keys(process.env).filter(k => k.includes('PADDLE'))
+    });
+
     // Use hosted checkout URLs
     const checkoutUrl = selectedPlan === 'monthly' 
       ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_CHECKOUT_URL 
@@ -40,8 +47,8 @@ export default function PremiumPage() {
 
     // Check if checkout URL is available
     if (!checkoutUrl) {
-      console.error('❌ Checkout URL is undefined. Please restart the dev server.');
-      alert('Payment system configuration error. Please refresh the page or contact support.');
+      console.error('❌ Checkout URL is undefined. Check Vercel environment variables.');
+      alert('Payment system configuration error. Environment variables not loaded. Check Vercel settings.');
       setLoading(false);
       return;
     }
