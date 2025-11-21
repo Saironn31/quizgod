@@ -541,7 +541,7 @@ export default function ClassDetailPage() {
           <MembersTab classData={classData} user={user} isPresident={isPresident} setSelectedMember={setSelectedMember} setActiveTab={setActiveTab} />
         )}
         {activeTab === 'memberAnalytics' && selectedMember && (
-          <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} />
+          <MemberAnalyticsTab classId={classData.id} memberId={selectedMember} quizzes={quizzes} subjects={subjects} onBack={() => setActiveTab('members')} />
         )}
       </div>
     </div>

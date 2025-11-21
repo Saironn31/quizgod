@@ -71,8 +71,8 @@ export default function ClassAnalyticsTab({ classData, user, quizzes, subjects }
       const recentQuizzes: RecentQuiz[] = await Promise.all(
         records
           .sort((a, b) => {
-            const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : (a.timestamp?.seconds ? a.timestamp.seconds * 1000 : 0);
-            const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : (b.timestamp?.seconds ? b.timestamp.seconds * 1000 : 0);
+            const timeA = a.timestamp instanceof Date ? a.timestamp.getTime() : ((a.timestamp as any)?.seconds ? (a.timestamp as any).seconds * 1000 : 0);
+            const timeB = b.timestamp instanceof Date ? b.timestamp.getTime() : ((b.timestamp as any)?.seconds ? (b.timestamp as any).seconds * 1000 : 0);
             return timeB - timeA; // Most recent first
           })
           .slice(0, 5)

@@ -3,6 +3,7 @@
  * Copy-paste examples for common animation patterns
  */
 
+import { useState } from 'react';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import SkeletonLoader, { SkeletonCard, SkeletonQuizCard } from '@/components/SkeletonLoader';
 import { useToast } from '@/components/NotificationToast';
@@ -251,7 +252,7 @@ export function AnimatedFormExample() {
     e.preventDefault();
     
     // Validate and show error with shake
-    const emailInput = document.getElementById('email') as HTMLElement;
+    const emailInput = document.getElementById('email') as HTMLInputElement;
     if (!emailInput.value) {
       shakeElement(emailInput.parentElement);
       setErrors({ email: 'Email is required' });
