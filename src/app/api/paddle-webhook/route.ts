@@ -35,6 +35,14 @@ export async function POST(req: NextRequest) {
 
     // Handle different event types
     switch (event_type) {
+      case 'transaction.completed':
+        // One-time payment completed
+        if (data.status === 'completed') {
+          await updateUserPremiumStatus(userId, true);
+          console.log(`User ${userId} payment completed - granted premium access`);
+        }
+        break;
+
       case 'subscription.created':
       case 'subscription.activated':
       case 'subscription.updated':
