@@ -5,6 +5,7 @@ import { ThemeProvider } from "../contexts/ThemeContext";
 import { AuthProvider } from "../contexts/AuthContext";
 import { DocumentProcessingProvider } from "../contexts/DocumentProcessingContext";
 import ChatOverlay from '@/components/ChatOverlay';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -50,14 +51,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased preload`}
         suppressHydrationWarning={true}
       >
-        <AuthProvider>
-          <DocumentProcessingProvider>
-            <ThemeProvider>
-              {children}
-              <ChatOverlay />
-            </ThemeProvider>
-          </DocumentProcessingProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <DocumentProcessingProvider>
+              <ThemeProvider>
+                {children}
+                <ChatOverlay />
+              </ThemeProvider>
+            </DocumentProcessingProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

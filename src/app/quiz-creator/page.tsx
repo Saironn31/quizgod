@@ -24,7 +24,7 @@ type Question = {
   question: string; 
   options: string[]; 
   correct: number;
-  type?: 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer';
+  type?: 'multiple-choice' | 'true-false' | 'fill-blank';
 };
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {
@@ -65,15 +65,11 @@ export default function CreatePage() {
     'multiple-choice': number;
     'true-false': number;
     'fill-blank': number;
-    'short-answer': number;
-  }>({
+  }>({ 
     'multiple-choice': 5,
     'true-false': 0,
-    'fill-blank': 0,
-    'short-answer': 0
-  });
-  
-  // AI mode fields
+    'fill-blank': 0
+  });  // AI mode fields
   const [numQuestions, setNumQuestions] = useState(5);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState("");
@@ -612,7 +608,7 @@ export default function CreatePage() {
 
     // Calculate total questions
     const totalQuestions = questionTypes['multiple-choice'] + questionTypes['true-false'] + 
-                          questionTypes['fill-blank'] + questionTypes['short-answer'];
+                          questionTypes['fill-blank'];
     
     if (totalQuestions === 0) {
       alert("Please specify at least one question to generate");
@@ -633,10 +629,7 @@ export default function CreatePage() {
       types.push(`${questionTypes['true-false']} true/false questions (options: True/False, mark correct with *)`);
     }
     if (questionTypes['fill-blank'] > 0) {
-      types.push(`${questionTypes['fill-blank']} fill-in-the-blank questions (provide the correct answer)`);
-    }
-    if (questionTypes['short-answer'] > 0) {
-      types.push(`${questionTypes['short-answer']} short-answer questions (provide a model answer)`);
+      types.push(`${questionTypes['fill-blank']} fill-in-the-blank questions (ANSWER MUST BE 1-3 WORDS MAXIMUM)`);
     }
 
     const basePrompt = `You are a quiz generator. Create a quiz about ${subject} with difficulty level: ${difficulty.toUpperCase()}.
@@ -665,18 +658,15 @@ For FILL-IN-THE-BLANK questions:
 3. The capital of France is _____.
 ANSWER: Paris
 
-For SHORT ANSWER questions:
-4. Explain the concept briefly.
-ANSWER: A detailed model answer explaining the concept thoroughly.
-
 CRITICAL RULES:
 1. Start output with "1." immediately - NO introduction text
 2. For multiple-choice and true/false: EXACTLY ONE asterisk (*) marking the correct answer
-3. For fill-blank and short-answer: Use "ANSWER:" followed by the correct answer
+3. For fill-blank: Use "ANSWER:" followed by ONLY 1-3 WORDS (no full sentences or long phrases)
 4. Number questions sequentially: 1, 2, 3, etc.
 5. Generate EXACTLY the number specified for each type
 6. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
 7. End after the last question - NO conclusion text
+8. Fill-in-the-blank answers will be checked case-insensitively, so focus on the core term/concept
 
 Generate the questions NOW:`;
 
@@ -918,20 +908,18 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
       const questionText = lines[0].replace(/\?$/, '').trim();
       
-      // Check if it's a fill-blank or short-answer question (has ANSWER: format)
+      // Check if it's a fill-blank question (has ANSWER: format)
       const answerMatch = block.match(/ANSWER:\s*(.+?)(?=\n\d+\.|$)/i);
       
       if (answerMatch) {
-        // Fill-in-the-blank or Short Answer question
+        // Fill-in-the-blank question
         const answer = answerMatch[1].trim();
-        const questionType: 'fill-blank' | 'short-answer' = 
-          questionText.includes('_') ? 'fill-blank' : 'short-answer';
         
         questions.push({
           question: questionText,
           options: [answer],
           correct: 0,
-          type: questionType
+          type: 'fill-blank'
         });
       } else {
         // Multiple choice or True/False question
@@ -1415,7 +1403,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                               <select
                                 value={q.type || 'multiple-choice'}
                                 onChange={(e) => {
-                                  const newType = e.target.value as 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer';
+                                  const newType = e.target.value as 'multiple-choice' | 'true-false' | 'fill-blank';
                                   // Adjust options based on type
                                   let newOptions = [...q.options];
                                   let newCorrect = q.correct;
@@ -1423,7 +1411,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                                   if (newType === 'true-false') {
                                     newOptions = ['True', 'False'];
                                     newCorrect = 0;
-                                  } else if (newType === 'fill-blank' || newType === 'short-answer') {
+                                  } else if (newType === 'fill-blank') {
                                     newOptions = [''];
                                     newCorrect = 0;
                                   } else if (newOptions.length < 4) {
@@ -1437,8 +1425,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                               >
                                 <option value="multiple-choice" className="bg-slate-800">📝 Multiple Choice</option>
                                 <option value="true-false" className="bg-slate-800">✓✗ True/False</option>
-                                <option value="fill-blank" className="bg-slate-800">📋 Fill in the Blank</option>
-                                <option value="short-answer" className="bg-slate-800">✍️ Short Answer</option>
+                                <option value="fill-blank" className="bg-slate-800">📋 Fill in the Blank (1-3 words)</option>
                               </select>
                             </div>
 
@@ -1508,19 +1495,6 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                                 <input 
                                   className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
                                   placeholder="Enter the correct answer..." 
-                                  value={q.options[0] || ''} 
-                                  onChange={e => updateQuestion(i, { options: [e.target.value], correct: 0 })}
-                                />
-                              </div>
-                            )}
-
-                            {q.type === 'short-answer' && (
-                              <div>
-                                <label className="block text-xs text-slate-300 mb-2">Model Answer</label>
-                                <textarea 
-                                  className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
-                                  placeholder="Enter the model/expected answer..." 
-                                  rows={3}
                                   value={q.options[0] || ''} 
                                   onChange={e => updateQuestion(i, { options: [e.target.value], correct: 0 })}
                                 />
@@ -1850,25 +1824,12 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                               />
                             </div>
 
-                            {/* Short Answer */}
-                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
-                              <label className="block text-sm text-slate-300 mb-2">✍️ Short Answer</label>
-                              <input
-                                type="number"
-                                min="0"
-                                max="50"
-                                value={questionTypes['short-answer']}
-                                onChange={(e) => setQuestionTypes({...questionTypes, 'short-answer': parseInt(e.target.value) || 0})}
-                                className="w-full p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-center"
-                              />
-                            </div>
-
                             {/* Total Questions Display */}
                             <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-3 border-2 border-purple-400/30">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-semibold text-slate-300">Total Questions:</span>
                                 <span className="text-2xl font-bold text-white">
-                                  {questionTypes['multiple-choice'] + questionTypes['true-false'] + questionTypes['fill-blank'] + questionTypes['short-answer']}
+                                  {questionTypes['multiple-choice'] + questionTypes['true-false'] + questionTypes['fill-blank']}
                                 </span>
                               </div>
                             </div>

@@ -250,11 +250,11 @@ export default function HomePage() {
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-green-400 text-xl mt-0.5">✓</span>
-                    <span>Priority support</span>
+                    <span>Ad-free experience</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <span className="text-green-400 text-xl mt-0.5">✓</span>
-                    <span>Unlimited cloud storage</span>
+                    <span>Early access to new features</span>
                   </li>
                 </ul>
               </div>

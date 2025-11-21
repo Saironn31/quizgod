@@ -78,23 +78,20 @@ export default function PremiumPage() {
   const features = [
     { icon: '🚀', text: 'Unlimited AI Quiz Generation', premium: true },
     { icon: '📚', text: 'Unlimited Quiz Creation', premium: true },
-    { icon: '🎯', text: 'Advanced Question Types', premium: true },
+    { icon: '🎯', text: 'Advanced Question Types (Fill-in-blank)', premium: true },
     { icon: '⏱️', text: 'Custom Timer Settings', premium: true },
     { icon: '🏆', text: 'Detailed Analytics & Reports', premium: true },
     { icon: '👥', text: 'Live Multiplayer Quizzes', premium: true },
     { icon: '📊', text: 'Student Progress Tracking', premium: true },
-    { icon: '🎨', text: 'Custom Quiz Themes', premium: true },
-    { icon: '📤', text: 'Export Quiz Results', premium: true },
-    { icon: '🔒', text: 'Priority Support', premium: true },
-    { icon: '☁️', text: 'Unlimited Cloud Storage', premium: true },
-    { icon: '✨', text: 'Early Access to New Features', premium: true }
+    { icon: '✨', text: 'Early Access to New Features', premium: true },
+    { icon: '🎨', text: 'No Advertisements', premium: true }
   ];
 
   const freeFeatures = [
-    { icon: '📝', text: 'Basic Quiz Creation (5/month)' },
-    { icon: '🤖', text: 'AI Generation (3/month)' },
-    { icon: '📖', text: 'Access to Public Quizzes' },
-    { icon: '💾', text: 'Basic Storage (100MB)' }
+    { icon: '📝', text: 'Basic Quiz Creation (10 questions max)' },
+    { icon: '🤖', text: 'AI Generation (Limited)' },
+    { icon: '📖', text: 'Access to Class Quizzes' },
+    { icon: '👥', text: 'Join Classes & Groups' }
   ];
 
   return (

@@ -23,6 +23,8 @@ export default function QuizzesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12); // Show 12 quizzes per page
   const { user, userProfile } = useAuth();
 
   // Load preferences
@@ -131,6 +133,22 @@ export default function QuizzesPage() {
     
     return matchesSearch && matchesSubject;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredQuizzes.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedQuizzes = filteredQuizzes.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedSubject]);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const formatDate = (date?: Date | string) => {
     if (!date) return "Unknown date";
@@ -273,8 +291,14 @@ export default function QuizzesPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                {filteredQuizzes.map((quiz, index) => (
+              <>
+                {/* Showing results info */}
+                <div className="mb-4 text-sm text-slate-300">
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredQuizzes.length)} of {filteredQuizzes.length} quizzes
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {paginatedQuizzes.map((quiz, index) => (
                   <React.Fragment key={quiz.id}>
                     {/* Native Ad every 6 quizzes */}
                     {index > 0 && index % 6 === 0 && (
@@ -353,6 +377,55 @@ export default function QuizzesPage() {
                   </React.Fragment>
                 ))}
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex justify-center items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    ← Previous
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    // Show first page, last page, current page, and pages around current
+                    if (
+                      page === 1 ||
+                      page === totalPages ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`px-4 py-2 rounded-lg border transition-all ${
+                            currentPage === page
+                              ? 'bg-gradient-to-r from-cyan-500 to-violet-500 text-white border-transparent font-bold'
+                              : 'bg-white/10 text-white border-white/20 hover:bg-white/20'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="text-white">...</span>;
+                    }
+                    return null;
+                  })}
+                  
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+              </>
             )}
           </div>
         </div>
