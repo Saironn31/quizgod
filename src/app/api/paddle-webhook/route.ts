@@ -24,13 +24,26 @@ export async function POST(req: NextRequest) {
     const body: PaddleEvent = await req.json();
     
     console.log('Paddle webhook received:', body.event_type);
+    console.log('Full webhook data:', JSON.stringify(body, null, 2));
 
     const { event_type, data } = body;
-    const userId = data.custom_data?.userId;
+    
+    // Try to get userId from custom_data
+    let userId = data.custom_data?.userId;
+    
+    // If not found, try to parse from customer email or other fields
+    if (!userId && data.customer_id) {
+      // Log what we received to help debug
+      console.log('Custom data received:', data.custom_data);
+      console.log('Customer ID:', data.customer_id);
+    }
 
     if (!userId) {
-      console.error('No userId found in webhook data');
-      return NextResponse.json({ error: 'No userId provided' }, { status: 400 });
+      console.error('No userId found in webhook data. Full data:', JSON.stringify(data));
+      return NextResponse.json({ 
+        error: 'No userId provided',
+        received: { event_type, customer_id: data.customer_id }
+      }, { status: 400 });
     }
 
     // Handle different event types
