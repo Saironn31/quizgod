@@ -28,32 +28,23 @@ export default function PremiumPage() {
 
     setLoading(true);
 
-    // Get the price ID based on selected plan
-    const priceId = selectedPlan === 'monthly' 
-      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_PRICE_ID 
-      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_PRICE_ID;
+    // Use hosted checkout URLs
+    const checkoutUrl = selectedPlan === 'monthly' 
+      ? process.env.NEXT_PUBLIC_PADDLE_MONTHLY_CHECKOUT_URL 
+      : process.env.NEXT_PUBLIC_PADDLE_YEARLY_CHECKOUT_URL;
 
-    // Build Paddle checkout URL with parameters
-    const baseUrl = 'https://buy.paddle.com/checkout/custom';
-    const params = new URLSearchParams({
-      'price_id': priceId || '',
-      'customer_email': user.email || '',
-      'custom_data': JSON.stringify({
-        userId: user.uid,
-        userEmail: user.email
-      })
-    });
-
-    const checkoutUrl = `${baseUrl}?${params.toString()}`;
-
-    console.log('🛒 Redirecting to Paddle checkout:', {
+    console.log('🛒 Redirecting to Paddle hosted checkout:', {
       selectedPlan,
-      priceId,
       checkoutUrl
     });
 
-    // Redirect to Paddle checkout page
-    window.location.href = checkoutUrl;
+    // Add user data as query parameters
+    const urlWithParams = `${checkoutUrl}?customer_email=${encodeURIComponent(user.email || '')}&passthrough=${encodeURIComponent(JSON.stringify({ userId: user.uid, userEmail: user.email }))}`;
+
+    console.log('✅ Opening checkout URL:', urlWithParams);
+
+    // Redirect to Paddle hosted checkout
+    window.location.href = urlWithParams;
   };
 
   const plans = {
