@@ -32,6 +32,7 @@ export default function QuizPlayerPage() {
         const progress = JSON.parse(savedProgress);
         setCurrentQuestionIndex(progress.currentQuestionIndex || 0);
         setSelectedAnswers(progress.selectedAnswers || []);
+        setTextAnswers(progress.textAnswers || []);
         setTimeLeft(progress.timeLeft || 0);
         setQuizStarted(progress.quizStarted || false);
         setShowResults(progress.showResults || false);
@@ -52,6 +53,7 @@ export default function QuizPlayerPage() {
     const progress = {
       currentQuestionIndex,
       selectedAnswers,
+      textAnswers,
       timeLeft,
       quizStarted,
       showResults,

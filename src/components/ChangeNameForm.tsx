@@ -9,11 +9,26 @@ export default function ChangeNameForm({ user, userProfile, refreshUserProfile }
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.uid) return;
+    
+    // Validate inputs
+    const trimmedName = name.trim();
+    const trimmedUsername = username.trim();
+    
+    if (!trimmedName) {
+      setMessage('Name cannot be empty');
+      return;
+    }
+    
+    if (trimmedUsername && trimmedUsername.length < 3) {
+      setMessage('Username must be at least 3 characters');
+      return;
+    }
+    
     setSaving(true);
     setMessage('');
     try {
       const res = await import('@/lib/firestore');
-      await res.updateUserProfile(user.uid, { name, username });
+      await res.updateUserProfile(user.uid, { name: trimmedName, username: trimmedUsername });
       setMessage('Saved!');
       await refreshUserProfile();
     } catch (error) {

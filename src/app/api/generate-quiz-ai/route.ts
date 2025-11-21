@@ -54,6 +54,23 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    
+    // Validate questionTypes structure
+    if (typeof questionTypes !== 'object' || !questionTypes['multiple-choice'] && !questionTypes['true-false'] && !questionTypes['fill-blank']) {
+      return NextResponse.json(
+        { error: 'Invalid questionTypes format' },
+        { status: 400 }
+      );
+    }
+    
+    // Validate questionTypes values are positive numbers
+    const totalQuestions = (questionTypes['multiple-choice'] || 0) + (questionTypes['true-false'] || 0) + (questionTypes['fill-blank'] || 0);
+    if (totalQuestions <= 0 || totalQuestions > 50) {
+      return NextResponse.json(
+        { error: 'Total questions must be between 1 and 50' },
+        { status: 400 }
+      );
+    }
 
     // Check premium status
     const isPremium = await isUserPremium(userId);
@@ -90,9 +107,6 @@ export async function POST(req: NextRequest) {
         { status: 403 }
       );
     }
-
-    // Calculate total questions
-    const totalQuestions = Object.values(questionTypes).reduce((sum: number, count) => sum + (count as number), 0);
 
     // Free tier limits
     if (!isPremium && totalQuestions > 10) {

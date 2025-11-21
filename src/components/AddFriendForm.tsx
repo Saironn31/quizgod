@@ -10,12 +10,25 @@ const FriendRequestForm: React.FC = () => {
 
   const handleAddFriend = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate identifier format
+    const trimmedIdentifier = identifier.trim();
+    if (!trimmedIdentifier) {
+      setMessage('Please enter a username or email');
+      return;
+    }
+    
+    if (trimmedIdentifier.length < 3) {
+      setMessage('Username must be at least 3 characters');
+      return;
+    }
+    
     setLoading(true);
     setMessage('');
     try {
       if (!user?.uid) throw new Error('Not logged in');
-  await sendFriendRequest(user.uid, identifier.trim());
-  setMessage('Friend request sent!');
+      await sendFriendRequest(user.uid, trimmedIdentifier);
+      setMessage('Friend request sent!');
       setIdentifier('');
     } catch (error: any) {
       setMessage(error.message || 'Failed to add friend');
