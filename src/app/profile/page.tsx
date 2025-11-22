@@ -106,55 +106,30 @@ const ProfilePage: React.FC = () => {
                 <p className="text-slate-300 text-lg">Manage your account details</p>
               </div>
             </div>
-          </div>
-        </div>
-        <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Single Column Layout */}
-          <div className="flex flex-col gap-6">
-            {/* Account Status Card */}
-            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-white/10">
-              <h2 className="text-2xl font-bold mb-4 text-white text-center">Account Status</h2>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-lg text-white">Premium:</span>
-                <span className={`text-2xl font-bold ${(userProfile?.isPremium || userProfile?.role === 'admin') ? 'text-green-400' : 'text-red-400'}`}>
+
+            {/* Account Status - Inside Profile Header */}
+            <div className="mt-8 p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10">
+              <h2 className="text-xl font-bold mb-3 text-white">Account Status</h2>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-base text-white">Premium:</span>
+                <span className={`text-xl font-bold ${(userProfile?.isPremium || userProfile?.role === 'admin') ? 'text-green-400' : 'text-red-400'}`}>
                   {(userProfile?.isPremium || userProfile?.role === 'admin') ? '✅ Active' : '❌ Not Active'}
                 </span>
               </div>
               {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
-                <div className="mt-4 text-center">
-                  <a href="/premium" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
+                <div className="mb-3">
+                  <a href="/premium" className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
                     Upgrade to Premium
                   </a>
                 </div>
               )}
-              <div className="mt-4 text-xs text-slate-400 text-center">
+              <div className="text-xs text-slate-400">
                 User ID: {user?.uid}
               </div>
             </div>
 
-            {/* Edit Profile Card */}
-            <div className="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-br from-white/10 to-purple-900/10 border-2 border-white/10">
-              <h2 className="text-2xl font-bold mb-6 text-purple-300 text-center">Edit Profile</h2>
-              <form className="flex flex-col gap-4" onSubmit={handleSave}>
-                <div>
-                  <label className="text-sm font-medium text-gray-200 mb-1 block">Name</label>
-                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={name} onChange={e => setName(e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-200 mb-1 block">Email</label>
-                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={email} onChange={e => setEmail(e.target.value)} />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-200 mb-1 block">Bio</label>
-                  <textarea className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" rows={3} value={bio} onChange={e => setBio(e.target.value)} />
-                </div>
-                <button type="submit" className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</button>
-                {message && <div className={`text-center mt-2 ${message.includes('Failed') || message.includes('Error') ? 'text-red-300' : 'text-green-300'}`}>{message}</div>}
-              </form>
-            </div>
-            
-            {/* Change Password Card */}
-            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10">
+            {/* Change Password - Inside Profile Header */}
+            <div className="mt-6 p-6 rounded-2xl bg-gradient-to-br from-white/10 to-red-900/10 border border-white/10">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-xl font-bold text-red-300">Change Password</h2>
                 <button
@@ -210,11 +185,33 @@ const ProfilePage: React.FC = () => {
                   {passwordMessage && <div className={`text-center text-sm ${passwordMessage.includes('success') ? 'text-green-300' : 'text-red-300'}`}>{passwordMessage}</div>}
                 </form>
               ) : (
-                <div className="text-center py-3 text-slate-400 text-sm">
+                <div className="text-slate-400 text-sm">
                   <p>Click "Change" to update your password</p>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+        <div className="relative z-10 max-w-6xl mx-auto mt-8">
+          {/* Edit Profile Card */}
+          <div className="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-br from-white/10 to-purple-900/10 border-2 border-white/10">
+            <h2 className="text-2xl font-bold mb-6 text-purple-300 text-center">Edit Profile</h2>
+            <form className="flex flex-col gap-4" onSubmit={handleSave}>
+              <div>
+                <label className="text-sm font-medium text-gray-200 mb-1 block">Name</label>
+                <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={name} onChange={e => setName(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-200 mb-1 block">Email</label>
+                <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={email} onChange={e => setEmail(e.target.value)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-200 mb-1 block">Bio</label>
+                <textarea className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" rows={3} value={bio} onChange={e => setBio(e.target.value)} />
+              </div>
+              <button type="submit" className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</button>
+              {message && <div className={`text-center mt-2 ${message.includes('Failed') || message.includes('Error') ? 'text-red-300' : 'text-green-300'}`}>{message}</div>}
+            </form>
           </div>
         </div>
       </div>
