@@ -1631,6 +1631,29 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
                               value={q.question} 
                               onChange={e => updateQuestion(i, { question: e.target.value })}
                             />
+
+                            {/* Image URL (Optional) */}
+                            <div>
+                              <label className="block text-xs text-slate-300 mb-2">🖼️ Image URL (Optional)</label>
+                              <input 
+                                className="w-full p-2 md:p-3 text-sm md:text-base border border-white/30 bg-white/10 text-white placeholder-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                placeholder="Enter image URL (e.g., https://example.com/image.png)..." 
+                                value={q.imageUrl || ''} 
+                                onChange={e => updateQuestion(i, { imageUrl: e.target.value })}
+                              />
+                              {q.imageUrl && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={q.imageUrl} 
+                                    alt="Question preview" 
+                                    className="max-h-48 rounded-lg border border-white/20"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                             
                             {/* Dynamic Options based on Question Type */}
                             {(q.type === 'multiple-choice' || !q.type) && (
