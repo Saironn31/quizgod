@@ -404,6 +404,59 @@ export default function QuizPlayerPage() {
     setEditedQuestions(updated);
   };
 
+  const addNewQuestion = (type: 'multiple-choice' | 'true-false' | 'fill-blank') => {
+    const newQuestion: any = {
+      question: '',
+      type: type,
+      correct: 0,
+      options: []
+    };
+
+    if (type === 'multiple-choice') {
+      newQuestion.options = ['', '', '', ''];
+    } else if (type === 'true-false') {
+      newQuestion.options = ['True', 'False'];
+    } else if (type === 'fill-blank') {
+      newQuestion.options = [''];
+    }
+
+    setEditedQuestions([...editedQuestions, newQuestion]);
+  };
+
+  const removeQuestion = (index: number) => {
+    if (editedQuestions.length === 1) {
+      alert('Quiz must have at least one question');
+      return;
+    }
+    
+    if (confirm(`Delete question ${index + 1}?`)) {
+      const updated = editedQuestions.filter((_, i) => i !== index);
+      setEditedQuestions(updated);
+    }
+  };
+
+  const changeQuestionType = (index: number, newType: 'multiple-choice' | 'true-false' | 'fill-blank') => {
+    const updated = [...editedQuestions];
+    const currentQuestion = updated[index];
+    
+    // Update type
+    currentQuestion.type = newType;
+    
+    // Update options based on new type
+    if (newType === 'multiple-choice') {
+      currentQuestion.options = ['', '', '', ''];
+      currentQuestion.correct = 0;
+    } else if (newType === 'true-false') {
+      currentQuestion.options = ['True', 'False'];
+      currentQuestion.correct = 0;
+    } else if (newType === 'fill-blank') {
+      currentQuestion.options = [''];
+      currentQuestion.correct = 0;
+    }
+    
+    setEditedQuestions(updated);
+  };
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -472,10 +525,25 @@ export default function QuizPlayerPage() {
                   return (
                     <div key={qIndex} className="bg-white/5 rounded-xl p-6 border border-white/10">
                       <div className="flex items-start justify-between mb-4">
-                        <label className="text-sm text-purple-200 font-semibold">Question {qIndex + 1}</label>
-                        <span className="text-xs px-3 py-1 bg-purple-500/30 rounded-full text-purple-200">
-                          {questionType.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <label className="text-sm text-purple-200 font-semibold">Question {qIndex + 1}</label>
+                          <select
+                            value={questionType}
+                            onChange={(e) => changeQuestionType(qIndex, e.target.value as any)}
+                            className="px-3 py-1 text-xs bg-purple-500/30 border border-purple-400/50 rounded-full text-purple-200 cursor-pointer hover:bg-purple-500/50 transition-colors"
+                          >
+                            <option value="multiple-choice">Multiple Choice</option>
+                            <option value="true-false">True/False</option>
+                            <option value="fill-blank">Fill in the Blank</option>
+                          </select>
+                        </div>
+                        <button
+                          onClick={() => removeQuestion(qIndex)}
+                          className="px-3 py-1 bg-red-600/80 hover:bg-red-600 rounded-lg text-xs font-semibold transition-colors"
+                          title="Delete question"
+                        >
+                          🗑️ Delete
+                        </button>
                       </div>
                       
                       <textarea
@@ -528,6 +596,31 @@ export default function QuizPlayerPage() {
                     </div>
                   );
                 })}
+
+                {/* Add New Question Buttons */}
+                <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border-2 border-dashed border-purple-400/50">
+                  <p className="text-white font-semibold mb-4 text-center">➕ Add New Question</p>
+                  <div className="flex gap-3 justify-center flex-wrap">
+                    <button
+                      onClick={() => addNewQuestion('multiple-choice')}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition-colors"
+                    >
+                      📝 Multiple Choice
+                    </button>
+                    <button
+                      onClick={() => addNewQuestion('true-false')}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-colors"
+                    >
+                      ✓✗ True/False
+                    </button>
+                    <button
+                      onClick={() => addNewQuestion('fill-blank')}
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition-colors"
+                    >
+                      ✍️ Fill in Blank
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
