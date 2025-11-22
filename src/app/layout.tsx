@@ -6,6 +6,7 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { DocumentProcessingProvider } from "../contexts/DocumentProcessingContext";
 import ChatOverlay from '@/components/ChatOverlay';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import SEO from '@/components/SEO';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <SEO />
         <meta name="google-adsense-account" content="ca-pub-6371037672090963" />
         <script
           dangerouslySetInnerHTML={{
@@ -48,7 +50,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased preload`}
+        className={`${geistSans.variable} ${geistMono.variable} preload`}
         suppressHydrationWarning={true}
       >
         <ErrorBoundary>

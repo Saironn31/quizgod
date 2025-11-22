@@ -1,198 +1,246 @@
-# Email Setup Guide
+# Welcome Email Setup Guide
 
-## Welcome Email on User Signup
+## Overview
+QuizGod sends automatic welcome emails to new users using Brevo's API through a Next.js API route. This works on **Firebase Spark (free) plan** - no Blaze upgrade needed!
 
-The app now automatically sends a welcome email when users sign up using Firebase Authentication triggers.
+## Why Brevo?
+- ✅ **300 emails/day FREE** (vs Mailgun's 100/day)
+- ✅ No credit card required
+- ✅ Works with Next.js (no Firebase Functions needed)
+- ✅ Simple REST API integration
+
+---
+
+## Setup Steps
+
+### 1. Create Brevo Account
+1. Visit https://www.brevo.com/
+2. Click "Sign up free"
+3. Verify your email address
+4. Complete account setup
+
+### 2. Get API Key
+1. Go to https://app.brevo.com/settings/keys/api
+2. Click "Generate a new API key"
+3. Name it: **QuizGod Email API**
+4. Copy the generated key (starts with `xkeysib-`)
+5. Store it securely (you can't see it again!)
+
+### 3. Configure Environment Variable
+
+**For Local Development:**
+
+Add to `.env.local` in project root:
+```bash
+BREVO_API_KEY=xkeysib-your-api-key-here
+```
+
+**For Production (Vercel):**
+
+1. Go to Vercel Dashboard → Your Project
+2. Click "Settings" → "Environment Variables"
+3. Add new variable:
+   - **Name**: `BREVO_API_KEY`
+   - **Value**: `xkeysib-your-api-key-here`
+   - **Environment**: Production (and Preview if needed)
+4. Click "Save"
+5. Redeploy your app
+
+### 4. Test the System
+
+1. **Start dev server** (if not running):
+   ```bash
+   npm run dev
+   ```
+
+2. **Create test account**:
+   - Open your app
+   - Click "Sign Up"
+   - Enter real email address (to receive test email)
+   - Complete signup
+
+3. **Check email**:
+   - Check inbox within 1-2 minutes
+   - Check spam/junk folder if not in inbox
+   - Email should be personalized with your name
+
+4. **Verify in Brevo dashboard**:
+   - Go to https://app.brevo.com/statistics/email
+   - Check "Transactional" emails
+   - See delivery status
+
+---
 
 ## How It Works
 
-1. **Trigger**: When a user creates an account, the `sendWelcomeEmail` Firebase Function is automatically triggered
-2. **Queue**: Email data is stored in Firestore `mail` collection
-3. **Delivery**: An email extension processes the queue and sends the email
-
-## Setup Options
-
-### Option 1: Firebase Email Extension (Recommended - Easiest)
-
-1. **Install the Trigger Email extension from Firebase Console:**
-   ```bash
-   firebase ext:install firebase/firestore-send-email
-   ```
-
-2. **Configure during installation:**
-   - SMTP Connection URI: Your email provider's SMTP URI
-   - Email documents collection: `mail`
-   - Default FROM address: `noreply@yourdomain.com`
-   - Default Reply-To address: `support@yourdomain.com`
-
-3. **SMTP Providers (Choose one):**
-
-   **Brevo (Recommended - Best Free Tier):**
-   - Sign up at https://brevo.com
-   - **Free Tier**: 300 emails/day (9,000/month) - FREE FOREVER ✅
-   - **Paid**: $17/month for 10,000 emails/month
-   - Get SMTP credentials from Settings > SMTP & API
-   - SMTP URI: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
-   - **Setup Steps**:
-     1. Create account and verify email (no credit card required)
-     2. Go to Settings > SMTP & API > SMTP
-     3. Click "Create a new SMTP key"
-     4. Copy your login (email) and SMTP key
-     5. Use format: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
-   - **Perfect for**: Growing apps with consistent signups (3x more than Mailgun)
-
-   **Alternative: Mailgun (Good for small apps):**
-   - Sign up at https://mailgun.com
-   - **Free Tier**: 100 emails/day (~3,000/month) - FREE FOREVER
-   - **Foundation Plan**: First month free trial, then $35/month for 50,000 emails
-   - SMTP URI: `smtps://postmaster@YOUR_DOMAIN.mailgun.org:YOUR_PASSWORD@smtp.mailgun.org:465`
-   - Good for testing and very small apps
-
-   **Alternative: Gmail (testing only):**
-   - Enable 2FA on your Google account
-   - Create App Password: https://myaccount.google.com/apppasswords
-   - SMTP URI: `smtps://your-email@gmail.com:YOUR_APP_PASSWORD@smtp.gmail.com:465`
-   - Note: 500 emails/day limit, not recommended for production
-
-### Option 2: Custom Email Service (More Control)
-
-If you prefer a different email service:
-
-1. **Create a Cloud Function to watch the `mail` collection:**
-   ```typescript
-   export const processMailQueue = functions.firestore
-     .document('mail/{mailId}')
-     .onCreate(async (snap, context) => {
-       const mailData = snap.data();
-       // Send email using your preferred service (SendGrid API, etc.)
-       // Mark as delivered: await snap.ref.update({ delivery: { state: 'SUCCESS' } });
-     });
-   ```
-
-2. **Use SendGrid API directly:**
-   ```bash
-   npm install @sendgrid/mail --prefix functions
-   ```
-
-3. **Update the function:**
-   ```typescript
-   import sgMail from '@sendgrid/mail';
-   sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-   
-   await sgMail.send({
-     to: mailData.to,
-     from: 'noreply@yourdomain.com',
-     subject: mailData.message.subject,
-     html: mailData.message.html
-   });
-   ```
-
-## Email Template
-
-The welcome email includes:
-- Personalized greeting with user's name
-- QuizGod branding with gradient header
-- List of key features
-- Call-to-action button
-- Responsive HTML design
-- Plain text fallback
-
-## Testing
-
-1. **Deploy the function:**
-   ```bash
-   cd functions
-   npm run build
-   firebase deploy --only functions
-   ```
-
-2. **Test with a new account:**
-   - Sign up with a real email address
-   - Check email inbox (and spam folder)
-   - Verify email appearance and links
-
-3. **Check logs:**
-   ```bash
-   firebase functions:log
-   ```
-
-## Customization
-
-### Update Email Content
-
-Edit `functions/src/index.ts` in the `sendWelcomeEmail` function:
-
-```typescript
-// Change subject
-subject: 'Your Custom Subject'
-
-// Update HTML template
-html: `...your custom HTML...`
-
-// Update text fallback
-text: `...your custom text...`
+```
+User Signs Up
+    ↓
+AuthModal.tsx (frontend)
+    ↓
+POST /api/send-welcome-email
+    ↓
+route.ts (Next.js API)
+    ↓
+Brevo API (HTTPS)
+    ↓
+Email Delivered to User
 ```
 
-### Add User's Name
+**Files involved:**
+- `/src/app/api/send-welcome-email/route.ts` - API endpoint
+- `/src/components/AuthModal.tsx` - Triggers email on signup
 
-The template uses `user.displayName` which is typically empty on signup. To show the actual name:
+---
 
-1. **Update AuthModal.tsx** to set displayName:
-   ```typescript
-   const userCredential = await signup(email, password);
-   await updateProfile(userCredential.user, { displayName: name });
-   ```
+## Monitoring Usage
 
-2. **Or** fetch from Firestore user profile in the function
+### Check Brevo Dashboard
+1. Go to https://app.brevo.com/statistics/email
+2. View:
+   - Emails sent today
+   - Delivery rate
+   - Open rate
+   - Click rate
 
-### Change Email Sender
+### Daily Limits (Free Tier)
+- 300 emails/day
+- ~9,000 emails/month
+- Unlimited contacts
+- No time limit
 
-Update the `from` field in the email or set it in Firebase extension config.
+### When to Upgrade
+If you consistently hit 300 emails/day:
+- **Starter**: $25/mo for 20,000 emails/month
+- **Business**: $65/mo for 60,000 emails/month
 
-## Cost Considerations
-
-- **Firebase Function**: Free tier covers most usage (2M invocations/month)
-- **Brevo (Recommended)**: 
-  - Free tier: 300 emails/day (9,000/month) - Forever free ✅
-  - Starter plan: $17/month for 10,000 emails/month
-  - Best value for growing quiz platforms
-- **Mailgun (Alternative)**: 
-  - Free tier: 100 emails/day (3,000/month) - Forever free
-  - Foundation: $35/month for 50,000 emails
+---
 
 ## Troubleshooting
 
-**Email not received:**
-1. Check Firebase Console > Functions logs
-2. Verify Firestore has `mail` collection with new documents
-3. Check email provider's dashboard for delivery status
-4. Verify SMTP credentials are correct
-5. Check spam folder
+### Email Not Received?
 
-**Function not triggering:**
-1. Ensure function is deployed: `firebase deploy --only functions`
-2. Check Firebase Console > Functions to see if it's listed
-3. Verify Firebase Authentication is working
+1. **Check spam folder** - First-time emails often go to spam
+2. **Check Brevo dashboard** - Verify email was sent
+3. **Check Next.js logs**:
+   ```bash
+   # Development
+   Check terminal where `npm run dev` is running
+   
+   # Production (Vercel)
+   Go to Vercel Dashboard → Your Project → Functions → Runtime Logs
+   ```
 
-**Rate limits:**
-- Brevo free tier: 300 emails/day (best free option) ✅
-- Mailgun free tier: 100 emails/day
-- Monitor usage in provider dashboard
-- Set up billing alerts to avoid surprises
-- Upgrade to paid plan when consistently exceeding daily limits
+4. **Verify API key**:
+   ```bash
+   # Check if env variable is loaded
+   echo $BREVO_API_KEY    # Mac/Linux
+   $env:BREVO_API_KEY     # Windows PowerShell
+   ```
 
-## Security Notes
+### Common Errors
 
-- Never commit SMTP credentials to Git
-- Use Firebase Console environment config or Google Cloud Secret Manager
-- Set up SPF/DKIM records for custom domains
-- Use environment variables for sensitive data
+**"Email service not configured"**
+- BREVO_API_KEY not set in environment
+- Restart dev server after adding .env.local
+- Redeploy if on Vercel
 
-## Next Steps
+**"Failed to send email" (401/403)**
+- Invalid API key
+- API key expired or deleted
+- Generate new key from Brevo dashboard
 
-1. Choose email provider and get credentials
-2. Install Firebase email extension OR implement custom solution
-3. Deploy functions: `firebase deploy --only functions`
-4. Test with a real signup
-5. Monitor logs and email delivery
-6. Customize template to match your branding
+**"Failed to send email" (429)**
+- Exceeded 300 emails/day limit
+- Wait until next day (UTC time)
+- Or upgrade Brevo plan
+
+**Email goes to spam**
+- First-time emails often flagged
+- For production: Verify your domain in Brevo
+- Add SPF/DKIM records to DNS
+
+---
+
+## Production Setup (Optional)
+
+### Verify Sender Domain
+
+For better deliverability, verify your domain:
+
+1. **Go to Brevo**: https://app.brevo.com/senders
+2. **Add domain**: `yourdomain.com`
+3. **Add DNS records** provided by Brevo:
+   - SPF record (TXT)
+   - DKIM record (TXT)
+   - DMARC record (TXT)
+4. **Wait for verification** (can take 24-48 hours)
+5. **Update sender email** in code to use your domain
+
+---
+
+## Email Template Customization
+
+Edit `/src/app/api/send-welcome-email/route.ts`:
+
+```typescript
+subject: "Welcome to QuizGod! 🎓",  // Change subject
+sender: {
+  name: "QuizGod Team",              // Change sender name
+  email: "noreply@yourdomain.com"    // Change sender email
+},
+htmlContent: `...`                   // Edit HTML template
+```
+
+---
+
+## Future Enhancements
+
+Consider adding more email types:
+
+- ✉️ Email verification
+- 🔒 Password reset
+- 🎯 Quiz results summary
+- 📊 Weekly progress digest
+- 💎 Premium upgrade notifications
+- 🎉 Achievement unlocked emails
+
+Each would be a new API route following the same pattern.
+
+---
+
+## Alternative: Mailgun
+
+If you prefer Mailgun instead:
+
+**Pros:**
+- Good for enterprise
+- Reliable delivery
+
+**Cons:**
+- Only 100 emails/day free (vs Brevo's 300)
+- Requires credit card
+- More complex setup
+
+**Setup:** https://www.mailgun.com/
+
+---
+
+## Cost Comparison
+
+| Provider | Free Tier | Paid Plans |
+|----------|-----------|------------|
+| **Brevo** ✅ | 300/day (9k/month) | $25/mo for 20k |
+| Mailgun | 100/day (3k/month) | $35/mo for 50k |
+| SendGrid | 100/day | $20/mo for 50k |
+
+**Recommendation**: Stick with Brevo for the best free tier!
+
+---
+
+## Questions?
+
+Check:
+- Brevo Documentation: https://developers.brevo.com/
+- API Reference: https://developers.brevo.com/reference/sendtransacemail
+- QuizGod codebase: `/src/app/api/send-welcome-email/route.ts`

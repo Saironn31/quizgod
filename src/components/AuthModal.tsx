@@ -44,8 +44,20 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       } else {
         const userCredential = await signup(email, password);
         if (userCredential?.user) {
+          // Set display name for Firebase Auth
+          const { updateProfile } = await import('firebase/auth');
+          await updateProfile(userCredential.user, { displayName: name });
+          
+          // Create user profile in Firestore
           await createUserProfile(userCredential.user.uid, email, name);
           await migrateLocalDataToFirestore(userCredential.user.uid, email);
+
+          // Send welcome email (non-blocking)
+          fetch('/api/send-welcome-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name })
+          }).catch(err => console.error('Failed to send welcome email:', err));
         }
       }
       onClose();
