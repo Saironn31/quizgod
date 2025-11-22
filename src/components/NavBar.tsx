@@ -389,7 +389,7 @@ const NavBar: React.FC = () => {
             {/* Middle: Navigation Links */}
             <div className="flex flex-col gap-2 px-6 py-4 flex-1 overflow-y-auto">
               <Link href="/" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Home</Link>
-              <Link href="/create" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Create</Link>
+              <Link href="/quiz-creator" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Create</Link>
               <Link href="/ai-quiz" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>AI Quiz</Link>
               <Link href="/subjects" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>Subjects</Link>
               <Link href="/quizzes" className="text-white px-3 py-2 rounded hover:bg-white/10 transition text-base font-medium" onClick={closeMenu}>My Quizzes</Link>

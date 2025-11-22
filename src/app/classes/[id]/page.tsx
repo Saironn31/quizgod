@@ -318,7 +318,7 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
               <option value="subject">Subject</option>
             </select>
           </div>
-          <Link href="/create" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">➕ Create Quiz</Link>
+          <Link href="/quiz-creator" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">➕ Create Quiz</Link>
           <Link href="/ai-quiz" className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">🤖 AI Quiz</Link>
         </div>
       </div>
@@ -328,7 +328,7 @@ function QuizzesTab({ quizzes, classData }: { quizzes: FirebaseQuiz[], classData
           <h3 className="text-xl font-semibold text-gray-700 mb-2">No Shared Quizzes Yet</h3>
           <p className="text-gray-500 mb-4">Create quizzes and share them with your class!</p>
           <div className="flex gap-4 justify-center">
-            <Link href="/create" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">➕ Create Quiz</Link>
+            <Link href="/quiz-creator" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">➕ Create Quiz</Link>
             <Link href="/ai-quiz" className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">🤖 Generate AI Quiz</Link>
           </div>
         </div>

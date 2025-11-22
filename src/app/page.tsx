@@ -311,7 +311,7 @@ export default function HomePage() {
                   <li><a href="/features" className="hover:text-white transition-colors">Features</a></li>
                   <li><a href="/premium" className="hover:text-white transition-colors">Pricing</a></li>
                   <li><a href="/ai-quiz" className="hover:text-white transition-colors">AI Quiz Generator</a></li>
-                  <li><a href="/create" className="hover:text-white transition-colors">Create Quiz</a></li>
+                  <li><a href="/quiz-creator" className="hover:text-white transition-colors">Create Quiz</a></li>
                   <li><a href="/quizzes" className="hover:text-white transition-colors">Browse Quizzes</a></li>
                 </ul>
               </div>

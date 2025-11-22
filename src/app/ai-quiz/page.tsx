@@ -6,7 +6,7 @@ export default function AIQuizRedirect() {
   const router = useRouter();
   
   useEffect(() => {
-    router.push("/create");
+    router.push("/quiz-creator");
   }, [router]);
   
   return (
