@@ -72,6 +72,7 @@ export default function CreatePage() {
     'fill-blank': 0
   });  // AI mode fields
   const [numQuestions, setNumQuestions] = useState(5);
+  const [numQuestionsWithImages, setNumQuestionsWithImages] = useState(0);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfText, setPdfText] = useState("");
   const [generatedQuestions, setGeneratedQuestions] = useState("");
@@ -646,6 +647,23 @@ export default function CreatePage() {
       }
     }
 
+    // Validate image count against available images
+    if (numQuestionsWithImages > 0) {
+      if (uploadedImages.length === 0) {
+        setIsGenerating(false);
+        setError(`❌ No images found in the PDF. Cannot generate ${numQuestionsWithImages} questions with images.`);
+        alert(`❌ No images were extracted from the PDF.\n\nYou requested ${numQuestionsWithImages} questions with images, but the PDF contains no images.\n\nPlease either:\n- Upload a PDF with images, or\n- Set "Questions with Images" to 0`);
+        return;
+      }
+      
+      if (numQuestionsWithImages > uploadedImages.length) {
+        setIsGenerating(false);
+        setError(`❌ Not enough images. Found ${uploadedImages.length} images but you requested ${numQuestionsWithImages} questions with images.`);
+        alert(`❌ Not enough images in PDF!\n\nFound: ${uploadedImages.length} images\nRequested: ${numQuestionsWithImages} questions with images\n\nPlease reduce the "Questions with Images" setting to ${uploadedImages.length} or less.`);
+        return;
+      }
+    }
+
     // Build question type instructions
     let typeInstructions = '';
     const types = [];
@@ -669,7 +687,9 @@ export default function CreatePage() {
       ).join('\n')}\n
 You can reference images in questions using the format:
 IMAGE_URL: [IMAGE_0]
-(Place this line immediately after the question text, before the options)\n`;
+(Place this line immediately after the question text, before the options)
+
+${numQuestionsWithImages > 0 ? `IMPORTANT: You MUST include images in EXACTLY ${numQuestionsWithImages} questions. Use the most relevant images for those questions.\n` : 'NOTE: Images are available but optional. Use them only if they add value to the question.\n'}`;
     }
 
     const basePrompt = `You are a quiz generator. Create a quiz about ${subject} with difficulty level: ${difficulty.toUpperCase()}.
@@ -678,6 +698,7 @@ Based on the following content, generate EXACTLY:
 ${types.join('\n')}
 
 TOTAL QUESTIONS REQUIRED: ${totalQuestions}
+${uploadedImages.length > 0 && numQuestionsWithImages > 0 ? `QUESTIONS WITH IMAGES: ${numQuestionsWithImages} (MANDATORY)\n` : ''}
 
 Content:
 ${pdfText.slice(0, 15000)}
@@ -706,14 +727,15 @@ CRITICAL RULES:
 2. For multiple-choice and true/false: EXACTLY ONE asterisk (*) marking the correct answer
 3. For fill-blank: Use "ANSWER:" followed by ONLY 1-3 WORDS (no full sentences or long phrases)
 4. Number questions sequentially: 1, 2, 3, etc.
-${uploadedImages.length > 0 ? '5. OPTIONAL: Add IMAGE_URL: [IMAGE_X] line after question text if relevant image available\n' : ''}
-5. Generate EXACTLY ${totalQuestions} questions total (${types.join(', ')})
-6. DO NOT generate more or fewer than ${totalQuestions} questions
-7. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
-8. End after the last question - NO conclusion text
-9. Fill-in-the-blank answers will be checked case-insensitively, so focus on the core term/concept
+${uploadedImages.length > 0 && numQuestionsWithImages > 0 ? `5. MANDATORY: Include IMAGE_URL: [IMAGE_X] in EXACTLY ${numQuestionsWithImages} questions (choose most relevant images)\n` : uploadedImages.length > 0 ? '5. OPTIONAL: Add IMAGE_URL: [IMAGE_X] line after question text if relevant image available\n' : ''}
+6. Generate EXACTLY ${totalQuestions} questions total (${types.join(', ')})
+7. DO NOT generate more or fewer than ${totalQuestions} questions
+8. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
+9. End after the last question - NO conclusion text
+10. Fill-in-the-blank answers will be checked case-insensitively, so focus on the core term/concept
 
 IMPORTANT: You must generate exactly ${totalQuestions} questions. No more, no less.
+${uploadedImages.length > 0 && numQuestionsWithImages > 0 ? `REMINDER: ${numQuestionsWithImages} of these questions MUST include images!\n` : ''}
 
 Generate the questions NOW:`;
 
@@ -2008,6 +2030,44 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
                             </div>
                           </div>
                         </div>
+
+                        {/* Questions with Images Setting */}
+                        {currentJob?.extractedImages && currentJob.extractedImages.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-3 mb-3">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center text-xl">
+                                🖼️
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-base font-bold text-white">Questions with Images</label>
+                                <p className="text-xs text-slate-400">
+                                  {currentJob.extractedImages.length} images found in PDF
+                                </p>
+                              </div>
+                            </div>
+                            <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                              <div className="flex items-center gap-3">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={currentJob.extractedImages.length}
+                                  value={numQuestionsWithImages}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value) || 0;
+                                    setNumQuestionsWithImages(Math.min(value, currentJob.extractedImages.length));
+                                  }}
+                                  className="flex-1 p-2 text-base font-semibold border border-white/20 bg-white/10 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-center"
+                                />
+                                <span className="text-sm text-slate-400">of {currentJob.extractedImages.length}</span>
+                              </div>
+                              {numQuestionsWithImages > 0 && (
+                                <p className="text-xs text-green-400 mt-2">
+                                  ✓ AI will include images in {numQuestionsWithImages} question{numQuestionsWithImages > 1 ? 's' : ''}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Generate Button */}
                         <div>
