@@ -109,6 +109,27 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
         <div className="relative z-10 max-w-2xl mx-auto">
+          {/* Premium Status Card */}
+          <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-white/10 mb-6">
+            <h2 className="text-2xl font-bold mb-4 text-white text-center">Account Status</h2>
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-lg text-white">Premium:</span>
+              <span className={`text-2xl font-bold ${userProfile?.isPremium ? 'text-green-400' : 'text-red-400'}`}>
+                {userProfile?.isPremium ? '✅ Active' : '❌ Not Active'}
+              </span>
+            </div>
+            {!userProfile?.isPremium && (
+              <div className="mt-4 text-center">
+                <a href="/premium" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
+                  Upgrade to Premium
+                </a>
+              </div>
+            )}
+            <div className="mt-4 text-xs text-slate-400 text-center">
+              User ID: {user?.uid}
+            </div>
+          </div>
+          
           <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-white/10 to-purple-900/10 border-2 border-white/10 mb-6">
             <h2 className="text-2xl font-bold mb-4 text-purple-700 dark:text-purple-300 text-center">Edit Profile</h2>
             <form className="flex flex-col gap-4" onSubmit={handleSave}>

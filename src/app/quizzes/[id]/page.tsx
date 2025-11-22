@@ -323,12 +323,9 @@ export default function QuizPlayerPage() {
     }
   };
 
-  const handleEnterEditMode = () => {
-    if (!quiz || !userProfile?.isPremium) {
-      if (!userProfile?.isPremium) {
-        alert('Edit mode is a premium feature. Please upgrade to edit quizzes.');
-        router.push('/premium');
-      }
+  const handleEnterEditMode = async () => {
+    if (!quiz || !user?.uid) {
+      alert('Please log in to edit quizzes.');
       return;
     }
     
@@ -337,8 +334,23 @@ export default function QuizPlayerPage() {
       return;
     }
     
-    setIsEditMode(true);
-    setEditedQuestions(JSON.parse(JSON.stringify(quiz.questions)));
+    // Fetch fresh user profile to ensure we have latest premium status
+    try {
+      const freshProfile = await getUserProfile(user.uid);
+      console.log('User profile premium status:', freshProfile?.isPremium);
+      
+      if (!freshProfile?.isPremium) {
+        alert('Edit mode is a premium feature. Please upgrade to edit quizzes.');
+        router.push('/premium');
+        return;
+      }
+      
+      setIsEditMode(true);
+      setEditedQuestions(JSON.parse(JSON.stringify(quiz.questions)));
+    } catch (error) {
+      console.error('Error checking premium status:', error);
+      alert('Failed to verify premium status. Please try again.');
+    }
   };
 
   const handleCancelEdit = () => {
