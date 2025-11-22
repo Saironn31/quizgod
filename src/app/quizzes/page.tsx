@@ -242,7 +242,7 @@ export default function QuizzesPage() {
             </div>
 
             {/* Quiz Stats - Bento Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-8">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
               <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all">
                 <div className="text-xs text-blue-200 mb-1 font-medium">Total Quizzes</div>
                 <div className="text-2xl md:text-3xl font-black text-blue-300">{quizzes.length}</div>
@@ -252,13 +252,6 @@ export default function QuizzesPage() {
                 <div className="text-xs text-green-200 mb-1 font-medium">Subjects</div>
                 <div className="text-2xl md:text-3xl font-black text-green-300">{subjects.length}</div>
                 <div className="text-xs text-green-300/60 mt-1">Topics</div>
-              </div>
-              <div className="glass-card rounded-xl p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all">
-                <div className="text-xs text-purple-200 mb-1 font-medium">Questions</div>
-                <div className="text-2xl md:text-3xl font-black text-purple-300">
-                  {quizzes.reduce((total, q) => total + q.questions.length, 0)}
-                </div>
-                <div className="text-xs text-purple-300/60 mt-1">Total</div>
               </div>
             </div>
 
@@ -344,13 +337,22 @@ export default function QuizzesPage() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2 mt-auto">
+                    <div className="flex gap-2 mt-auto flex-wrap">
                       <Link 
                         href={`/quizzes/${quiz.id}`} 
-                        className="flex-1 px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium"
+                        className="flex-1 min-w-[80px] px-3 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-center rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium"
                       >
                         🎮 Play
                       </Link>
+                      {quiz.source === 'personal' && quiz.userId === user?.uid && (
+                        <Link
+                          href={`/quizzes/${quiz.id}?edit=true`}
+                          className="px-2.5 md:px-3 py-2 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium shrink-0"
+                          title="Edit quiz (Premium)"
+                        >
+                          ✏️
+                        </Link>
+                      )}
                       {quiz.source === 'personal' && (
                         <button
                           onClick={() => {
@@ -364,14 +366,16 @@ export default function QuizzesPage() {
                           🔗
                         </button>
                       )}
-                      <button 
-                        onClick={() => handleDelete(quiz.id, quiz.title)}
-                        disabled={deleting === quiz.id}
-                        className="px-2.5 md:px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium disabled:opacity-50 shrink-0"
-                        title="Delete quiz"
-                      >
-                        {deleting === quiz.id ? "⏳" : "🗑️"}
-                      </button>
+                      {quiz.source === 'personal' && quiz.userId === user?.uid && (
+                        <button 
+                          onClick={() => handleDelete(quiz.id, quiz.title)}
+                          disabled={deleting === quiz.id}
+                          className="px-2.5 md:px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 transition-all duration-200 shadow-md text-xs md:text-sm font-medium disabled:opacity-50 shrink-0"
+                          title="Delete quiz"
+                        >
+                          {deleting === quiz.id ? "⏳" : "🗑️"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   </React.Fragment>

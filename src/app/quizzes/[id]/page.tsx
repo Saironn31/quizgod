@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from '@/contexts/AuthContext';
 import { getQuizById, FirebaseQuiz, saveQuizRecord, createLiveQuizSession, joinLiveQuizSession, getUserProfile, updateQuiz } from '@/lib/firestore';
 import SideNav from '@/components/SideNav';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 export default function QuizPlayerPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, userProfile } = useAuth();
   const [quiz, setQuiz] = useState<FirebaseQuiz | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -80,6 +81,14 @@ export default function QuizPlayerPage() {
   useEffect(() => {
     loadQuiz();
   }, [params.id]);
+
+  // Check for edit parameter on mount
+  useEffect(() => {
+    const editParam = searchParams.get('edit');
+    if (editParam === 'true' && quiz && user?.uid === quiz.userId) {
+      handleEnterEditMode();
+    }
+  }, [searchParams, quiz, user?.uid]);
 
   const loadQuiz = async () => {
     if (!params.id) return;
@@ -631,82 +640,137 @@ export default function QuizPlayerPage() {
 
   if (!quizStarted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-4">
-          <h1 className="text-3xl font-bold mb-4 text-center">{quiz.title}</h1>
-          <div className="text-center space-y-4">
-            <p className="text-xl">📚 Subject: {quiz.subject}</p>
-            {quiz.description && (
-              <p className="text-gray-300">{quiz.description}</p>
-            )}
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-lg">📊 Quiz Information:</p>
-              <ul className="mt-2 space-y-1">
-                <li>• Questions: {quiz.questions.length}</li>
-                <li>• Difficulty: {quiz.difficulty ? quiz.difficulty.charAt(0).toUpperCase() + quiz.difficulty.slice(1) : 'Not specified'}</li>
-                {quiz.timerType && quiz.timerType !== 'none' ? (
-                  <li>• Timer: {quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s per question` : `${Math.floor((quiz.timerDuration || 0) / 60)} minutes total`}</li>
-                ) : (
-                  <li>• Timer: No time limit</li>
-                )}
-                <li>• Type: {quiz.questions[0]?.type ? quiz.questions[0].type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Multiple Choice'}</li>
-              </ul>
+      <div className="min-h-screen bg-slate-950">
+        <SideNav />
+        <div className="md:ml-64 min-h-screen p-4 md:p-8 pb-32 md:pb-8">
+          <div className="fixed inset-0 pointer-events-none overflow-hidden">
+            <div className="absolute top-20 right-20 w-96 h-96 bg-cyan-500/5 rounded-full filter blur-3xl animate-float"></div>
+            <div className="absolute bottom-20 left-20 w-96 h-96 bg-violet-500/5 rounded-full filter blur-3xl animate-float" style={{animationDelay: '1.5s'}}></div>
+          </div>
+          
+          {/* Header Card */}
+          <div className="relative z-10 mb-8">
+            <div className="glass-card rounded-3xl p-8 md:p-12 bg-gradient-to-br from-purple-500/10 to-blue-500/10 border-2 border-white/10">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div>
+                  <h1 className="text-4xl md:text-6xl font-black mb-3">
+                    <span className="text-white">{quiz.title}</span>
+                  </h1>
+                  <p className="text-slate-300 text-lg">📚 {quiz.subject}</p>
+                </div>
+              </div>
             </div>
-            <div className="flex gap-4 justify-center mt-6 flex-wrap">
-              <Link 
-                href="/quizzes" 
-                className="px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                ← Back to Quizzes
-              </Link>
-              {quiz.userId === user?.uid && (
-                <button
-                  onClick={handleEnterEditMode}
-                  className="px-6 py-3 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors font-semibold flex items-center gap-2"
-                  title={userProfile?.isPremium ? 'Edit Quiz' : 'Premium Feature'}
-                >
-                  ✏️ Edit Quiz
-                  {!userProfile?.isPremium && <span className="text-xs bg-purple-500 px-2 py-0.5 rounded">Premium</span>}
-                </button>
-              )}
+          </div>
+
+          {/* Quiz Info Bento Grid */}
+          <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-400/30 hover:scale-105 transition-all">
+              <div className="text-sm text-blue-200 mb-2 font-medium">Questions</div>
+              <div className="text-4xl font-black text-blue-300">{quiz.questions.length}</div>
+              <div className="text-xs text-blue-300/60 mt-1">Total</div>
+            </div>
+            
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all">
+              <div className="text-sm text-purple-200 mb-2 font-medium">Difficulty</div>
+              <div className="text-2xl font-black text-purple-300 capitalize">{quiz.difficulty || 'Medium'}</div>
+              <div className="text-xs text-purple-300/60 mt-1">Level</div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all">
+              <div className="text-sm text-green-200 mb-2 font-medium">Timer</div>
+              <div className="text-2xl font-black text-green-300">
+                {quiz.timerType && quiz.timerType !== 'none' 
+                  ? (quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s` : `${Math.floor((quiz.timerDuration || 0) / 60)}m`)
+                  : 'None'}
+              </div>
+              <div className="text-xs text-green-300/60 mt-1">
+                {quiz.timerType === 'per-question' ? 'Per Q' : quiz.timerType === 'whole-quiz' ? 'Total' : 'Unlimited'}
+              </div>
+            </div>
+            
+            <div className="glass-card rounded-2xl p-6 bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-400/30 hover:scale-105 transition-all">
+              <div className="text-sm text-orange-200 mb-2 font-medium">Type</div>
+              <div className="text-xl font-black text-orange-300 capitalize">
+                {quiz.questions[0]?.type?.split('-').join(' ') || 'Multiple Choice'}
+              </div>
+              <div className="text-xs text-orange-300/60 mt-1">Format</div>
+            </div>
+          </div>
+
+          {/* Description Card */}
+          {quiz.description && (
+            <div className="relative z-10 glass-card rounded-3xl p-6 mb-8">
+              <h3 className="text-xl font-bold text-white mb-3">Description</h3>
+              <p className="text-slate-300">{quiz.description}</p>
+            </div>
+          )}
+
+          {/* Action Buttons - Bento Grid */}
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Link 
+              href="/quizzes" 
+              className="glass-card rounded-2xl p-6 bg-gradient-to-br from-gray-500/10 to-gray-600/10 border border-gray-400/30 hover:scale-105 transition-all text-center group"
+            >
+              <div className="text-4xl mb-3">←</div>
+              <div className="text-xl font-bold text-white mb-2">Back to Quizzes</div>
+              <div className="text-sm text-gray-300">Return to quiz list</div>
+            </Link>
+
+            {quiz.userId === user?.uid && (
               <button
-                onClick={handleStartQuiz}
-                className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                onClick={handleEnterEditMode}
+                className="glass-card rounded-2xl p-6 bg-gradient-to-br from-yellow-500/10 to-yellow-600/10 border border-yellow-400/30 hover:scale-105 transition-all text-center group"
               >
-                🚀 Start Solo Quiz
+                <div className="text-4xl mb-3">✏️</div>
+                <div className="text-xl font-bold text-white mb-2">Edit Quiz</div>
+                <div className="text-sm text-yellow-300">
+                  {userProfile?.isPremium ? 'Modify questions' : '⭐ Premium Feature'}
+                </div>
               </button>
-              {quiz.classId && (
-                <button
-                  onClick={async () => {
-                    if (!user) return;
-                    try {
-                      const userProfile = await getUserProfile(user.uid);
-                      const sessionId = await createLiveQuizSession(
-                        quiz.id,
-                        quiz.title,
-                        quiz.classId!,
-                        user.uid,
-                        userProfile?.name || user.email || 'Anonymous'
-                      );
-                      // Join the session as host
-                      await joinLiveQuizSession(
-                        sessionId,
-                        user.uid,
-                        userProfile?.name || user.email || 'Anonymous',
-                        user.email || ''
-                      );
-                      router.push(`/live-quiz/${sessionId}`);
-                    } catch (error) {
-                      console.error('Error creating live session:', error);
-                      alert('Failed to create live quiz session');
-                    }
-                  }}
-                  className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-                >
-                  🎮 Start Live Multiplayer
-                </button>
-              )}
-            </div>
+            )}
+
+            <button
+              onClick={handleStartQuiz}
+              className="glass-card rounded-2xl p-6 bg-gradient-to-br from-green-500/10 to-green-600/10 border border-green-400/30 hover:scale-105 transition-all text-center group"
+            >
+              <div className="text-4xl mb-3">🚀</div>
+              <div className="text-xl font-bold text-white mb-2">Start Solo Quiz</div>
+              <div className="text-sm text-green-300">Play by yourself</div>
+            </button>
+
+            {quiz.classId && (
+              <button
+                onClick={async () => {
+                  if (!user) return;
+                  try {
+                    const userProfile = await getUserProfile(user.uid);
+                    const sessionId = await createLiveQuizSession(
+                      quiz.id,
+                      quiz.title,
+                      quiz.classId!,
+                      user.uid,
+                      userProfile?.name || user.email || 'Anonymous'
+                    );
+                    // Join the session as host
+                    await joinLiveQuizSession(
+                      sessionId,
+                      user.uid,
+                      userProfile?.name || user.email || 'Anonymous',
+                      user.email || ''
+                    );
+                    router.push(`/live-quiz/${sessionId}`);
+                  } catch (error) {
+                    console.error('Error creating live session:', error);
+                    alert('Failed to create live quiz session');
+                  }
+                }}
+                className="glass-card rounded-2xl p-6 bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-400/30 hover:scale-105 transition-all text-center group"
+              >
+                <div className="text-4xl mb-3">🎮</div>
+                <div className="text-xl font-bold text-white mb-2">Live Multiplayer</div>
+                <div className="text-sm text-purple-300">Play with classmates</div>
+              </button>
+            )}
           </div>
         </div>
       </div>
