@@ -774,6 +774,16 @@ Generate the questions NOW:`;
     setChatMessages(newMessages);
     setIsChatLoading(true);
 
+    // Parse current generated questions if available
+    const parsedQuestions = generatedQuestions ? parseQuizQuestions(generatedQuestions) : [];
+    const questionsContext = parsedQuestions.length > 0 
+      ? `\n\nCURRENT GENERATED QUESTIONS (${parsedQuestions.length} total):\n${parsedQuestions.map((q, idx) => {
+          const typeLabel = q.type === 'multiple-choice' ? 'Multiple Choice' : 
+                           q.type === 'true-false' ? 'True/False' : 'Fill-in-Blank';
+          return `${idx + 1}. [${typeLabel}] ${q.question}\n   Options: ${q.options.join(', ')}\n   Correct: ${q.options[typeof q.correct === 'number' ? q.correct : 0]}`;
+        }).join('\n\n')}`
+      : '\n\nNo questions generated yet.';
+
     // Build conversation context with document AND QuizGod knowledge
     const systemMessage = `You are QuizGod AI Assistant - an expert helper for the QuizGod quiz creation platform.
 
@@ -795,7 +805,7 @@ KEY FEATURES:
 1. QUIZ CREATION:
    - Manual Quiz Creator (/create): Create quizzes manually with custom questions
    - AI Quiz Generator (/quiz-creator): Upload documents (PDF, DOCX, PPTX) and AI generates quiz questions automatically
-   - Question types: Multiple choice with 4 options (A, B, C, D)
+   - Question types: Multiple choice with 4 options (A, B, C, D), True/False, Fill-in-the-blank
    - Add quiz titles, descriptions, and subjects
    - OCR support for scanned documents
 
@@ -822,17 +832,41 @@ KEY FEATURES:
    - Average scores and completion rates
 
 5. CURRENT DOCUMENT:
-${pdfText ? `The user has uploaded a document. Here's the content:\n\n${pdfText.slice(0, 10000)}\n\nYou can answer questions about this document.` : 'No document uploaded yet.'}
+${pdfText ? `The user has uploaded a document. Here's the content:\n\n${pdfText.slice(0, 8000)}\n\nYou can answer questions about this document.` : 'No document uploaded yet.'}
 
-YOUR ROLE:
+${questionsContext}
+
+YOUR ABILITIES:
 - Help users understand QuizGod features
 - Answer questions about uploaded documents
 - Guide users on how to create effective quizzes
-- Explain how to use classes and share quizzes
-- Provide tips for quiz generation
-- Troubleshoot issues with document uploads or quiz creation
+- Review and provide feedback on generated questions
+- EDIT QUESTIONS: If user asks to modify questions, respond with the edited questions in the EXACT format below
+- Add, remove, or modify specific questions when requested
+- Improve question clarity and difficulty
 
-Be friendly, concise, and helpful. When discussing the uploaded document, provide specific answers based on its content.`;
+EDITING QUESTIONS FORMAT:
+When user asks to edit questions, respond ONLY with the edited questions in this format:
+
+EDITED_QUESTIONS_START
+1. Question text here?
+A) Option 1
+B) Option 2*
+C) Option 3
+D) Option 4
+
+2. Another question?
+A) True*
+B) False
+
+3. Fill in blank question text with _____.
+ANSWER: correct answer
+EDITED_QUESTIONS_END
+
+Mark correct answers with asterisk (*) for multiple choice and true/false.
+For fill-blank, use ANSWER: format.
+
+Be friendly, concise, and helpful. When discussing the uploaded document or questions, provide specific answers based on content.`;
 
     // Use Groq for chat
     try {
@@ -860,17 +894,42 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
             model: 'meta-llama/llama-4-scout-17b-16e-instruct',
             messages: messages,
             temperature: 0.7,
-            max_tokens: 1000,
+            max_tokens: 2000,
           })
         }
       );
 
       if (response.ok) {
         const data = await response.json();
-        const assistantMessage = data.choices?.[0]?.message?.content;
+        let assistantMessage = data.choices?.[0]?.message?.content;
         
         if (assistantMessage) {
           console.log('✅ Chat response from Groq');
+          
+          // Check if response contains edited questions
+          const editedQuestionsMatch = assistantMessage.match(/EDITED_QUESTIONS_START\s*([\s\S]*?)\s*EDITED_QUESTIONS_END/);
+          
+          if (editedQuestionsMatch) {
+            const editedQuestionsText = editedQuestionsMatch[1].trim();
+            
+            // Apply the edited questions
+            setGeneratedQuestions(editedQuestionsText);
+            
+            // Update the assistant message to confirm the edit
+            const beforeEdit = assistantMessage.substring(0, editedQuestionsMatch.index);
+            const afterEdit = assistantMessage.substring(editedQuestionsMatch.index! + editedQuestionsMatch[0].length);
+            
+            const parsedCount = parseQuizQuestions(editedQuestionsText).length;
+            const confirmMessage = `✅ I've updated the questions! (${parsedCount} questions parsed)\n\n${beforeEdit}${afterEdit}`.trim();
+            
+            assistantMessage = confirmMessage || `✅ I've updated ${parsedCount} questions for you!`;
+            
+            // Show success notification
+            setTimeout(() => {
+              alert(`✅ AI Assistant updated the questions!\n${parsedCount} questions have been edited and applied.`);
+            }, 500);
+          }
+          
           setChatMessages([...newMessages, { role: 'assistant', content: assistantMessage }]);
           
           // Scroll to bottom
@@ -2061,7 +2120,11 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                           </div>
                           <div>
                             <h4 className="text-lg font-bold text-white">AI Assistant</h4>
-                            <p className="text-xs text-slate-300">Chat with DeepSeek R1 about your document</p>
+                            <p className="text-xs text-slate-300">
+                              {generatedQuestions 
+                                ? 'Ask me to review or edit your questions!' 
+                                : 'Chat about your document'}
+                            </p>
                           </div>
                         </div>
                         
@@ -2073,8 +2136,22 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
                           {chatMessages.length === 0 ? (
                             <div className="text-sm text-slate-400 text-center py-8">
                               <div className="text-4xl mb-3">💬</div>
-                              <p>Ask questions about your document!</p>
+                              <p className="font-semibold text-slate-300">Ask questions about your document!</p>
                               <p className="text-xs mt-2">Upload a document first, then chat with AI</p>
+                              {generatedQuestions && (
+                                <div className="mt-4 p-3 bg-cyan-500/10 border border-cyan-400/30 rounded-lg text-left">
+                                  <p className="text-xs font-semibold text-cyan-300 mb-1">💡 Pro Tip:</p>
+                                  <p className="text-xs text-slate-300">
+                                    I can see your generated questions! Try asking me to:
+                                  </p>
+                                  <ul className="text-xs text-slate-400 mt-1 space-y-1 list-disc list-inside">
+                                    <li>Review the questions</li>
+                                    <li>Make question 3 easier</li>
+                                    <li>Improve question clarity</li>
+                                    <li>Change the difficulty level</li>
+                                  </ul>
+                                </div>
+                              )}
                             </div>
                           ) : (
                             chatMessages.map((msg, idx) => (
