@@ -100,12 +100,10 @@ export default function LiveQuizPage() {
   };
 
   const handleAnswerSelect = (answer: number | string) => {
-    if (hasAnswered) return;
     setCurrentAnswer(answer);
   };
 
   const handleTextAnswerChange = (text: string) => {
-    if (hasAnswered) return;
     setTextAnswer(text);
     setCurrentAnswer(text);
   };
@@ -154,6 +152,43 @@ export default function LiveQuizPage() {
 
   const handleNextQuestion = async () => {
     if (!session || !quiz || !user || session.hostUserId !== user.uid) return;
+
+    // Auto-save current answer for this player if not already answered
+    if (!hasAnswered && currentAnswer !== null) {
+      const currentQuestion = quiz.questions[session.currentQuestionIndex];
+      const questionType = currentQuestion.type || 'multiple-choice';
+      
+      let isCorrect = false;
+
+      // Validate answer based on question type
+      if (questionType === 'multiple-choice' || questionType === 'true-false') {
+        const correctIdx = typeof currentQuestion.correct === 'number' 
+          ? currentQuestion.correct 
+          : currentQuestion.correct[0];
+        isCorrect = currentAnswer === correctIdx;
+      } else if (questionType === 'fill-blank' || questionType === 'short-answer') {
+        const userAnswer = String(currentAnswer).trim().toLowerCase();
+        const correctAnswer = currentQuestion.options[0]?.trim().toLowerCase() || '';
+        
+        if (questionType === 'fill-blank') {
+          isCorrect = userAnswer === correctAnswer;
+        } else {
+          isCorrect = userAnswer.includes(correctAnswer) || correctAnswer.includes(userAnswer);
+        }
+      }
+
+      try {
+        await submitLiveQuizAnswer(
+          session.id!,
+          user.uid,
+          session.currentQuestionIndex,
+          currentAnswer,
+          isCorrect
+        );
+      } catch (error) {
+        console.error('Error auto-saving answer:', error);
+      }
+    }
 
     const nextIndex = session.currentQuestionIndex + 1;
     
@@ -346,6 +381,11 @@ export default function LiveQuizPage() {
               <p className="text-slate-300">Question {session.currentQuestionIndex + 1} of {quiz.questions.length}</p>
             </div>
             <div className="text-right">
+              {quiz.timerType && quiz.timerType !== 'none' && (
+                <div className="text-lg text-slate-300 mb-2">
+                  ⏱️ Timer: {quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s per question` : `${Math.floor((quiz.timerDuration || 0) / 60)} min total`}
+                </div>
+              )}
               <div className="text-xl font-bold text-white">
                 Your Score: {currentPlayer?.score || 0}
               </div>
@@ -376,12 +416,11 @@ export default function LiveQuizPage() {
                     <button
                       key={index}
                       onClick={() => handleAnswerSelect(index)}
-                      disabled={hasAnswered}
                       className={`w-full p-4 rounded-lg text-left transition-all duration-200 ${
                         currentAnswer === index
                           ? 'bg-blue-600 border-2 border-blue-400'
                           : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
-                      } ${hasAnswered ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      }`}
                     >
                       <div className="flex items-center">
                         <span className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-4 font-semibold">
@@ -399,24 +438,22 @@ export default function LiveQuizPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => handleAnswerSelect(0)}
-                    disabled={hasAnswered}
                     className={`p-6 rounded-xl text-center text-xl font-bold transition-all duration-200 ${
                       currentAnswer === 0
                         ? 'bg-green-600 border-2 border-green-400 scale-105'
                         : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
-                    } ${hasAnswered ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    }`}
                   >
                     <div className="text-4xl mb-2">✓</div>
                     <div className="text-white">TRUE</div>
                   </button>
                   <button
                     onClick={() => handleAnswerSelect(1)}
-                    disabled={hasAnswered}
                     className={`p-6 rounded-xl text-center text-xl font-bold transition-all duration-200 ${
                       currentAnswer === 1
                         ? 'bg-red-600 border-2 border-red-400 scale-105'
                         : 'bg-white/20 hover:bg-white/30 border-2 border-transparent'
-                    } ${hasAnswered ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    }`}
                   >
                     <div className="text-4xl mb-2">✗</div>
                     <div className="text-white">FALSE</div>
@@ -431,9 +468,8 @@ export default function LiveQuizPage() {
                     type="text"
                     value={textAnswer}
                     onChange={(e) => handleTextAnswerChange(e.target.value)}
-                    disabled={hasAnswered}
                     placeholder="Type your answer here..."
-                    className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg disabled:opacity-50"
+                    className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg"
                   />
                 </div>
               )}
@@ -444,27 +480,22 @@ export default function LiveQuizPage() {
                   <textarea
                     value={textAnswer}
                     onChange={(e) => handleTextAnswerChange(e.target.value)}
-                    disabled={hasAnswered}
                     placeholder="Write your answer here..."
                     rows={4}
-                    className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg resize-none disabled:opacity-50"
+                    className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg resize-none"
                   />
                 </div>
               )}
 
-              {/* Submit Button */}
+              {/* Answer Status - No Submit Button */}
               <div className="mt-6">
-                {!hasAnswered ? (
-                  <button
-                    onClick={handleSubmitAnswer}
-                    disabled={currentAnswer === null}
-                    className="w-full px-6 py-3 bg-blue-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors font-semibold text-white"
-                  >
-                    ✓ Submit Answer
-                  </button>
+                {currentAnswer !== null ? (
+                  <div className="text-center p-4 bg-blue-500/20 border border-blue-400 rounded-lg text-blue-300 font-semibold">
+                    ✓ Answer Selected! Waiting for host to continue...
+                  </div>
                 ) : (
-                  <div className="text-center p-4 bg-green-500/20 border border-green-400 rounded-lg text-green-300 font-semibold">
-                    ✓ Answer Submitted! Waiting for host...
+                  <div className="text-center p-4 bg-white/10 border border-white/30 rounded-lg text-slate-300">
+                    Select your answer above
                   </div>
                 )}
               </div>

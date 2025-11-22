@@ -905,20 +905,25 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
 
   const parseQuizQuestions = (text: string) => {
     const questions: Question[] = [];
-    const questionBlocks = text.split(/\d+\.\s+/).filter(block => block.trim());
+    // Split by question numbers more reliably - use positive lookahead to keep the number
+    const questionBlocks = text.split(/(?=\d+\.\s+)/g).filter(block => block.trim());
 
     for (const block of questionBlocks) {
       const lines = block.trim().split('\n').filter(line => line.trim());
       if (lines.length === 0) continue;
 
-      const questionText = lines[0].replace(/\?$/, '').trim();
+      // Extract question number and text from first line
+      const firstLineMatch = lines[0].match(/^\d+\.\s+(.+)$/);
+      if (!firstLineMatch) continue;
+      
+      const questionText = firstLineMatch[1].replace(/\?$/, '').trim();
       
       // Check if it's a fill-blank question (has ANSWER: format)
       const answerMatch = block.match(/ANSWER:\s*(.+?)(?=\n\d+\.|$)/i);
       
       if (answerMatch) {
         // Fill-in-the-blank question
-        const answer = answerMatch[1].trim();
+        const answer = answerMatch[1].trim().split('\n')[0].trim();
         
         questions.push({
           question: questionText,
@@ -932,11 +937,14 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
         let correctIndex = -1;
         let foundAsterisk = false;
 
-        for (let i = 1; i < lines.length && options.length < 4; i++) {
+        for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
-          // Match patterns like "A) text*", "A. text*", "A text*", or just "text*"
-          const match = line.match(/^[A-D][\)\.\:]?\s*(.+?)$/i);
-          if (match) {
+          // Stop if we hit the next question or ANSWER: line
+          if (line.match(/^\d+\.\s+/) || line.match(/^ANSWER:/i)) break;
+          
+          // Match patterns like "A) text*", "A. text*", "A: text*" or just "A text*"
+          const match = line.match(/^[A-D][\)\.:\s]+(.+?)$/i);
+          if (match && options.length < 4) {
             const optionText = match[1].trim();
             const hasAsterisk = optionText.includes('*');
             const cleanText = optionText.replace(/\*+/g, '').trim();
