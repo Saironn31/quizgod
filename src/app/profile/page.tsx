@@ -156,7 +156,7 @@ const ProfilePage: React.FC = () => {
             {/* Change Password Card */}
             <div className="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-red-300">Change Password</h2>
+                <h2 className="text-2xl font-bold text-red-300">Change Password</h2>
                 <button
                   onClick={() => {
                     setShowPasswordForm(!showPasswordForm);
@@ -175,42 +175,42 @@ const ProfilePage: React.FC = () => {
               {showPasswordForm ? (
                 <form className="flex flex-col gap-3" onSubmit={handleChangePassword}>
                   <div>
-                    <label className="text-xs font-medium text-gray-200 mb-1 block">Current Password</label>
+                    <label className="text-sm font-medium text-gray-200 mb-1 block">Current Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
                       value={currentPassword} 
                       onChange={e => setCurrentPassword(e.target.value)}
                       placeholder="Current password"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-200 mb-1 block">New Password</label>
+                    <label className="text-sm font-medium text-gray-200 mb-1 block">New Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
                       value={newPassword} 
                       onChange={e => setNewPassword(e.target.value)}
                       placeholder="Min. 6 characters"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-200 mb-1 block">Confirm Password</label>
+                    <label className="text-sm font-medium text-gray-200 mb-1 block">Confirm Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
                       value={confirmPassword} 
                       onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="Confirm password"
                     />
                   </div>
-                  <button type="submit" className="mt-2 px-4 py-2 text-sm bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-lg font-medium shadow hover:from-red-700 hover:to-pink-700 transition-all" disabled={passwordLoading}>
+                  <button type="submit" className="mt-2 px-6 py-2 bg-gradient-to-r from-red-600 to-pink-600 text-white rounded-xl font-medium shadow hover:from-red-700 hover:to-pink-700 transition-all" disabled={passwordLoading}>
                     {passwordLoading ? 'Updating...' : 'Update Password'}
                   </button>
-                  {passwordMessage && <div className={`text-center text-xs ${passwordMessage.includes('success') ? 'text-green-300' : 'text-red-300'}`}>{passwordMessage}</div>}
+                  {passwordMessage && <div className={`text-center text-sm ${passwordMessage.includes('success') ? 'text-green-300' : 'text-red-300'}`}>{passwordMessage}</div>}
                 </form>
               ) : (
-                <div className="text-center py-6 text-slate-400 text-sm">
+                <div className="text-center py-4 text-slate-400 text-sm">
                   <p>Click "Change" to update your password</p>
                 </div>
               )}
