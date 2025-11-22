@@ -1104,7 +1104,7 @@ export default function QuizPlayerPage() {
                       value={textAnswers[currentQuestionIndex] || ''}
                       onChange={(e) => handleTextAnswerChange(e.target.value)}
                       placeholder="Type your answer here..."
-                      className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg"
+                      className="w-full p-4 rounded-lg bg-slate-900/50 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-gray-400 text-lg"
                     />
                     <p className="text-sm text-purple-200 mt-2">💡 Hint: Be specific with your answer</p>
                   </div>
@@ -1118,7 +1118,7 @@ export default function QuizPlayerPage() {
                       onChange={(e) => handleTextAnswerChange(e.target.value)}
                       placeholder="Write your answer here (1-2 sentences)..."
                       rows={4}
-                      className="w-full p-4 rounded-lg bg-white/20 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-white/50 text-lg resize-none"
+                      className="w-full p-4 rounded-lg bg-slate-900/50 border-2 border-white/30 focus:border-blue-400 focus:outline-none text-white placeholder-gray-400 text-lg resize-none"
                     />
                     <p className="text-sm text-purple-200 mt-2">💡 Tip: Write a clear and concise answer</p>
                   </div>

@@ -138,15 +138,15 @@ const ProfilePage: React.FC = () => {
               <form className="flex flex-col gap-4" onSubmit={handleSave}>
                 <div>
                   <label className="text-sm font-medium text-gray-200 mb-1 block">Name</label>
-                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-white" value={name} onChange={e => setName(e.target.value)} />
+                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={name} onChange={e => setName(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-200 mb-1 block">Email</label>
-                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-white" value={email} onChange={e => setEmail(e.target.value)} />
+                  <input className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-200 mb-1 block">Bio</label>
-                  <textarea className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-white/20 text-white" rows={3} value={bio} onChange={e => setBio(e.target.value)} />
+                  <textarea className="w-full px-3 py-2 rounded-xl border border-purple-300 bg-slate-900/50 text-white" rows={3} value={bio} onChange={e => setBio(e.target.value)} />
                 </div>
                 <button type="submit" className="mt-4 px-6 py-2 bg-gradient-to-r from-purple-700 to-indigo-700 text-white rounded-xl font-medium shadow hover:bg-purple-800/80 transition-all" disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</button>
                 {message && <div className={`text-center mt-2 ${message.includes('Failed') || message.includes('Error') ? 'text-red-300' : 'text-green-300'}`}>{message}</div>}
@@ -178,7 +178,7 @@ const ProfilePage: React.FC = () => {
                     <label className="text-sm font-medium text-gray-200 mb-1 block">Current Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-slate-900/50 text-white placeholder-gray-400" 
                       value={currentPassword} 
                       onChange={e => setCurrentPassword(e.target.value)}
                       placeholder="Current password"
@@ -188,7 +188,7 @@ const ProfilePage: React.FC = () => {
                     <label className="text-sm font-medium text-gray-200 mb-1 block">New Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-slate-900/50 text-white placeholder-gray-400" 
                       value={newPassword} 
                       onChange={e => setNewPassword(e.target.value)}
                       placeholder="Min. 6 characters"
@@ -198,7 +198,7 @@ const ProfilePage: React.FC = () => {
                     <label className="text-sm font-medium text-gray-200 mb-1 block">Confirm Password</label>
                     <input 
                       type="password" 
-                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-white/20 text-white" 
+                      className="w-full px-3 py-2 rounded-xl border border-red-300 bg-slate-900/50 text-white placeholder-gray-400" 
                       value={confirmPassword} 
                       onChange={e => setConfirmPassword(e.target.value)}
                       placeholder="Confirm password"
