@@ -429,6 +429,7 @@ export interface FirebaseQuiz {
     correct: number | number[]; // Single correct answer or multiple correct answers
     type?: 'multiple-choice' | 'true-false' | 'fill-blank' | 'short-answer'; // Question type
     explanation?: string; // AI-generated explanation for the answer
+    imageUrl?: string; // Optional image URL for the question
   }>;
   userId: string;
   classId?: string; // Optional - belongs to class if set

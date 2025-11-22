@@ -25,6 +25,7 @@ type Question = {
   options: string[]; 
   correct: number;
   type?: 'multiple-choice' | 'true-false' | 'fill-blank';
+  imageUrl?: string;
 };
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {

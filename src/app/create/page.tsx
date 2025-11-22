@@ -16,7 +16,12 @@ import {
   createSubject
 } from '@/lib/firestore';
 
-type Question = { question: string; options: string[]; correct: number };
+type Question = { 
+  question: string; 
+  options: string[]; 
+  correct: number;
+  imageUrl?: string;
+};
 
 interface ExtendedFirebaseSubject extends FirebaseSubject {
   source?: 'personal' | 'class';
@@ -962,6 +967,31 @@ CRITICAL QUALITY REQUIREMENTS:
                               value={q.question} 
                               onChange={e => updateQuestion(i, { question: e.target.value })}
                             />
+                            
+                            {/* Image URL Input */}
+                            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                              <label className="block text-xs font-semibold text-slate-300 mb-2">
+                                🖼️ Image URL (Optional)
+                              </label>
+                              <input 
+                                className="w-full p-2 text-sm border border-white/30 bg-white/10 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400" 
+                                placeholder="https://example.com/image.jpg" 
+                                value={q.imageUrl || ''} 
+                                onChange={e => updateQuestion(i, { imageUrl: e.target.value })}
+                              />
+                              {q.imageUrl && (
+                                <div className="mt-2">
+                                  <img 
+                                    src={q.imageUrl} 
+                                    alt="Question" 
+                                    className="max-w-full h-auto max-h-40 rounded-lg border border-white/20"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                               {q.options.map((option, oi) => (

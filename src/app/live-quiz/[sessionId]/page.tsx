@@ -409,6 +409,20 @@ export default function LiveQuizPage() {
                 {currentQuestion.question}
               </h2>
 
+              {/* Question Image */}
+              {currentQuestion.imageUrl && (
+                <div className="mb-6 flex justify-center">
+                  <img 
+                    src={currentQuestion.imageUrl} 
+                    alt="Question illustration" 
+                    className="max-h-80 rounded-lg border border-white/20"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+
               {/* Multiple Choice */}
               {(!questionType || questionType === 'multiple-choice') && (
                 <div className="space-y-4">

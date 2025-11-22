@@ -1006,6 +1006,20 @@ export default function QuizPlayerPage() {
                   {currentQuestion.question}
                 </h2>
 
+                {/* Question Image */}
+                {currentQuestion.imageUrl && (
+                  <div className="mb-6 flex justify-center">
+                    <img 
+                      src={currentQuestion.imageUrl} 
+                      alt="Question illustration" 
+                      className="max-w-full h-auto max-h-80 rounded-xl border-2 border-white/20 shadow-lg"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Multiple Choice */}
                 {(!currentQuestion.type || currentQuestion.type === 'multiple-choice') && (
                   <div className="space-y-4">
