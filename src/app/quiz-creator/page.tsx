@@ -80,6 +80,7 @@ export default function CreatePage() {
   const [useOCR, setUseOCR] = useState(false); // Default to false - user must enable
   const [ocrProgress, setOcrProgress] = useState({ current: 0, total: 0, percentage: 0 });
   const [error, setError] = useState("");
+  const [uploadedImagesMap, setUploadedImagesMap] = useState<Map<string, string>>(new Map());
   
   // AI Chatbot states
   const [chatMessages, setChatMessages] = useState<Array<{ role: 'user' | 'assistant', content: string }>>([]);
@@ -619,6 +620,32 @@ export default function CreatePage() {
     setIsGenerating(true);
     setError("");
 
+    // Upload extracted images to Firebase Storage if any exist
+    let uploadedImages: Array<{ url: string; pageNumber: number; context: string; index: number }> = [];
+    if (user && currentJob?.extractedImages && currentJob.extractedImages.length > 0) {
+      try {
+        console.log(`Uploading ${currentJob.extractedImages.length} extracted images...`);
+        const { uploadExtractedImages } = await import('@/utils/imageUpload');
+        const tempQuizId = `temp_${Date.now()}`;
+        uploadedImages = await uploadExtractedImages(
+          currentJob.extractedImages,
+          user.uid,
+          tempQuizId
+        );
+        console.log(`Successfully uploaded ${uploadedImages.length} images`);
+        
+        // Create image map for parsing
+        const imageMap = new Map<string, string>();
+        uploadedImages.forEach(img => {
+          imageMap.set(`IMAGE_${img.index}`, img.url);
+        });
+        setUploadedImagesMap(imageMap);
+      } catch (uploadError) {
+        console.error('Failed to upload images:', uploadError);
+        // Continue even if image upload fails
+      }
+    }
+
     // Build question type instructions
     let typeInstructions = '';
     const types = [];
@@ -633,6 +660,18 @@ export default function CreatePage() {
       types.push(`${questionTypes['fill-blank']} fill-in-the-blank questions (ANSWER MUST BE 1-3 WORDS MAXIMUM)`);
     }
 
+    // Build image context if images were extracted
+    let imageContext = '';
+    if (uploadedImages.length > 0) {
+      imageContext = `\n\nAVAILABLE IMAGES (extracted from PDF):\n${uploadedImages.map((img, idx) => 
+        `[IMAGE_${idx}] - Page ${img.pageNumber}: ${img.context.substring(0, 100)}... 
+         URL: ${img.url}`
+      ).join('\n')}\n
+You can reference images in questions using the format:
+IMAGE_URL: [IMAGE_0]
+(Place this line immediately after the question text, before the options)\n`;
+    }
+
     const basePrompt = `You are a quiz generator. Create a quiz about ${subject} with difficulty level: ${difficulty.toUpperCase()}.
 
 Based on the following content, generate EXACTLY:
@@ -642,30 +681,32 @@ TOTAL QUESTIONS REQUIRED: ${totalQuestions}
 
 Content:
 ${pdfText.slice(0, 15000)}
+${imageContext}
 
 MANDATORY FORMAT - Follow this EXACTLY:
 
 For MULTIPLE CHOICE questions:
 1. What is the question text?
-A) First option
+${uploadedImages.length > 0 ? 'IMAGE_URL: [IMAGE_0]\n' : ''}A) First option
 B) Second option*
 C) Third option
 D) Fourth option
 
 For TRUE/FALSE questions:
 2. Is this statement correct?
-A) True*
+${uploadedImages.length > 0 ? 'IMAGE_URL: [IMAGE_1]\n' : ''}A) True*
 B) False
 
 For FILL-IN-THE-BLANK questions:
 3. The capital of France is _____.
-ANSWER: Paris
+${uploadedImages.length > 0 ? 'IMAGE_URL: [IMAGE_2]\n' : ''}ANSWER: Paris
 
 CRITICAL RULES:
 1. Start output with "1." immediately - NO introduction text
 2. For multiple-choice and true/false: EXACTLY ONE asterisk (*) marking the correct answer
 3. For fill-blank: Use "ANSWER:" followed by ONLY 1-3 WORDS (no full sentences or long phrases)
 4. Number questions sequentially: 1, 2, 3, etc.
+${uploadedImages.length > 0 ? '5. OPTIONAL: Add IMAGE_URL: [IMAGE_X] line after question text if relevant image available\n' : ''}
 5. Generate EXACTLY ${totalQuestions} questions total (${types.join(', ')})
 6. DO NOT generate more or fewer than ${totalQuestions} questions
 7. Adjust difficulty based on: ${difficulty === 'easy' ? 'Simple concepts, clear answers' : difficulty === 'medium' ? 'Moderate complexity, some reasoning' : 'Complex concepts, critical thinking required'}
@@ -776,7 +817,7 @@ Generate the questions NOW:`;
     setIsChatLoading(true);
 
     // Parse current generated questions if available
-    const parsedQuestions = generatedQuestions ? parseQuizQuestions(generatedQuestions) : [];
+    const parsedQuestions = generatedQuestions ? parseQuizQuestions(generatedQuestions, uploadedImagesMap) : [];
     const questionsContext = parsedQuestions.length > 0 
       ? `\n\nCURRENT GENERATED QUESTIONS (${parsedQuestions.length} total):\n${parsedQuestions.map((q, idx) => {
           const typeLabel = q.type === 'multiple-choice' ? 'Multiple Choice' : 
@@ -920,7 +961,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
             const beforeEdit = assistantMessage.substring(0, editedQuestionsMatch.index);
             const afterEdit = assistantMessage.substring(editedQuestionsMatch.index! + editedQuestionsMatch[0].length);
             
-            const parsedCount = parseQuizQuestions(editedQuestionsText).length;
+            const parsedCount = parseQuizQuestions(editedQuestionsText, uploadedImagesMap).length;
             const confirmMessage = `✅ I've updated the questions! (${parsedCount} questions parsed)\n\n${beforeEdit}${afterEdit}`.trim();
             
             assistantMessage = confirmMessage || `✅ I've updated ${parsedCount} questions for you!`;
@@ -963,7 +1004,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
     }
   }, [chatMessages]);
 
-  const parseQuizQuestions = (text: string) => {
+  const parseQuizQuestions = (text: string, imageMap?: Map<string, string>) => {
     const questions: Question[] = [];
     // Split by question numbers more reliably - use positive lookahead to keep the number
     const questionBlocks = text.split(/(?=\d+\.\s+)/g).filter(block => block.trim());
@@ -977,6 +1018,14 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
       if (!firstLineMatch) continue;
       
       const questionText = firstLineMatch[1].replace(/\?$/, '').trim();
+      let imageUrl: string | undefined = undefined;
+      
+      // Check for IMAGE_URL reference in the block
+      const imageUrlMatch = block.match(/IMAGE_URL:\s*\[IMAGE_(\d+)\]/i);
+      if (imageUrlMatch && imageMap) {
+        const imageIndex = imageUrlMatch[1];
+        imageUrl = imageMap.get(`IMAGE_${imageIndex}`);
+      }
       
       // Check if it's a fill-blank question (has ANSWER: format)
       const answerMatch = block.match(/ANSWER:\s*(.+?)(?=\n\d+\.|$)/i);
@@ -989,7 +1038,8 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
           question: questionText,
           options: [answer],
           correct: 0,
-          type: 'fill-blank'
+          type: 'fill-blank',
+          imageUrl
         });
       } else {
         // Multiple choice or True/False question
@@ -1001,6 +1051,8 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
           const line = lines[i].trim();
           // Stop if we hit the next question or ANSWER: line
           if (line.match(/^\d+\.\s+/) || line.match(/^ANSWER:/i)) break;
+          // Skip IMAGE_URL lines
+          if (line.match(/^IMAGE_URL:/i)) continue;
           
           // Match patterns like "A) text*", "A. text*", "A: text*" or just "A text*"
           const match = line.match(/^[A-D][\)\.:\s]+(.+?)$/i);
@@ -1033,7 +1085,8 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
             question: questionText,
             options,
             correct: correctIndex,
-            type: isTrueFalse ? 'true-false' : 'multiple-choice'
+            type: isTrueFalse ? 'true-false' : 'multiple-choice',
+            imageUrl
           });
         }
       }
@@ -1162,7 +1215,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
       
       const selectedSubjectObj = subjects.find(s => s.name === subject);
       
-      const parsedQuestions = parseQuizQuestions(generatedQuestions);
+      const parsedQuestions = parseQuizQuestions(generatedQuestions, uploadedImagesMap);
 
       if (parsedQuestions.length === 0) {
         alert("No valid questions found. Please check the format.");

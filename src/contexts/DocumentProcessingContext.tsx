@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import { ExtractedImage } from '@/utils/pdfImageExtraction';
 
 interface OcrProgress {
   current: number;
@@ -15,6 +16,7 @@ interface ProcessingJob {
   isExtracting: boolean;
   ocrProgress: OcrProgress;
   extractedText: string;
+  extractedImages: ExtractedImage[];
   error: string | null;
   startTime: number;
 }
@@ -97,6 +99,7 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
       isExtracting: true,
       ocrProgress: { current: 0, total: 0, percentage: 0 },
       extractedText: '',
+      extractedImages: [],
       error: null,
       startTime: Date.now()
     };
@@ -162,6 +165,18 @@ export const DocumentProcessingProvider = ({ children }: { children: ReactNode }
         }
 
         console.log(`[Job ${jobId}] Extracted ${extractedText.length} characters from embedded text`);
+
+        // Extract images from PDF
+        console.log(`[Job ${jobId}] Extracting images from PDF...`);
+        try {
+          const { extractImagesFromPDF } = await import('@/utils/pdfImageExtraction');
+          const extractedImages = await extractImagesFromPDF(file);
+          console.log(`[Job ${jobId}] Extracted ${extractedImages.length} images`);
+          updateJob(jobId, { extractedImages });
+        } catch (imageError) {
+          console.error(`[Job ${jobId}] Failed to extract images:`, imageError);
+          // Continue even if image extraction fails
+        }
 
         // Run OCR only if enabled
         if (useOCR) {
