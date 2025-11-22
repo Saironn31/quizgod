@@ -29,8 +29,8 @@ The app now automatically sends a welcome email when users sign up using Firebas
 
    **Mailgun (Recommended):**
    - Sign up at https://mailgun.com
-   - **Free Tier**: 5,000 emails/month for first 3 months
-   - **Paid**: $35/month for 50,000 emails after trial
+   - **Free Tier**: 100 emails/day (~3,000/month) - FREE FOREVER
+   - **Foundation Plan**: First month free trial, then $35/month for 50,000 emails
    - Get SMTP credentials from Sending > Domain Settings > SMTP credentials
    - SMTP URI: `smtps://postmaster@YOUR_DOMAIN.mailgun.org:YOUR_PASSWORD@smtp.mailgun.org:465`
    - **Setup Steps**:
@@ -40,10 +40,13 @@ The app now automatically sends a welcome email when users sign up using Firebas
      4. Click "SMTP credentials" tab
      5. Copy username (postmaster@...) and password
      6. Use format: `smtps://USERNAME:PASSWORD@smtp.mailgun.org:465`
+   - **Note**: Free tier is perfect for testing and small apps. Upgrade when you exceed 100 emails/day.
 
-   **Alternative: SendGrid (for comparison):**
-   - Sign up at https://sendgrid.com (Free: 100 emails/day)
-   - SMTP URI: `smtps://apikey:YOUR_SENDGRID_API_KEY@smtp.sendgrid.net:465`
+   **Alternative: Brevo/Sendinblue (Better free tier for volume):**
+   - Sign up at https://brevo.com
+   - **Free Tier**: 300 emails/day (9,000/month) - FREE FOREVER
+   - Better for apps with higher signup volume
+   - SMTP URI: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
 
    **Alternative: Gmail (testing only):**
    - Enable 2FA on your Google account
@@ -150,10 +153,10 @@ Update the `from` field in the email or set it in Firebase extension config.
 
 - **Firebase Function**: Free tier covers most usage (2M invocations/month)
 - **Mailgun**: 
-  - First 3 months: 5,000 emails/month free
-  - After trial: $35/month for 50,000 emails
-  - Pay-as-you-go: $0.80 per 1,000 emails after plan limit
-  - Foundation plan recommended for growing apps
+  - Free tier: 100 emails/day (~3,000/month) - Forever free
+  - Foundation plan: $35/month for 50,000 emails (first month free trial)
+  - Overage: $1.30 per 1,000 emails beyond plan limit
+- **Brevo (alternative)**: 300 emails/day (9,000/month) free forever - Better for higher volume startups
 
 ## Troubleshooting
 
@@ -170,10 +173,11 @@ Update the `from` field in the email or set it in Firebase extension config.
 3. Verify Firebase Authentication is working
 
 **Rate limits:**
-- Mailgun free tier: 5,000 emails/month during trial
-- Monitor usage in Mailgun dashboard
+- Mailgun free tier: 100 emails/day (forever free)
+- Brevo free tier: 300 emails/day (better for growth)
+- Monitor usage in provider dashboard
 - Set up billing alerts to avoid surprises
-- Consider upgrading to Foundation plan ($35/month) for 50,000 emails
+- Upgrade to paid plan when consistently exceeding daily limits
 
 ## Security Notes
 
