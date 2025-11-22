@@ -27,26 +27,26 @@ The app now automatically sends a welcome email when users sign up using Firebas
 
 3. **SMTP Providers (Choose one):**
 
-   **Mailgun (Recommended):**
+   **Brevo (Recommended - Best Free Tier):**
+   - Sign up at https://brevo.com
+   - **Free Tier**: 300 emails/day (9,000/month) - FREE FOREVER ✅
+   - **Paid**: $17/month for 10,000 emails/month
+   - Get SMTP credentials from Settings > SMTP & API
+   - SMTP URI: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
+   - **Setup Steps**:
+     1. Create account and verify email (no credit card required)
+     2. Go to Settings > SMTP & API > SMTP
+     3. Click "Create a new SMTP key"
+     4. Copy your login (email) and SMTP key
+     5. Use format: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
+   - **Perfect for**: Growing apps with consistent signups (3x more than Mailgun)
+
+   **Alternative: Mailgun (Good for small apps):**
    - Sign up at https://mailgun.com
    - **Free Tier**: 100 emails/day (~3,000/month) - FREE FOREVER
    - **Foundation Plan**: First month free trial, then $35/month for 50,000 emails
-   - Get SMTP credentials from Sending > Domain Settings > SMTP credentials
    - SMTP URI: `smtps://postmaster@YOUR_DOMAIN.mailgun.org:YOUR_PASSWORD@smtp.mailgun.org:465`
-   - **Setup Steps**:
-     1. Create account and verify email
-     2. Add and verify your sending domain (or use sandbox for testing)
-     3. Go to Sending > Domains > Select your domain
-     4. Click "SMTP credentials" tab
-     5. Copy username (postmaster@...) and password
-     6. Use format: `smtps://USERNAME:PASSWORD@smtp.mailgun.org:465`
-   - **Note**: Free tier is perfect for testing and small apps. Upgrade when you exceed 100 emails/day.
-
-   **Alternative: Brevo/Sendinblue (Better free tier for volume):**
-   - Sign up at https://brevo.com
-   - **Free Tier**: 300 emails/day (9,000/month) - FREE FOREVER
-   - Better for apps with higher signup volume
-   - SMTP URI: `smtps://YOUR_EMAIL:YOUR_SMTP_KEY@smtp-relay.brevo.com:465`
+   - Good for testing and very small apps
 
    **Alternative: Gmail (testing only):**
    - Enable 2FA on your Google account
@@ -152,11 +152,13 @@ Update the `from` field in the email or set it in Firebase extension config.
 ## Cost Considerations
 
 - **Firebase Function**: Free tier covers most usage (2M invocations/month)
-- **Mailgun**: 
-  - Free tier: 100 emails/day (~3,000/month) - Forever free
-  - Foundation plan: $35/month for 50,000 emails (first month free trial)
-  - Overage: $1.30 per 1,000 emails beyond plan limit
-- **Brevo (alternative)**: 300 emails/day (9,000/month) free forever - Better for higher volume startups
+- **Brevo (Recommended)**: 
+  - Free tier: 300 emails/day (9,000/month) - Forever free ✅
+  - Starter plan: $17/month for 10,000 emails/month
+  - Best value for growing quiz platforms
+- **Mailgun (Alternative)**: 
+  - Free tier: 100 emails/day (3,000/month) - Forever free
+  - Foundation: $35/month for 50,000 emails
 
 ## Troubleshooting
 
@@ -173,8 +175,8 @@ Update the `from` field in the email or set it in Firebase extension config.
 3. Verify Firebase Authentication is working
 
 **Rate limits:**
-- Mailgun free tier: 100 emails/day (forever free)
-- Brevo free tier: 300 emails/day (better for growth)
+- Brevo free tier: 300 emails/day (best free option) ✅
+- Mailgun free tier: 100 emails/day
 - Monitor usage in provider dashboard
 - Set up billing alerts to avoid surprises
 - Upgrade to paid plan when consistently exceeding daily limits
