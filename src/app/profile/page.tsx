@@ -154,9 +154,9 @@ const ProfilePage: React.FC = () => {
             </div>
             
             {/* Change Password Card */}
-            <div className="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-red-300">Change Password</h2>
+            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10 h-fit">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xl font-bold text-red-300">Change Password</h2>
                 <button
                   onClick={() => {
                     setShowPasswordForm(!showPasswordForm);
@@ -210,7 +210,7 @@ const ProfilePage: React.FC = () => {
                   {passwordMessage && <div className={`text-center text-sm ${passwordMessage.includes('success') ? 'text-green-300' : 'text-red-300'}`}>{passwordMessage}</div>}
                 </form>
               ) : (
-                <div className="text-center py-4 text-slate-400 text-sm">
+                <div className="text-center py-3 text-slate-400 text-sm">
                   <p>Click "Change" to update your password</p>
                 </div>
               )}
