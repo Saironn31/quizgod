@@ -437,91 +437,7 @@ export default function QuizPlayerPage() {
     );
   }
 
-  if (!quizStarted) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
-        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-4">
-          <h1 className="text-3xl font-bold mb-4 text-center">{quiz.title}</h1>
-          <div className="text-center space-y-4">
-            <p className="text-xl">📚 Subject: {quiz.subject}</p>
-            {quiz.description && (
-              <p className="text-gray-300">{quiz.description}</p>
-            )}
-            <div className="bg-white/20 rounded-lg p-4">
-              <p className="text-lg">📊 Quiz Information:</p>
-              <ul className="mt-2 space-y-1">
-                <li>• Questions: {quiz.questions.length}</li>
-                <li>• Difficulty: {quiz.difficulty ? quiz.difficulty.charAt(0).toUpperCase() + quiz.difficulty.slice(1) : 'Not specified'}</li>
-                {quiz.timerType && quiz.timerType !== 'none' ? (
-                  <li>• Timer: {quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s per question` : `${Math.floor((quiz.timerDuration || 0) / 60)} minutes total`}</li>
-                ) : (
-                  <li>• Timer: No time limit</li>
-                )}
-                <li>• Type: {quiz.questions[0]?.type ? quiz.questions[0].type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Multiple Choice'}</li>
-              </ul>
-            </div>
-            <div className="flex gap-4 justify-center mt-6 flex-wrap">
-              <Link 
-                href="/quizzes" 
-                className="px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                ← Back to Quizzes
-              </Link>
-              {quiz.userId === user?.uid && (
-                <button
-                  onClick={handleEnterEditMode}
-                  className="px-6 py-3 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors font-semibold flex items-center gap-2"
-                  title={userProfile?.isPremium ? 'Edit Quiz' : 'Premium Feature'}
-                >
-                  ✏️ Edit Quiz
-                  {!userProfile?.isPremium && <span className="text-xs bg-purple-500 px-2 py-0.5 rounded">Premium</span>}
-                </button>
-              )}
-              <button
-                onClick={handleStartQuiz}
-                className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
-              >
-                🚀 Start Solo Quiz
-              </button>
-              {quiz.classId && (
-                <button
-                  onClick={async () => {
-                    if (!user) return;
-                    try {
-                      const userProfile = await getUserProfile(user.uid);
-                      const sessionId = await createLiveQuizSession(
-                        quiz.id,
-                        quiz.title,
-                        quiz.classId!,
-                        user.uid,
-                        userProfile?.name || user.email || 'Anonymous'
-                      );
-                      // Join the session as host
-                      await joinLiveQuizSession(
-                        sessionId,
-                        user.uid,
-                        userProfile?.name || user.email || 'Anonymous',
-                        user.email || ''
-                      );
-                      router.push(`/live-quiz/${sessionId}`);
-                    } catch (error) {
-                      console.error('Error creating live session:', error);
-                      alert('Failed to create live quiz session');
-                    }
-                  }}
-                  className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-                >
-                  🎮 Start Live Multiplayer
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Edit Mode Screen
+  // Edit Mode Screen - Check this BEFORE quizStarted
   if (isEditMode) {
     return (
       <div className="min-h-screen bg-slate-950">
@@ -613,6 +529,90 @@ export default function QuizPlayerPage() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quizStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-900 text-white flex items-center justify-center">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-4">
+          <h1 className="text-3xl font-bold mb-4 text-center">{quiz.title}</h1>
+          <div className="text-center space-y-4">
+            <p className="text-xl">📚 Subject: {quiz.subject}</p>
+            {quiz.description && (
+              <p className="text-gray-300">{quiz.description}</p>
+            )}
+            <div className="bg-white/20 rounded-lg p-4">
+              <p className="text-lg">📊 Quiz Information:</p>
+              <ul className="mt-2 space-y-1">
+                <li>• Questions: {quiz.questions.length}</li>
+                <li>• Difficulty: {quiz.difficulty ? quiz.difficulty.charAt(0).toUpperCase() + quiz.difficulty.slice(1) : 'Not specified'}</li>
+                {quiz.timerType && quiz.timerType !== 'none' ? (
+                  <li>• Timer: {quiz.timerType === 'per-question' ? `${quiz.timerDuration || 60}s per question` : `${Math.floor((quiz.timerDuration || 0) / 60)} minutes total`}</li>
+                ) : (
+                  <li>• Timer: No time limit</li>
+                )}
+                <li>• Type: {quiz.questions[0]?.type ? quiz.questions[0].type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Multiple Choice'}</li>
+              </ul>
+            </div>
+            <div className="flex gap-4 justify-center mt-6 flex-wrap">
+              <Link 
+                href="/quizzes" 
+                className="px-6 py-3 bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                ← Back to Quizzes
+              </Link>
+              {quiz.userId === user?.uid && (
+                <button
+                  onClick={handleEnterEditMode}
+                  className="px-6 py-3 bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors font-semibold flex items-center gap-2"
+                  title={userProfile?.isPremium ? 'Edit Quiz' : 'Premium Feature'}
+                >
+                  ✏️ Edit Quiz
+                  {!userProfile?.isPremium && <span className="text-xs bg-purple-500 px-2 py-0.5 rounded">Premium</span>}
+                </button>
+              )}
+              <button
+                onClick={handleStartQuiz}
+                className="px-6 py-3 bg-green-600 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              >
+                🚀 Start Solo Quiz
+              </button>
+              {quiz.classId && (
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    try {
+                      const userProfile = await getUserProfile(user.uid);
+                      const sessionId = await createLiveQuizSession(
+                        quiz.id,
+                        quiz.title,
+                        quiz.classId!,
+                        user.uid,
+                        userProfile?.name || user.email || 'Anonymous'
+                      );
+                      // Join the session as host
+                      await joinLiveQuizSession(
+                        sessionId,
+                        user.uid,
+                        userProfile?.name || user.email || 'Anonymous',
+                        user.email || ''
+                      );
+                      router.push(`/live-quiz/${sessionId}`);
+                    } catch (error) {
+                      console.error('Error creating live session:', error);
+                      alert('Failed to create live quiz session');
+                    }
+                  }}
+                  className="px-6 py-3 bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
+                  🎮 Start Live Multiplayer
+                </button>
+              )}
             </div>
           </div>
         </div>
