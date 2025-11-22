@@ -108,9 +108,9 @@ const ProfilePage: React.FC = () => {
               </div>
 
               {/* Right side - Account Status and Change Password */}
-              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
+              <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-stretch">
                 {/* Account Status */}
-                <div className="w-full md:w-fit p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 h-full flex flex-col">
+                <div className="w-full md:w-fit p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-white/10 flex flex-col">
                   <h2 className="text-xl font-bold mb-3 text-white">Account Status</h2>
                   <div className="flex items-center gap-3 mb-3">
                     <span className="text-base text-white">Premium:</span>
@@ -131,7 +131,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 {/* Change Password */}
-                <div className="w-full md:w-fit p-6 rounded-2xl bg-gradient-to-br from-white/10 to-red-900/10 border border-white/10 h-full flex flex-col">
+                <div className="w-full md:w-fit p-6 rounded-2xl bg-gradient-to-br from-white/10 to-red-900/10 border border-white/10 flex flex-col">
                   <div className="flex justify-between items-center mb-3 gap-4">
                     <h2 className="text-xl font-bold text-red-300 whitespace-nowrap">Change Password</h2>
                     <button
