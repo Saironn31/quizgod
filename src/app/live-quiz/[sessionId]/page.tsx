@@ -8,6 +8,7 @@ import {
   subscribeToLiveQuizSession,
   submitLiveQuizAnswer,
   updateLiveQuizQuestion,
+  startLiveQuizSession,
   finishLiveQuizSession,
   leaveLiveQuizSession,
   LiveQuizSession,
@@ -87,10 +88,14 @@ export default function LiveQuizPage() {
     if (!session || !user) return;
     
     try {
+      // Start the session (changes status to 'in-progress')
+      await startLiveQuizSession(session.id!);
+      // Set the first question
       await updateLiveQuizQuestion(session.id!, 0);
       // Session status will update via real-time listener
     } catch (error) {
       console.error('Error starting quiz:', error);
+      alert('Failed to start quiz. Please try again.');
     }
   };
 
