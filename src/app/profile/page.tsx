@@ -109,29 +109,29 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
         <div className="relative z-10 max-w-6xl mx-auto">
-          {/* Premium Status Card - Full Width */}
-          <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-white/10 mb-6">
-            <h2 className="text-2xl font-bold mb-4 text-white text-center">Account Status</h2>
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-lg text-white">Premium:</span>
-              <span className={`text-2xl font-bold ${(userProfile?.isPremium || userProfile?.role === 'admin') ? 'text-green-400' : 'text-red-400'}`}>
-                {(userProfile?.isPremium || userProfile?.role === 'admin') ? '✅ Active' : '❌ Not Active'}
-              </span>
-            </div>
-            {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
-              <div className="mt-4 text-center">
-                <a href="/premium" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
-                  Upgrade to Premium
-                </a>
+          {/* Single Column Layout */}
+          <div className="flex flex-col gap-6">
+            {/* Account Status Card */}
+            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-purple-500/20 to-blue-500/20 border-2 border-white/10">
+              <h2 className="text-2xl font-bold mb-4 text-white text-center">Account Status</h2>
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-lg text-white">Premium:</span>
+                <span className={`text-2xl font-bold ${(userProfile?.isPremium || userProfile?.role === 'admin') ? 'text-green-400' : 'text-red-400'}`}>
+                  {(userProfile?.isPremium || userProfile?.role === 'admin') ? '✅ Active' : '❌ Not Active'}
+                </span>
               </div>
-            )}
-            <div className="mt-4 text-xs text-slate-400 text-center">
-              User ID: {user?.uid}
+              {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
+                <div className="mt-4 text-center">
+                  <a href="/premium" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
+                    Upgrade to Premium
+                  </a>
+                </div>
+              )}
+              <div className="mt-4 text-xs text-slate-400 text-center">
+                User ID: {user?.uid}
+              </div>
             </div>
-          </div>
-          
-          {/* Two Column Grid for Edit Profile and Change Password */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
             {/* Edit Profile Card */}
             <div className="glass-card rounded-3xl p-6 md:p-8 bg-gradient-to-br from-white/10 to-purple-900/10 border-2 border-white/10">
               <h2 className="text-2xl font-bold mb-6 text-purple-300 text-center">Edit Profile</h2>
@@ -154,7 +154,7 @@ const ProfilePage: React.FC = () => {
             </div>
             
             {/* Change Password Card */}
-            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10 h-fit">
+            <div className="glass-card rounded-3xl p-6 bg-gradient-to-br from-white/10 to-red-900/10 border-2 border-white/10">
               <div className="flex justify-between items-center mb-3">
                 <h2 className="text-xl font-bold text-red-300">Change Password</h2>
                 <button
