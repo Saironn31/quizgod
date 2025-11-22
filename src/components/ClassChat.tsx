@@ -24,6 +24,7 @@ const ClassChat: React.FC<ClassChatProps> = ({ classId }) => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || !user?.uid || !userProfile?.name) return;
+    if (!userProfile?.isPremium && userProfile?.role !== 'admin') return;
     setLoading(true);
     await sendChatMessage({
       senderUid: user.uid,
@@ -34,6 +35,8 @@ const ClassChat: React.FC<ClassChatProps> = ({ classId }) => {
     setInput('');
     setLoading(false);
   };
+
+  const isPremium = userProfile?.isPremium || userProfile?.role === 'admin';
 
   return (
     <div className="flex flex-col h-full">
@@ -65,22 +68,32 @@ const ClassChat: React.FC<ClassChatProps> = ({ classId }) => {
       </div>
       
       {/* Input Area */}
-      <form onSubmit={handleSend} className="flex gap-2 p-3 bg-slate-800 rounded-b-2xl border-t border-slate-700">
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          className="flex-1 px-4 py-2 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-blue-500 placeholder-slate-400"
-          placeholder="Type a message..."
-        />
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-        >
-          Send
-        </button>
-      </form>
+      {!isPremium ? (
+        <div className="p-4 bg-slate-800 rounded-b-2xl border-t border-slate-700 text-center">
+          <p className="text-slate-400 text-sm mb-2">💎 Premium Feature</p>
+          <p className="text-slate-500 text-xs mb-3">Upgrade to Premium to send messages</p>
+          <a href="/premium" className="inline-block px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-sm font-semibold hover:from-purple-700 hover:to-pink-700 transition-all">
+            Upgrade to Premium
+          </a>
+        </div>
+      ) : (
+        <form onSubmit={handleSend} className="flex gap-2 p-3 bg-slate-800 rounded-b-2xl border-t border-slate-700">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            className="flex-1 px-4 py-2 rounded-xl bg-slate-700 text-white border border-slate-600 focus:outline-none focus:border-blue-500 placeholder-slate-400"
+            placeholder="Type a message..."
+          />
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:from-blue-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Send
+          </button>
+        </form>
+      )}
     </div>
   );
 };
