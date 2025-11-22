@@ -749,7 +749,7 @@ export default function QuizPlayerPage() {
                 <div className="text-4xl mb-3">✏️</div>
                 <div className="text-xl font-bold text-white mb-2">Edit Quiz</div>
                 <div className="text-sm text-yellow-300">
-                  {(userProfile?.isPremium || userProfile?.role === 'admin') ? 'Modify questions' : '⭐ Premium Feature'}
+                  {(userProfile?.role === 'admin' || (userProfile?.isPremium && userProfile?.premiumStatus === 'active')) ? 'Modify questions' : '⭐ Premium Feature'}
                 </div>
               </button>
             )}

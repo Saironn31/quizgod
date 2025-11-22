@@ -110,10 +110,21 @@ async function updateUserPremiumStatus(userId: string, isPremium: boolean) {
     }
 
     const db = admin.firestore();
-    await db.collection('users').doc(userId).update({
+    const updateData: any = {
       isPremium,
       premiumUpdatedAt: new Date().toISOString()
-    });
+    };
+    
+    // If granting premium, set subscription date and status
+    if (isPremium) {
+      updateData.premiumStatus = 'active';
+      updateData.subscriptionDate = new Date().toISOString();
+    } else {
+      // If removing premium, set status to none
+      updateData.premiumStatus = 'none';
+    }
+    
+    await db.collection('users').doc(userId).update(updateData);
   } catch (error) {
     console.error('Failed to update user premium status:', error);
     throw error;

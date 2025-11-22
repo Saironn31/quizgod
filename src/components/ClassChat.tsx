@@ -36,7 +36,7 @@ const ClassChat: React.FC<ClassChatProps> = ({ classId }) => {
     setLoading(false);
   };
 
-  const isPremium = userProfile?.isPremium || userProfile?.role === 'admin';
+  const isPremium = userProfile?.role === 'admin' || (userProfile?.isPremium && userProfile?.premiumStatus === 'active');
 
   return (
     <div className="flex flex-col h-full">

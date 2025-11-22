@@ -70,6 +70,8 @@ async function handleOrderCompleted(event: any) {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       isPremium: true,
+      premiumStatus: 'active',
+      subscriptionDate: new Date(),
       premiumActivatedAt: new Date(),
       paymentProvider: 'fastspring',
       fastspringOrderId: order.id,
@@ -97,6 +99,8 @@ async function handleSubscriptionActivated(event: any) {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       isPremium: true,
+      premiumStatus: 'active',
+      subscriptionDate: new Date(),
       premiumActivatedAt: new Date(),
       subscriptionStatus: 'active',
       fastspringSubscriptionId: subscription.id,

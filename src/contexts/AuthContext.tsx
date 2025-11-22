@@ -67,7 +67,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Check if user has premium access (either isPremium flag or admin role)
   const isPremiumUser = () => {
-    return userProfile?.isPremium === true || userProfile?.role === 'admin';
+    // Admin users always have premium access
+    if (userProfile?.role === 'admin') return true;
+    
+    // Check if premium is active
+    return userProfile?.isPremium === true && userProfile?.premiumStatus === 'active';
   };
 
   // Listen for authentication state changes
@@ -94,6 +98,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch (err) {
             console.error('Failed to auto-grant admin:', err);
           }
+        }
+        
+        // Check and update premium expiry status
+        try {
+          const { checkAndUpdatePremiumExpiry } = await import('@/lib/firestore');
+          await checkAndUpdatePremiumExpiry(user.uid);
+        } catch (err) {
+          console.error('Failed to check premium expiry:', err);
         }
         
         // Fetch user profile data from Firestore

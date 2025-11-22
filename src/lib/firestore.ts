@@ -229,6 +229,8 @@ export interface FirebaseUser {
   bio?: string; // User biography
   friends?: string[]; // Array of user UIDs
   isPremium?: boolean; // Premium subscription status
+  premiumStatus?: 'active' | 'pending' | 'none'; // Premium status for expiry management
+  subscriptionDate?: Date; // Date when premium was activated
   role?: 'user' | 'admin'; // User role
   preferences?: {
     theme: 'light' | 'dark';
@@ -255,7 +257,64 @@ export const isUserPremium = async (uid: string): Promise<boolean> => {
   const userRef = doc(db, 'users', uid);
   const userSnap = await getDoc(userRef);
   if (!userSnap.exists()) return false;
-  return userSnap.data().isPremium === true || userSnap.data().role === 'admin';
+  
+  const userData = userSnap.data();
+  
+  // Admin users always have premium access
+  if (userData.role === 'admin') return true;
+  
+  // Check if premium is active and not expired
+  if (userData.isPremium === true && userData.premiumStatus === 'active') {
+    return true;
+  }
+  
+  return false;
+};
+
+/**
+ * Check and update premium expiry status
+ * Changes premium to "pending" if 30 days have passed since subscription date
+ * Returns updated premium status
+ */
+export const checkAndUpdatePremiumExpiry = async (uid: string): Promise<'active' | 'pending' | 'none'> => {
+  const userRef = doc(db, 'users', uid);
+  const userSnap = await getDoc(userRef);
+  
+  if (!userSnap.exists()) return 'none';
+  
+  const userData = userSnap.data();
+  
+  // Admin users are exempt from expiry
+  if (userData.role === 'admin') return 'active';
+  
+  // If not premium, return current status
+  if (!userData.isPremium) {
+    return userData.premiumStatus || 'none';
+  }
+  
+  // Check if subscription date exists
+  if (!userData.subscriptionDate) {
+    // No subscription date set, keep current status
+    return userData.premiumStatus || 'active';
+  }
+  
+  // Calculate days since subscription
+  const subscriptionDate = userData.subscriptionDate.toDate ? userData.subscriptionDate.toDate() : new Date(userData.subscriptionDate);
+  const now = new Date();
+  const daysSinceSubscription = Math.floor((now.getTime() - subscriptionDate.getTime()) / (1000 * 60 * 60 * 24));
+  
+  // If more than 30 days, set to pending
+  if (daysSinceSubscription > 30 && userData.premiumStatus !== 'pending') {
+    await updateDoc(userRef, {
+      isPremium: false,
+      premiumStatus: 'pending',
+      updatedAt: new Date()
+    });
+    return 'pending';
+  }
+  
+  // Still active
+  return 'active';
 };
 
 /**
@@ -269,10 +328,21 @@ export const setUserPremium = async (adminUid: string, targetUid: string, isPrem
   }
   
   const userRef = doc(db, 'users', targetUid);
-  await updateDoc(userRef, {
+  const updateData: any = {
     isPremium,
     updatedAt: new Date()
-  });
+  };
+  
+  // If granting premium, set subscription date and status
+  if (isPremium) {
+    updateData.premiumStatus = 'active';
+    updateData.subscriptionDate = new Date();
+  } else {
+    // If removing premium, set status to none
+    updateData.premiumStatus = 'none';
+  }
+  
+  await updateDoc(userRef, updateData);
 };
 
 /**

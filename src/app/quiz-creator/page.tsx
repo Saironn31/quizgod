@@ -2395,7 +2395,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document or ques
       </div>
 
       {/* Fixed Bottom Center Ad - Only for non-premium users */}
-      {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
+      {!(userProfile?.role === 'admin' || (userProfile?.isPremium && userProfile?.premiumStatus === 'active')) && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
           <AdsterraAd 
             atOptions={{

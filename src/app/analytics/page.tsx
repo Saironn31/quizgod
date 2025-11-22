@@ -52,7 +52,7 @@ export default function AnalyticsPage() {
     totalScore: 0
   });
 
-  const isPremium = userProfile?.isPremium || userProfile?.role === 'admin';
+  const isPremium = userProfile?.role === 'admin' || (userProfile?.isPremium && userProfile?.premiumStatus === 'active');
 
   useEffect(() => {
     async function fetchStats() {
