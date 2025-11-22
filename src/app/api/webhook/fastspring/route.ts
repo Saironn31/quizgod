@@ -66,12 +66,22 @@ async function handleOrderCompleted(event: any) {
       return;
     }
 
+    // Detect subscription type from product name
+    const isYearly = items.some((item: any) => 
+      item.product?.toLowerCase().includes('yearly') ||
+      item.product?.toLowerCase().includes('annual') ||
+      item.display?.toLowerCase().includes('yearly') ||
+      item.display?.toLowerCase().includes('annual')
+    );
+    const subscriptionType = isYearly ? 'yearly' : 'monthly';
+
     // Grant premium access
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       isPremium: true,
       premiumStatus: 'active',
       subscriptionDate: new Date(),
+      subscriptionType: subscriptionType,
       premiumActivatedAt: new Date(),
       paymentProvider: 'fastspring',
       fastspringOrderId: order.id,
@@ -96,11 +106,20 @@ async function handleSubscriptionActivated(event: any) {
       return;
     }
 
+    // Detect subscription type from product or plan name
+    const isYearly = 
+      subscription.product?.toLowerCase().includes('yearly') ||
+      subscription.product?.toLowerCase().includes('annual') ||
+      subscription.plan?.toLowerCase().includes('yearly') ||
+      subscription.plan?.toLowerCase().includes('annual');
+    const subscriptionType = isYearly ? 'yearly' : 'monthly';
+
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       isPremium: true,
       premiumStatus: 'active',
       subscriptionDate: new Date(),
+      subscriptionType: subscriptionType,
       premiumActivatedAt: new Date(),
       subscriptionStatus: 'active',
       fastspringSubscriptionId: subscription.id,

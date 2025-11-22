@@ -57,8 +57,9 @@ export async function POST(req: NextRequest) {
       case 'transaction.completed':
         // One-time payment completed
         if (data.status === 'completed') {
-          await updateUserPremiumStatus(userId, true);
-          console.log(`User ${userId} payment completed - granted premium access`);
+          const subscriptionType = detectSubscriptionType(data);
+          await updateUserPremiumStatus(userId, true, subscriptionType);
+          console.log(`User ${userId} payment completed - granted premium access (${subscriptionType})`);
         }
         break;
 
@@ -67,8 +68,9 @@ export async function POST(req: NextRequest) {
       case 'subscription.updated':
         // User subscribed or subscription updated
         if (data.status === 'active') {
-          await updateUserPremiumStatus(userId, true);
-          console.log(`User ${userId} upgraded to premium`);
+          const subscriptionType = detectSubscriptionType(data);
+          await updateUserPremiumStatus(userId, true, subscriptionType);
+          console.log(`User ${userId} upgraded to premium (${subscriptionType})`);
         }
         break;
 
@@ -95,7 +97,21 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function updateUserPremiumStatus(userId: string, isPremium: boolean) {
+function detectSubscriptionType(data: any): 'monthly' | 'yearly' {
+  // Check items for yearly/annual keywords
+  if (data.items) {
+    const hasYearly = data.items.some((item: any) => {
+      const priceId = item.price_id?.toLowerCase() || '';
+      return priceId.includes('yearly') || priceId.includes('annual');
+    });
+    if (hasYearly) return 'yearly';
+  }
+  
+  // Default to monthly if not detected
+  return 'monthly';
+}
+
+async function updateUserPremiumStatus(userId: string, isPremium: boolean, subscriptionType?: 'monthly' | 'yearly') {
   try {
     // Initialize Firebase Admin if not already initialized
     if (!admin.apps.length) {
@@ -115,10 +131,11 @@ async function updateUserPremiumStatus(userId: string, isPremium: boolean) {
       premiumUpdatedAt: new Date().toISOString()
     };
     
-    // If granting premium, set subscription date and status
+    // If granting premium, set subscription date, status, and type
     if (isPremium) {
       updateData.premiumStatus = 'active';
       updateData.subscriptionDate = new Date().toISOString();
+      updateData.subscriptionType = subscriptionType || 'monthly';
     } else {
       // If removing premium, set status to none
       updateData.premiumStatus = 'none';

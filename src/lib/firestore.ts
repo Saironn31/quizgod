@@ -231,6 +231,7 @@ export interface FirebaseUser {
   isPremium?: boolean; // Premium subscription status
   premiumStatus?: 'active' | 'pending' | 'none'; // Premium status for expiry management
   subscriptionDate?: Date; // Date when premium was activated
+  subscriptionType?: 'monthly' | 'yearly'; // Subscription plan type
   role?: 'user' | 'admin'; // User role
   preferences?: {
     theme: 'light' | 'dark';
@@ -273,7 +274,7 @@ export const isUserPremium = async (uid: string): Promise<boolean> => {
 
 /**
  * Check and update premium expiry status
- * Changes premium to "pending" if 30 days have passed since subscription date
+ * Changes premium to "pending" if subscription period has passed (30 days for monthly, 365 days for yearly)
  * Returns updated premium status
  */
 export const checkAndUpdatePremiumExpiry = async (uid: string): Promise<'active' | 'pending' | 'none'> => {
@@ -303,8 +304,11 @@ export const checkAndUpdatePremiumExpiry = async (uid: string): Promise<'active'
   const now = new Date();
   const daysSinceSubscription = Math.floor((now.getTime() - subscriptionDate.getTime()) / (1000 * 60 * 60 * 24));
   
-  // If more than 30 days, set to pending
-  if (daysSinceSubscription > 30 && userData.premiumStatus !== 'pending') {
+  // Determine expiry duration based on subscription type
+  const expiryDays = userData.subscriptionType === 'yearly' ? 365 : 30;
+  
+  // If expired, set to pending
+  if (daysSinceSubscription > expiryDays && userData.premiumStatus !== 'pending') {
     await updateDoc(userRef, {
       isPremium: false,
       premiumStatus: 'pending',
@@ -320,7 +324,12 @@ export const checkAndUpdatePremiumExpiry = async (uid: string): Promise<'active'
 /**
  * Update user premium status (admin only)
  */
-export const setUserPremium = async (adminUid: string, targetUid: string, isPremium: boolean): Promise<void> => {
+export const setUserPremium = async (
+  adminUid: string, 
+  targetUid: string, 
+  isPremium: boolean, 
+  subscriptionType: 'monthly' | 'yearly' = 'monthly'
+): Promise<void> => {
   // Check if requester is admin
   const isAdmin = await isUserAdmin(adminUid);
   if (!isAdmin) {
@@ -333,10 +342,11 @@ export const setUserPremium = async (adminUid: string, targetUid: string, isPrem
     updatedAt: new Date()
   };
   
-  // If granting premium, set subscription date and status
+  // If granting premium, set subscription date, status, and type
   if (isPremium) {
     updateData.premiumStatus = 'active';
     updateData.subscriptionDate = new Date();
+    updateData.subscriptionType = subscriptionType;
   } else {
     // If removing premium, set status to none
     updateData.premiumStatus = 'none';
