@@ -40,7 +40,7 @@ interface AnalyticsStats {
 }
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [stats, setStats] = useState<AnalyticsStats>({ 
     quizzesTaken: 0, 
     avgScore: 0, 
@@ -52,9 +52,11 @@ export default function AnalyticsPage() {
     totalScore: 0
   });
 
+  const isPremium = userProfile?.isPremium || userProfile?.role === 'admin';
+
   useEffect(() => {
     async function fetchStats() {
-      if (!user?.uid) return;
+      if (!user?.uid || !isPremium) return;
       const records = await getUserQuizRecords(user.uid);
       const quizzesTaken = records.length;
       
@@ -176,6 +178,42 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+
+        {!isPremium ? (
+          <div className="relative z-10 max-w-4xl mx-auto">
+            <div className="glass-card rounded-3xl p-12 text-center bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-2 border-purple-400/30">
+              <div className="text-6xl mb-6">💎</div>
+              <h2 className="text-3xl font-bold text-white mb-4">Premium Feature</h2>
+              <p className="text-slate-300 text-lg mb-6">
+                Unlock detailed analytics and performance tracking with Premium
+              </p>
+              <div className="space-y-3 text-left max-w-md mx-auto mb-8">
+                <div className="flex items-center gap-3 text-slate-300">
+                  <span className="text-green-400 text-xl">✓</span>
+                  <span>Detailed performance dashboard</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-300">
+                  <span className="text-green-400 text-xl">✓</span>
+                  <span>Subject-wise analytics</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-300">
+                  <span className="text-green-400 text-xl">✓</span>
+                  <span>Score history and trends</span>
+                </div>
+                <div className="flex items-center gap-3 text-slate-300">
+                  <span className="text-green-400 text-xl">✓</span>
+                  <span>Recent quiz insights</span>
+                </div>
+              </div>
+              <a 
+                href="/premium" 
+                className="inline-block px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl text-lg font-bold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:scale-105"
+              >
+                Upgrade to Premium
+              </a>
+            </div>
+          </div>
+        ) : (
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           <div className="glass-card rounded-3xl p-6 md:col-span-2 animate-slide-up">
             <h3 className="text-2xl font-bold text-white mb-6">📊 Performance Dashboard</h3>
@@ -377,6 +415,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   );
