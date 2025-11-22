@@ -114,11 +114,11 @@ const ProfilePage: React.FC = () => {
             <h2 className="text-2xl font-bold mb-4 text-white text-center">Account Status</h2>
             <div className="flex items-center justify-center gap-3">
               <span className="text-lg text-white">Premium:</span>
-              <span className={`text-2xl font-bold ${userProfile?.isPremium ? 'text-green-400' : 'text-red-400'}`}>
-                {userProfile?.isPremium ? '✅ Active' : '❌ Not Active'}
+              <span className={`text-2xl font-bold ${(userProfile?.isPremium || userProfile?.role === 'admin') ? 'text-green-400' : 'text-red-400'}`}>
+                {(userProfile?.isPremium || userProfile?.role === 'admin') ? '✅ Active' : '❌ Not Active'}
               </span>
             </div>
-            {!userProfile?.isPremium && (
+            {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
               <div className="mt-4 text-center">
                 <a href="/premium" className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all inline-block">
                   Upgrade to Premium

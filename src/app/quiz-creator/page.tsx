@@ -2173,7 +2173,7 @@ Be friendly, concise, and helpful. When discussing the uploaded document, provid
       </div>
 
       {/* Fixed Bottom Center Ad - Only for non-premium users */}
-      {!userProfile?.isPremium && (
+      {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50">
           <AdsterraAd 
             atOptions={{

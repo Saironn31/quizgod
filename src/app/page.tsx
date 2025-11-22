@@ -515,7 +515,7 @@ export default function HomePage() {
       </div>
 
       {/* Fixed Bottom Center Ad - Only for non-premium users */}
-      {!userProfile?.isPremium && (
+      {!(userProfile?.isPremium || userProfile?.role === 'admin') && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[728px] px-4 hidden md:block">
           <AdsterraAd 
             atOptions={{

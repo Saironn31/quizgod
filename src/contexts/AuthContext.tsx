@@ -20,6 +20,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUserProfile: () => Promise<void>;
+  isPremiumUser: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -62,6 +63,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const profile = await getUserProfile(user.uid);
       setUserProfile(profile);
     }
+  };
+
+  // Check if user has premium access (either isPremium flag or admin role)
+  const isPremiumUser = () => {
+    return userProfile?.isPremium === true || userProfile?.role === 'admin';
   };
 
   // Listen for authentication state changes
@@ -110,7 +116,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     signup,
     login,
     logout,
-    refreshUserProfile
+    refreshUserProfile,
+    isPremiumUser
   };
 
   if (!mounted) {

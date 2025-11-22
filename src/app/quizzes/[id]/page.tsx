@@ -346,9 +346,10 @@ export default function QuizPlayerPage() {
     // Fetch fresh user profile to ensure we have latest premium status
     try {
       const freshProfile = await getUserProfile(user.uid);
-      console.log('User profile premium status:', freshProfile?.isPremium);
+      const hasPremiumAccess = freshProfile?.isPremium === true || freshProfile?.role === 'admin';
+      console.log('User profile premium status:', hasPremiumAccess);
       
-      if (!freshProfile?.isPremium) {
+      if (!hasPremiumAccess) {
         alert('Edit mode is a premium feature. Please upgrade to edit quizzes.');
         router.push('/premium');
         return;
@@ -724,7 +725,7 @@ export default function QuizPlayerPage() {
                 <div className="text-4xl mb-3">✏️</div>
                 <div className="text-xl font-bold text-white mb-2">Edit Quiz</div>
                 <div className="text-sm text-yellow-300">
-                  {userProfile?.isPremium ? 'Modify questions' : '⭐ Premium Feature'}
+                  {(userProfile?.isPremium || userProfile?.role === 'admin') ? 'Modify questions' : '⭐ Premium Feature'}
                 </div>
               </button>
             )}

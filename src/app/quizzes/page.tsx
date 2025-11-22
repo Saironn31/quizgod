@@ -25,7 +25,7 @@ export default function QuizzesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(12); // Show 12 quizzes per page
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, isPremiumUser } = useAuth();
 
   // Load preferences
   useEffect(() => {
@@ -436,7 +436,7 @@ export default function QuizzesPage() {
       </div>
 
       {/* Fixed Bottom Center Ad - Only for non-premium users */}
-      {!userProfile?.isPremium && (
+      {!isPremiumUser() && (
         <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-[728px] px-4 hidden md:block">
           <AdsterraAd 
             atOptions={{
