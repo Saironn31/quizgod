@@ -563,6 +563,30 @@ export default function QuizPlayerPage() {
                         rows={2}
                         placeholder="Enter question text"
                       />
+
+                      {/* Image URL (Optional) */}
+                      <div className="mb-4">
+                        <label className="text-sm text-purple-200 mb-2 block">🖼️ Image URL (Optional):</label>
+                        <input
+                          type="text"
+                          value={question.imageUrl || ''}
+                          onChange={(e) => updateEditedQuestion(qIndex, 'imageUrl', e.target.value)}
+                          className="w-full px-4 py-2 rounded-lg bg-white/10 text-white border border-white/20 focus:border-purple-400 focus:outline-none"
+                          placeholder="Enter image URL (e.g., https://example.com/image.png)"
+                        />
+                        {question.imageUrl && (
+                          <div className="mt-3">
+                            <img 
+                              src={question.imageUrl} 
+                              alt="Question preview" 
+                              className="max-h-48 rounded-lg border border-white/20"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                       
                       {questionType === 'fill-blank' || questionType === 'short-answer' ? (
                         <div>
